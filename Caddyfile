@@ -1,0 +1,130 @@
+{
+	admin off
+	auto_https off
+
+	log {
+		output stderr
+		format filter {
+			# Privacy: Preserves first 8 bits from IPv4 and 32 bits from IPv6
+			request>remote_ip ip_mask 8 32
+			request>client_ip ip_mask 8 32
+
+			# Remove identifiable information for privacy
+			request>remote_port delete
+			request>headers delete
+			request>uri query {
+				delete url
+				delete h
+				delete q
+			}
+		}
+	}
+
+	servers {
+		client_ip_headers X-Forwarded-For X-Real-IP
+
+		# Trust private ranges for Docker networking and local development
+		trusted_proxies static private_ranges
+		trusted_proxies_strict
+	}
+}
+
+:8080 {
+
+	encode zstd gzip
+
+	# SearXNG API endpoints
+	@api {
+		path /config
+		path /healthz
+		path /stats/errors
+		path /stats/checker
+		path /search
+	}
+
+	# Static assets
+	@static {
+		path /static/*
+	}
+
+	# Image proxy for privacy
+	@imageproxy {
+		path /image_proxy
+	}
+
+	# Handle CORS preflight requests for Searvo Flutter app
+	@options {
+		method OPTIONS
+	}
+
+	handle @options {
+		header {
+			Access-Control-Allow-Origin "*"
+			Access-Control-Allow-Methods "GET, POST, OPTIONS"
+			Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, Accept"
+			Access-Control-Max-Age "3600"
+		}
+		respond 204
+	}
+
+	header {
+		# CORS headers for Searvo Flutter app
+		Access-Control-Allow-Origin "*"
+		Access-Control-Allow-Methods "GET, POST, OPTIONS"
+		Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, Accept"
+		Access-Control-Expose-Headers "Content-Type, Content-Length"
+
+		# CSP for SearXNG (https://content-security-policy.com)
+		Content-Security-Policy "upgrade-insecure-requests; default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; form-action 'self' https:; font-src 'self'; frame-ancestors 'self'; base-uri 'self'; connect-src 'self'; img-src * data:; frame-src https:;"
+
+		# Privacy: Disable intrusive browser features
+		Permissions-Policy "accelerometer=(),camera=(),geolocation=(),gyroscope=(),magnetometer=(),microphone=(),payment=(),usb=()"
+
+		# Privacy: No referrer information
+		Referrer-Policy "no-referrer"
+
+		# Security: Prevent MIME type sniffing
+		X-Content-Type-Options "nosniff"
+
+		# Privacy: Prevent search engine indexing
+		X-Robots-Tag "noindex, nofollow, noarchive, nositelinkssearchbox, nosnippet, notranslate, noimageindex"
+
+		# Security: Remove server identification
+		-Server
+	}
+
+	header @api {
+		Access-Control-Allow-Methods "GET, OPTIONS"
+		Access-Control-Allow-Origin "*"
+	}
+
+	route {
+		# Optimized cache policy for Searvo
+		# API responses: no cache for fresh results
+		header Cache-Control "no-cache, no-store, must-revalidate"
+		# Static assets: moderate caching
+		header @static Cache-Control "public, max-age=300, stale-while-revalidate=600"
+		# Image proxy: aggressive caching for performance
+		header @imageproxy Cache-Control "public, max-age=86400, immutable"
+	}
+
+	# SearXNG reverse proxy with optimized headers
+	# Proxies all requests to SearXNG container on port 8080
+	reverse_proxy searxng:8080 {
+		header_up Host {host}
+		header_up X-Real-IP {remote}
+		header_up X-Forwarded-For {remote}
+		header_up X-Forwarded-Proto {scheme}
+		
+		# Health check configuration
+		health_uri /healthz
+		health_interval 30s
+		health_timeout 5s
+		
+		# Performance: Connection pooling
+		transport http {
+			keepalive 90s
+			keepalive_idle_conns 10
+		}
+	}
+}

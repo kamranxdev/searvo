@@ -1,0 +1,27 @@
+services:
+  searxng:
+    build:
+      context: .
+      dockerfile: searxng.dockerfile
+    container_name: searvo-searxng
+    environment:
+      - SEARXNG_BOTDETECTION_ENABLED=false
+    networks:
+      - searvo-network
+    restart: unless-stopped
+
+  caddy:
+    build:
+      context: .
+      dockerfile: caddy.dockerfile
+    container_name: searvo-caddy
+    ports:
+      - 4000:8080
+    networks:
+      - searvo-network
+    depends_on:
+      - searxng
+    restart: unless-stopped
+
+networks:
+  searvo-network: 
