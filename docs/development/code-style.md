@@ -501,4 +501,4 @@ open coverage/html/index.html
 
 ## Questions?
 
-Ask in [GitHub Discussions](https://github.com/kamranxdev/searvo-community/discussions) or [Discord](https://discord.gg/Bq67m6NYaa).
+Ask in [GitHub Discussions](https://github.com/kamranxdev/searvo/discussions) or [Discord](https://discord.gg/Bq67m6NYaa).

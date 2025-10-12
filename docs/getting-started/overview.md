@@ -177,8 +177,8 @@ Ready to start? Follow these steps:
 
 Join our growing community:
 
-- 💬 **[GitHub Discussions](https://github.com/kamranxdev/searvo-community/discussions)** - Ask questions, share ideas
-- 🐛 **[Issue Tracker](https://github.com/kamranxdev/searvo-community/issues)** - Report bugs, request features
+- 💬 **[GitHub Discussions](https://github.com/kamranxdev/searvo/discussions)** - Ask questions, share ideas
+- 🐛 **[Issue Tracker](https://github.com/kamranxdev/searvo/issues)** - Report bugs, request features
 - 💭 **[Discord](https://discord.gg/Bq67m6NYaa)** - Real-time chat with developers and users
 
 ## Contributing
@@ -274,8 +274,8 @@ flutter doctor -v
 
 1. **Clone the repository:**
 ```bash
-git clone https://github.com/kamranxdev/searvo-community.git
-cd searvo-community
+git clone https://github.com/kamranxdev/searvo.git
+cd searvo
 ```
 
 2. **Install dependencies:**
@@ -365,8 +365,8 @@ flutter build web
 We welcome contributions from the community! Here's how you can help:
 
 ### Ways to Contribute
-- 🐛 **Bug Reports**: Found a bug? [Open an issue](https://github.com/kamranxdev/searvo-community/issues/new?template=bug_report.md)
-- ✨ **Feature Requests**: Have an idea? [Suggest it here](https://github.com/kamranxdev/searvo-community/issues/new?template=feature_request.md)
+- 🐛 **Bug Reports**: Found a bug? [Open an issue](https://github.com/kamranxdev/searvo/issues/new?template=bug_report.md)
+- ✨ **Feature Requests**: Have an idea? [Suggest it here](https://github.com/kamranxdev/searvo/issues/new?template=feature_request.md)
 - 💻 **Code Contributions**: See our [Contributing Guide](CONTRIBUTING.md)
 - 📖 **Documentation**: Help improve docs and examples
 - 🧪 **Testing**: Add tests or report test failures
@@ -399,9 +399,9 @@ Just include the original copyright notice in any copy of the software.
 
 ## 🤝 Community & Support
 
-- 📧 **Discussions**: Join community discussions on [GitHub Discussions](https://github.com/kamranxdev/searvo-community/discussions)
+- 📧 **Discussions**: Join community discussions on [GitHub Discussions](https://github.com/kamranxdev/searvo/discussions)
 - 💬 **Discord**: Chat with the community on our [Discord server](https://discord.gg/Bq67m6NYaa)
-- 🐛 **Issues**: Report bugs or request features on [GitHub Issues](https://github.com/kamranxdev/searvo-community/issues)
+- 🐛 **Issues**: Report bugs or request features on [GitHub Issues](https://github.com/kamranxdev/searvo/issues)
 - 📖 **Documentation**: Full documentation available at [docs.searvo.app](https://docs.searvo.app)
 
 ## 📊 Project Status

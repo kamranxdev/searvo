@@ -70,8 +70,8 @@ Choose your preferred AI provider:
 
 ```bash
 # Clone the repository
-git clone https://github.com/kamranxdev/searvo-community.git
-cd searvo-community
+git clone https://github.com/kamranxdev/searvo.git
+cd searvo
 
 # Install dependencies
 flutter pub get
@@ -130,8 +130,8 @@ We welcome contributions from the community! Whether you're fixing bugs, adding 
 
 **Quick Links:**
 - [Contributing Guide](docs/development/contributing.md)
-- [Good First Issues](https://github.com/kamranxdev/searvo-community/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-- [Feature Requests](https://github.com/kamranxdev/searvo-community/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
+- [Good First Issues](https://github.com/kamranxdev/searvo/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+- [Feature Requests](https://github.com/kamranxdev/searvo/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
 
 ## � Privacy & Security
 
@@ -159,8 +159,8 @@ Searvo is designed with privacy as a core principle:
 
 Join our growing community:
 
-- 💬 **[GitHub Discussions](https://github.com/kamranxdev/searvo-community/discussions)** - Ask questions, share ideas
-- 🐛 **[Issue Tracker](https://github.com/kamranxdev/searvo-community/issues)** - Report bugs, request features
+- 💬 **[GitHub Discussions](https://github.com/kamranxdev/searvo/discussions)** - Ask questions, share ideas
+- 🐛 **[Issue Tracker](https://github.com/kamranxdev/searvo/issues)** - Report bugs, request features
 - 💭 **[Discord](https://discord.gg/Bq67m6NYaa)** - Real-time chat
 
 ## 📜 License
@@ -183,12 +183,12 @@ Searvo is built with these amazing open-source projects:
 - [ ] Advanced analytics
 - [ ] Plugin system
 
-See our [GitHub Projects](https://github.com/kamranxdev/searvo-community/projects) for detailed progress.
+See our [GitHub Projects](https://github.com/kamranxdev/searvo/projects) for detailed progress.
 
 ## 📧 Contact
 
 - **Project Maintainer**: [kamranxdev](https://github.com/kamranxdev)
-- **Email**: [Create an issue](https://github.com/kamranxdev/searvo-community/issues/new)
+- **Email**: [Create an issue](https://github.com/kamranxdev/searvo/issues/new)
 - **Website**: Coming soon!
 
 ---
@@ -197,7 +197,7 @@ See our [GitHub Projects](https://github.com/kamranxdev/searvo-community/project
 
 **Made with ❤️ by the open-source community**
 
-[⭐ Star this repo](https://github.com/kamranxdev/searvo-community) • [🐛 Report Bug](https://github.com/kamranxdev/searvo-community/issues) • [💡 Request Feature](https://github.com/kamranxdev/searvo-community/issues)
+[⭐ Star this repo](https://github.com/kamranxdev/searvo) • [🐛 Report Bug](https://github.com/kamranxdev/searvo/issues) • [💡 Request Feature](https://github.com/kamranxdev/searvo/issues)
 
 </div>
 

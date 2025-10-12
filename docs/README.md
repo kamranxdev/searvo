@@ -36,7 +36,7 @@ Welcome to the Searvo documentation! This comprehensive guide will help you unde
 
 - **New to Searvo?** Start with the [Overview](getting-started/overview.md)
 - **Want to contribute?** Check out the [Contributing Guide](development/contributing.md)
-- **Need help?** Visit our [GitHub Discussions](https://github.com/kamranxdev/searvo-community/discussions)
+- **Need help?** Visit our [GitHub Discussions](https://github.com/kamranxdev/searvo/discussions)
 
 ## 📱 Platform Support
 
@@ -50,8 +50,8 @@ Searvo supports multiple platforms:
 
 ## 🔗 Related Resources
 
-- [Main Repository](https://github.com/kamranxdev/searvo-community)
-- [Issue Tracker](https://github.com/kamranxdev/searvo-community/issues)
+- [Main Repository](https://github.com/kamranxdev/searvo)
+- [Issue Tracker](https://github.com/kamranxdev/searvo/issues)
 - [Discord Community](https://discord.gg/Bq67m6NYaa)
 
 Welcome to the Searvo documentation! This section provides comprehensive guides and references for using and contributing to Searvo.

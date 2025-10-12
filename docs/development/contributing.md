@@ -19,7 +19,7 @@ There are many ways to contribute to Searvo:
 
 Found a bug? Help us fix it!
 
-1. Check if the bug is already reported in [Issues](https://github.com/kamranxdev/searvo-community/issues)
+1. Check if the bug is already reported in [Issues](https://github.com/kamranxdev/searvo/issues)
 2. If not, create a new issue with:
    - Clear, descriptive title
    - Steps to reproduce
@@ -56,7 +56,7 @@ Found a bug? Help us fix it!
 
 Have an idea? We'd love to hear it!
 
-1. Check [existing feature requests](https://github.com/kamranxdev/searvo-community/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
+1. Check [existing feature requests](https://github.com/kamranxdev/searvo/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
 2. Create a new issue with the "enhancement" label
 3. Describe your idea clearly
 4. Explain the use case
@@ -96,17 +96,17 @@ git --version
 ### Fork and Clone
 
 1. **Fork the repository**
-   - Click "Fork" on [GitHub](https://github.com/kamranxdev/searvo-community)
+   - Click "Fork" on [GitHub](https://github.com/kamranxdev/searvo)
 
 2. **Clone your fork**
 ```bash
-git clone https://github.com/YOUR_USERNAME/searvo-community.git
-cd searvo-community
+git clone https://github.com/YOUR_USERNAME/searvo.git
+cd searvo
 ```
 
 3. **Add upstream remote**
 ```bash
-git remote add upstream https://github.com/kamranxdev/searvo-community.git
+git remote add upstream https://github.com/kamranxdev/searvo.git
 ```
 
 ### Install Dependencies
@@ -381,8 +381,8 @@ git checkout -b feature/new-feature
 
 Need help? We're here!
 
-- 💬 [GitHub Discussions](https://github.com/kamranxdev/searvo-community/discussions)
-- 🐛 [Issue Tracker](https://github.com/kamranxdev/searvo-community/issues)
+- 💬 [GitHub Discussions](https://github.com/kamranxdev/searvo/discussions)
+- 🐛 [Issue Tracker](https://github.com/kamranxdev/searvo/issues)
 - 💭 [Discord Community](https://discord.gg/Bq67m6NYaa)
 
 ## Recognition

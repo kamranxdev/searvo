@@ -36,8 +36,8 @@ Before you begin, ensure you have the following installed:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/kamranxdev/searvo-community.git
-cd searvo-community
+git clone https://github.com/kamranxdev/searvo.git
+cd searvo
 ```
 
 ### 2. Install Dependencies
@@ -154,6 +154,6 @@ See [Configuration Guide](configuration.md) for detailed instructions.
 
 ## Getting Help
 
-- [GitHub Issues](https://github.com/kamranxdev/searvo-community/issues)
-- [GitHub Discussions](https://github.com/kamranxdev/searvo-community/discussions)
+- [GitHub Issues](https://github.com/kamranxdev/searvo/issues)
+- [GitHub Discussions](https://github.com/kamranxdev/searvo/discussions)
 - [Discord Community](https://discord.gg/Bq67m6NYaa)

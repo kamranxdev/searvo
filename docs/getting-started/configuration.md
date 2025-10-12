@@ -213,4 +213,4 @@ Settings are stored in:
 
 ## Support
 
-Need help? Visit our [GitHub Discussions](https://github.com/kamranxdev/searvo-community/discussions)
+Need help? Visit our [GitHub Discussions](https://github.com/kamranxdev/searvo/discussions)

@@ -5,7 +5,7 @@ Searvo follows a feature-based architecture with clear separation of concerns. T
 ## Overview
 
 ```
-searvo-community/
+searvo/
 ├── android/              # Android platform configuration
 ├── ios/                  # iOS platform configuration
 ├── linux/                # Linux platform configuration

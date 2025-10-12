@@ -21,7 +21,7 @@ This project and everyone participating in it is governed by our Code of Conduct
 ## Quick Start
 
 1. Fork the repository
-2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/searvo-community.git`
+2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/searvo.git`
 3. Create a branch: `git checkout -b feature/my-feature`
 4. Make your changes
 5. Run tests: `flutter test`
@@ -74,8 +74,8 @@ Feature suggestions are tracked as GitHub issues. When creating a feature sugges
 
 ```bash
 # Clone the repository
-git clone https://github.com/kamranxdev/searvo-community.git
-cd searvo-community
+git clone https://github.com/kamranxdev/searvo.git
+cd searvo
 
 # Install dependencies
 flutter pub get
@@ -171,8 +171,8 @@ flutter test test/features/search/search_service_test.dart
 
 ## Community
 
-- 💬 [GitHub Discussions](https://github.com/kamranxdev/searvo-community/discussions) - Ask questions, share ideas
-- 🐛 [Issue Tracker](https://github.com/kamranxdev/searvo-community/issues) - Report bugs, request features
+- 💬 [GitHub Discussions](https://github.com/kamranxdev/searvo/discussions) - Ask questions, share ideas
+- 🐛 [Issue Tracker](https://github.com/kamranxdev/searvo/issues) - Report bugs, request features
 - 💭 [Discord](https://discord.gg/Bq67m6NYaa) - Real-time chat with the community
 
 ## Recognition
