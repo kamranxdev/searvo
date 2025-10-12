@@ -1,6 +1,6 @@
 <div align="center">
 
-# Searvo - Community Version
+# Searvo - Proprietary Version
 
 ### AI-Powered Search with RAG Capabilities
 
