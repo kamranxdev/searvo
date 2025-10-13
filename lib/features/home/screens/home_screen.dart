@@ -214,50 +214,48 @@ class _SearvoHomeContentState extends State<SearvoHomeContent> {
     final colorScheme = context.colorScheme;
     final screenSize = MediaQuery.of(context).size;
     
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          // Define breakpoint for mobile devices
-          const double mobileBreakpoint = 768;
-          final bool isMobile = constraints.maxWidth < mobileBreakpoint;
-          
-          if (isMobile) {
-            // Mobile Layout: Title centered, Search box at bottom
-            return Stack(
-              children: [
-                // Title centered vertically and horizontally
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Text(
-                      'Searvo A!',
-                      style: TextStyle(
-                        color: colorScheme.onSurface,
-                        fontFamily: 'Goldman',
-                        fontSize: 40,
-                        fontWeight: FontWeight.w300,
-                        letterSpacing: -0.5,
-                      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Define breakpoint for mobile devices
+        const double mobileBreakpoint = 768;
+        final bool isMobile = constraints.maxWidth < mobileBreakpoint;
+        
+        if (isMobile) {
+          // Mobile Layout: Title centered, Search box at bottom
+          return Stack(
+            children: [
+              // Title centered vertically and horizontally
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Text(
+                    'Searvo A!',
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
+                      fontFamily: 'Goldman',
+                      fontSize: 40,
+                      fontWeight: FontWeight.w300,
+                      letterSpacing: -0.5,
                     ),
                   ),
                 ),
-                
-                // Search Box at bottom
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    padding: EdgeInsets.only(
-                      left: 16,
-                      right: 16,
-                      bottom: MediaQuery.of(context).padding.bottom + 16,
-                      top: 16,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      boxShadow: [
+              ),
+              
+              // Search Box at bottom
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding: EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    bottom: MediaQuery.of(context).padding.bottom + 16,
+                    top: 16,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 20,
@@ -365,8 +363,7 @@ class _SearvoHomeContentState extends State<SearvoHomeContent> {
             );
           }
         },
-      ),
-    );
+      );
   }
 
   @override

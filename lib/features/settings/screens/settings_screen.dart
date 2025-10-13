@@ -97,45 +97,59 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   Widget _buildSettingsContent(BuildContext context, SettingsProvider settingsProvider) {
     final colorScheme = context.colorScheme;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isLargeScreen = screenWidth >= 1024;
     
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, 
-            color: colorScheme.onSurfaceVariant),
-          onPressed: () => AppRouter.goBack(context),
-        ),
-        title: Row(
-          children: [
-            Icon(Icons.settings, 
-              color: colorScheme.onSurface,
-              size: 23),
-            const SizedBox(width: 8),
-            Text(
-              'Settings',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w500,
-                color: colorScheme.onSurface,
+    return Column(
+      children: [
+        // Header
+        Container(
+          padding: EdgeInsets.fromLTRB(
+            isLargeScreen ? 32 : 16,
+            16,
+            isLargeScreen ? 32 : 16,
+            16,
+          ),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            border: Border(
+              bottom: BorderSide(
+                color: colorScheme.outline.withOpacity(0.2),
+                width: 1,
               ),
             ),
-          ],
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.settings, 
+                color: colorScheme.onSurface,
+                size: 23),
+              const SizedBox(width: 8),
+              Text(
+                'Settings',
+                style: TextStyle(
+                  fontSize: isLargeScreen ? 24 : 20,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final isTablet = constraints.maxWidth > 768;
-          
-          if (isTablet) {
-            return _buildTabletLayout(context);
-          } else {
-            return _buildMobileLayout(context.isDark);
-          }
-        },
-      ),
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isTablet = constraints.maxWidth > 768;
+              
+              if (isTablet) {
+                return _buildTabletLayout(context);
+              } else {
+                return _buildMobileLayout(context.isDark);
+              }
+            },
+          ),
+        ),
+      ],
     );
   }
 

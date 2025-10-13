@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
 import 'package:searvo/core/theme/theme.dart';
 import 'package:searvo/features/settings/services/search_provider_settings_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'section_header.dart';
 import 'setting_item.dart';
 
@@ -15,6 +18,19 @@ class _SearchProviderSettingsPanelState extends State<SearchProviderSettingsPane
   final SearchProviderSettingsService _searchSettings = SearchProviderSettingsService();
   bool _testingConnection = false;
   String? _testResult;
+  late TextEditingController _endpointController;
+
+  @override
+  void initState() {
+    super.initState();
+    _endpointController = TextEditingController(text: _searchSettings.getSearXNGEndpoint());
+  }
+
+  @override
+  void dispose() {
+    _endpointController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +65,7 @@ class _SearchProviderSettingsPanelState extends State<SearchProviderSettingsPane
           ],
         ),
         const SizedBox(height: 16),
-        _buildTextField(colorScheme, 'SearXNG Endpoint URL', 'http://localhost:4000', 'URL of your SearXNG instance', _searchSettings.getSearXNGEndpoint(), (value) {
+        _buildTextFieldWithController(colorScheme, 'SearXNG Endpoint URL', 'http://localhost:4000', 'URL of your SearXNG instance. Find public instances at https://searx.space/ (recommended to use self-hosted)', _endpointController, (value) {
           _searchSettings.setSearXNGEndpoint(value);
           setState(() { _testResult = null; });
         }),
@@ -97,17 +113,89 @@ class _SearchProviderSettingsPanelState extends State<SearchProviderSettingsPane
     );
   }
 
-  Widget _buildTextField(ColorScheme colorScheme, String label, String hint, String description, String currentValue, Function(String) onChanged) {
+  Widget _buildTextFieldWithController(ColorScheme colorScheme, String label, String hint, String description, TextEditingController controller, Function(String) onChanged) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
         const SizedBox(height: 8),
-        TextField(controller: TextEditingController(text: currentValue), decoration: InputDecoration(hintText: hint, border: OutlineInputBorder()), onChanged: onChanged),
+        TextField(
+          controller: controller,
+          decoration: InputDecoration(hintText: hint, border: OutlineInputBorder()),
+          textDirection: TextDirection.ltr,
+          keyboardType: TextInputType.url,
+          onChanged: onChanged,
+        ),
         const SizedBox(height: 4),
-        Text(description, style: TextStyle(fontSize: 12, color: Colors.grey)),
+        _buildDescription(description, colorScheme),
       ],
     );
+  }
+
+  Widget _buildDescription(String text, ColorScheme colorScheme) {
+    final urlRegex = RegExp(r'https?://[^\s]+');
+    final match = urlRegex.firstMatch(text);
+
+    if (match != null) {
+      final url = match.group(0)!;
+      final before = text.substring(0, match.start);
+      final after = text.substring(match.end);
+
+      return RichText(
+        text: TextSpan(
+          style: TextStyle(
+            fontSize: 12,
+            color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+          ),
+          children: [
+            if (before.isNotEmpty) TextSpan(text: before),
+            TextSpan(
+              text: url,
+              style: TextStyle(
+                color: colorScheme.primary,
+                decoration: TextDecoration.underline,
+              ),
+              recognizer: TapGestureRecognizer()
+                ..onTap = () async {
+                  try {
+                    final uri = Uri.parse(url);
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    } else {
+                      // Fallback for desktop platforms
+                      await launchUrl(uri, mode: LaunchMode.platformDefault);
+                    }
+                  } catch (e) {
+                    // If URL launching fails, show a snackbar with the URL
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Unable to open URL. Please visit: $url'),
+                          action: SnackBarAction(
+                            label: 'Copy',
+                            onPressed: () {
+                              Clipboard.setData(ClipboardData(text: url));
+                            },
+                          ),
+                        ),
+                      );
+                    }
+                  }
+                },
+            ),
+            if (after.isNotEmpty) TextSpan(text: after),
+          ],
+        ),
+      );
+    } else {
+      return Text(
+        text,
+        style: TextStyle(
+          fontSize: 12,
+          color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+        ),
+      );
+    }
   }
 
   Future<void> _testConnection() async {
