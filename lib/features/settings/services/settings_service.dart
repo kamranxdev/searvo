@@ -99,6 +99,17 @@ class SettingsService {
   T? getCustomSetting<T>(String key, T? defaultValue) => 
       _getValue<T>(key, defaultValue);
 
+  // Cloud Sync Settings
+  Future<bool> setCloudSyncEnabled(bool enabled) => 
+      setCustomSetting(AppConfig.cloudSyncEnabledKey, enabled);
+  bool getCloudSyncEnabled() => 
+      getCustomSetting<bool>(AppConfig.cloudSyncEnabledKey, false) ?? false;
+
+  Future<bool> setLastSyncTimestamp(String timestamp) => 
+      setCustomSetting(AppConfig.lastSyncTimestampKey, timestamp);
+  String? getLastSyncTimestamp() => 
+      getCustomSetting<String>(AppConfig.lastSyncTimestampKey, null);
+
   // Website Mappings
   Future<bool> setWebsiteMappings(Map<String, Map<String, String>> mappings) =>
       _setValue(AppConfig.websiteMappingsKey, jsonEncode(mappings));

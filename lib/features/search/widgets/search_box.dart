@@ -5,6 +5,7 @@ import 'package:searvo/features/settings/services/settings_service.dart';
 import 'package:searvo/features/voice/widgets/voice_input_widget.dart';
 import 'package:searvo/shared/widgets/rich_text_editing_controller.dart';
 import 'package:searvo/shared/widgets/attachment_input_widget.dart';
+import 'package:searvo/features/search/services/autocomplete_service.dart';
 import 'dart:ui';
 import 'search_box_mode_tooltip.dart';
 
@@ -51,6 +52,11 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
   Map<String, Map<String, String>> _websiteMappings = {};
   late RichTextEditingController _mentionController;
   
+  // Autocomplete service
+  late AutocompleteService _autocompleteService;
+  List<AutocompleteSuggestion> _dynamicSuggestions = [];
+  bool _isLoadingSuggestions = false;
+  
   // Animation controllers
   late AnimationController _suggestionsAnimationController;
   late Animation<double> _suggestionsHeightAnimation;
@@ -69,34 +75,12 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
     widget.onSearchModeChanged?.call(mode);
   }
 
-  // Sample suggestions - in a real app, these would come from an API
-  final List<String> _suggestions = [
-    'China skull rewrites human evolution',
-    'NISAR satellite first radar images released',
-    'Trump biological weapons ban AI verification',
-    'Sarkozy prison sentence Libya conspiracy',
-    'Microsoft blocks Israel Unit 8200 surveillance',
-    'ChatGPT stock picks beat UK funds',
-  ];
-  
-  // Sample hashtag suggestions
-  final List<String> _hashtagSuggestions = [
-    '#technology',
-    '#ai',
-    '#science',
-    '#news',
-    '#research',
-    '#innovation',
-  ];
-
   DetectedType _getCurrentInputType() {
     final text = widget.controller.text;
     if (text.isEmpty) return DetectedType.plainText;
     
     if (text.startsWith('@')) {
       return DetectedType.mention;
-    } else if (text.startsWith('#')) {
-      return DetectedType.hashtag;
     } else if (text.startsWith('http://') || text.startsWith('https://')) {
       return DetectedType.url;
     }
@@ -122,30 +106,13 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
               .toList();
         }
         
-      case DetectedType.hashtag:
-        final hashtagQuery = text.substring(1).toLowerCase();
-        
-        if (hashtagQuery.isEmpty) {
-          return _hashtagSuggestions;
-        } else {
-          return _hashtagSuggestions
-              .where((tag) => tag.substring(1).toLowerCase().contains(hashtagQuery))
-              .toList();
-        }
-        
       case DetectedType.url:
         // Don't show suggestions for URLs
         return [];
         
       case DetectedType.plainText:
-        if (text.isEmpty) {
-          return _suggestions;
-        }
-        
-        final query = text.toLowerCase();
-        return _suggestions
-            .where((suggestion) => suggestion.toLowerCase().contains(query))
-            .toList();
+        // Return dynamic suggestions from autocomplete service
+        return _dynamicSuggestions.map((s) => s.text).toList();
     }
   }
 
@@ -156,11 +123,18 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
     // Initialize website mappings
     _websiteMappings = _settingsService.getWebsiteMappings();
     
+    // Initialize autocomplete service
+    _autocompleteService = AutocompleteService(
+      baseUrl: 'http://localhost:4000', // You can make this configurable
+    );
+    
+    // Fetch trending suggestions for empty state
+    _fetchTrendingSuggestions();
+    
     // Initialize mention controller with valid mentions
     _mentionController = RichTextEditingController(
       validMentions: _websiteMappings.keys.toSet(),
       mentionColor: const Color(0xFF00B4A6), // AppTheme.primaryColor equivalent
-      hashtagColor: const Color(0xFF10B981),
       urlColor: const Color(0xFF3B82F6),
     );
     
@@ -237,6 +211,19 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
           _selectedSuggestionIndex = -1;
         });
         
+        // Fetch autocomplete suggestions for plain text
+        final inputType = _getCurrentInputType();
+        if (inputType == DetectedType.plainText) {
+          final query = widget.controller.text;
+          if (query.isEmpty) {
+            // Fetch trending suggestions when empty
+            _fetchTrendingSuggestions();
+          } else {
+            // Fetch query-based suggestions
+            _fetchAutocompleteSuggestions(query);
+          }
+        }
+        
         // Update animation based on filtered suggestions
         final shouldShowSuggestions = _isTextFieldFocused && _filteredSuggestions.isNotEmpty;
         if (shouldShowSuggestions && !_suggestionsAnimationController.isCompleted) {
@@ -247,12 +234,62 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
       }
     });
   }
+  
+  /// Fetch trending suggestions from SearxNG
+  void _fetchTrendingSuggestions() async {
+    setState(() {
+      _isLoadingSuggestions = true;
+    });
+
+    try {
+      final suggestions = await _autocompleteService.getTrendingSuggestions();
+      if (mounted) {
+        setState(() {
+          _dynamicSuggestions = suggestions;
+          _isLoadingSuggestions = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _dynamicSuggestions = [];
+          _isLoadingSuggestions = false;
+        });
+      }
+    }
+  }
+  
+  /// Fetch autocomplete suggestions with debouncing
+  void _fetchAutocompleteSuggestions(String query) {
+    if (query.trim().length < 2) {
+      setState(() {
+        _dynamicSuggestions = [];
+        _isLoadingSuggestions = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoadingSuggestions = true;
+    });
+
+    // Use debounced method to avoid excessive API calls
+    _autocompleteService.getSuggestionsDebounced(query, (suggestions) {
+      if (mounted) {
+        setState(() {
+          _dynamicSuggestions = suggestions;
+          _isLoadingSuggestions = false;
+        });
+      }
+    });
+  }
 
   @override
   void dispose() {
     _suggestionsAnimationController.dispose();
     _textFieldFocusNode.dispose();
     _mentionController.dispose();
+    _autocompleteService.dispose();
     super.dispose();
   }
 
@@ -425,7 +462,6 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
     final isSelected = index == _selectedSuggestionIndex;
     final colorScheme = context.colorScheme;
     final isMention = suggestion.startsWith('@');
-    final isHashtag = suggestion.startsWith('#');
     
     String displayText = suggestion;
     String? subtitle;
@@ -441,9 +477,10 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
         icon = Icons.link;
         iconColor = isSelected ? colorScheme.primary : colorScheme.primary.withOpacity(0.7);
       }
-    } else if (isHashtag) {
-      icon = Icons.tag;
-      iconColor = isSelected ? const Color(0xFF10B981) : const Color(0xFF10B981).withOpacity(0.7);
+    } else {
+      // For regular suggestions, use trending_up icon
+      icon = Icons.trending_up;
+      iconColor = isSelected ? colorScheme.onSurfaceVariant : colorScheme.onSurfaceVariant.withOpacity(0.7);
     }
     
     return AnimatedContainer(
@@ -480,9 +517,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
               border: isSelected ? Border.all(
                 color: isMention 
                     ? colorScheme.primary.withOpacity(0.3)
-                    : isHashtag
-                        ? const Color(0xFF10B981).withOpacity(0.3)
-                        : colorScheme.outline,
+                    : colorScheme.outline,
                 width: 1,
               ) : null,
             ),
@@ -534,9 +569,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
                   child: Icon(
                     isMention 
                         ? Icons.open_in_new 
-                        : isHashtag
-                            ? Icons.label_outline
-                            : Icons.trending_up,
+                        : Icons.trending_up,
                     color: isSelected ? iconColor : iconColor.withOpacity(0.5),
                     size: 16,
                   ),
@@ -625,7 +658,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
                           controller: _mentionController,
                           focusNode: _textFieldFocusNode,
                           decoration: InputDecoration(
-                            hintText: 'Ask anything or @mention a website or use #hashtags',
+                            hintText: 'Ask anything or @mention a website',
                             hintStyle: TextStyle(
                               color: colorScheme.onSurfaceVariant.withOpacity(0.6),
                               fontSize: 16,
@@ -804,8 +837,26 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
                                     height: 1,
                                   ),
                                   const SizedBox(height: 16),
-                                  ..._filteredSuggestions.asMap().entries.map((entry) => 
-                                    _buildSuggestionItem(entry.value, entry.key)),
+                                  if (_isLoadingSuggestions) ...[
+                                    Center(
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 8),
+                                        child: SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation<Color>(
+                                              colorScheme.primary,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ] else ...[
+                                    ..._filteredSuggestions.asMap().entries.map((entry) => 
+                                      _buildSuggestionItem(entry.value, entry.key)),
+                                  ],
                                 ],
                               ),
                             ) : const SizedBox.shrink(),

@@ -29,6 +29,18 @@ class DocumentRanker {
     }
 
     print('📊 Ranking ${documents.length} documents for query: "$query"');
+    
+    // CRITICAL: Filter out noise documents BEFORE ranking
+    final cleanedDocuments = _filterNoiseDocuments(documents);
+    if (cleanedDocuments.length < documents.length) {
+      print('🧹 Removed ${documents.length - cleanedDocuments.length} noise documents');
+      print('   Remaining: ${cleanedDocuments.length} clean documents');
+    }
+
+    if (cleanedDocuments.isEmpty) {
+      print('⚠️  All documents filtered as noise');
+      return [];
+    }
 
     // Extract query features
     final keywords = _extractKeywords(query);
@@ -37,8 +49,8 @@ class DocumentRanker {
 
     print('🔑 Extracted ${keywords.length} keywords and ${queryPhrases.length} phrases');
 
-    // Calculate scores for each document
-    final rankedDocuments = documents.map((doc) {
+    // Calculate scores for each CLEANED document
+    final rankedDocuments = cleanedDocuments.map((doc) {
       final score = _calculateRelevanceScore(
         doc,
         query,
@@ -572,6 +584,101 @@ class DocumentRanker {
     }
     
     return score;
+  }
+
+  /// Filter out noise/garbage documents before ranking
+  /// This prevents nonsensical documents from polluting the results
+  List<Document> _filterNoiseDocuments(List<Document> documents) {
+    return documents.where((doc) => !_isNoiseDocument(doc)).toList();
+  }
+
+  /// Detect if a document is noise/garbage
+  bool _isNoiseDocument(Document doc) {
+    final title = doc.title;
+    final content = doc.content;
+    
+    // 1. Check for file-like names (e.g., "2011 1129 National Museum Malaysia (66)-V2.0-SM-TXT")
+    if (_hasFileLikeName(title)) {
+      print('   🗑️  Noise: File-like title: "${title.length > 60 ? title.substring(0, 60) + "..." : title}"');
+      return true;
+    }
+    
+    // 2. Check for excessive numbers/dates in title
+    if (_hasExcessiveNumbers(title)) {
+      print('   🗑️  Noise: Excessive numbers in title: "${title.length > 60 ? title.substring(0, 60) + "..." : title}"');
+      return true;
+    }
+    
+    // 3. Check for version control artifacts
+    if (_hasVersionControlArtifacts(title)) {
+      print('   🗑️  Noise: Version control artifact: "${title.length > 60 ? title.substring(0, 60) + "..." : title}"');
+      return true;
+    }
+    
+    // 4. Check for random character sequences
+    if (_hasRandomCharacters(title)) {
+      print('   🗑️  Noise: Random characters: "${title.length > 60 ? title.substring(0, 60) + "..." : title}"');
+      return true;
+    }
+    
+    // 5. Check for extremely short or low-quality content
+    if (content.length < 50 && title.length < 15) {
+      print('   🗑️  Noise: Too short: "${title}" (${content.length} chars)');
+      return true;
+    }
+    
+    // 6. Check for metadata-only documents (no readable content)
+    if (_isMetadataOnly(content)) {
+      print('   🗑️  Noise: Metadata-only document: "${title.length > 60 ? title.substring(0, 60) + "..." : title}"');
+      return true;
+    }
+    
+    return false;
+  }
+
+  /// Check if title looks like a filename
+  bool _hasFileLikeName(String title) {
+    // Patterns like: "2011 1129 National Museum (66)-V2.0-SM-TXT"
+    // Contains: version numbers (V2.0), file extensions (TXT), parenthetical numbers
+    return RegExp(r'V\d+\.\d+|SM-[A-Z]+|\(\d+\)-|\.txt|\.pdf|\.doc|\.jpg', caseSensitive: false).hasMatch(title) ||
+           RegExp(r'^\d{4}\s+\d+\s+').hasMatch(title); // Starts with "2011 1129"
+  }
+
+  /// Check if title has excessive numbers/dates
+  bool _hasExcessiveNumbers(String title) {
+    // Count numeric sequences
+    final numbers = RegExp(r'\d+').allMatches(title);
+    final numberCount = numbers.length;
+    final totalDigits = numbers.fold(0, (sum, match) => sum + match.group(0)!.length);
+    
+    // Title is mostly numbers if >40% digits or >4 numeric sequences in short title
+    final digitRatio = totalDigits / title.length;
+    return digitRatio > 0.4 || (numberCount > 4 && title.length < 50);
+  }
+
+  /// Check for version control artifacts
+  bool _hasVersionControlArtifacts(String title) {
+    // Git hashes, commit IDs, build numbers
+    return RegExp(r'\b[a-f0-9]{7,40}\b|\bbuild[-_]?\d+\b|commit[-_]?[a-f0-9]+', caseSensitive: false).hasMatch(title);
+  }
+
+  /// Check for random character sequences
+  bool _hasRandomCharacters(String title) {
+    // Check for sequences like "xJk9dL2mP" or excessive special chars
+    final specialCharCount = RegExp(r'[^\w\s-]').allMatches(title).length;
+    final hasRandomSequence = RegExp(r'[A-Z][a-z][A-Z]\d|[a-z]\d[A-Z][a-z]').hasMatch(title);
+    
+    return (specialCharCount > title.length * 0.2) || hasRandomSequence;
+  }
+
+  /// Check if content is just metadata/tags
+  bool _isMetadataOnly(String content) {
+    // Look for patterns like: "key: value\nkey: value" with minimal prose
+    final lines = content.split('\n');
+    final metadataLines = lines.where((line) => RegExp(r'^[\w\s]+:\s*[\w\s]+$').hasMatch(line.trim())).length;
+    
+    // If >70% of lines are metadata format, it's likely not real content
+    return lines.isNotEmpty && (metadataLines / lines.length > 0.7);
   }
 
   /// Analyze ranking quality for debugging

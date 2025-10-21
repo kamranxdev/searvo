@@ -161,6 +161,7 @@ class CitationManager {
     required String query,
     required String answer,
     required List<ContextChunk> contextChunks,
+    List<Document>? allScrapedDocuments, // NEW: All scraped documents for fallback sources
     List<String>? customRelatedQuestions,
     List<AttachmentMetadata>? attachments,
     List<String>? images,
@@ -168,7 +169,11 @@ class CitationManager {
   }) {
     // Extract ALL citations from context chunks (not just the ones cited in answer)
     // This ensures all sources used to generate the answer are shown in the Sources tab
-    final allCitations = _extractAllCitationsFromChunks(contextChunks);
+    // NEW: Also includes scraped documents as fallback sources
+    final allCitations = _extractAllCitationsFromChunks(
+      contextChunks,
+      allScrapedDocuments: allScrapedDocuments,
+    );
     
     // Convert to sources - this will show ALL sources that contributed to the answer
     final sources = citationsToSourceItems(allCitations);
@@ -195,12 +200,22 @@ class CitationManager {
   /// IMPORTANT: We collect ALL citations from ALL chunks without deduplication
   /// because the same document can contribute multiple chunks with different content.
   /// The deduplication happens later in citationsToSourceItems() based on URL only.
-  List<Citation> _extractAllCitationsFromChunks(List<ContextChunk> chunks) {
+  /// 
+  /// NEW: Also includes all scraped documents as fallback sources even if they didn't
+  /// make it into the final context chunks (e.g., due to length limits).
+  List<Citation> _extractAllCitationsFromChunks(
+    List<ContextChunk> chunks, {
+    List<Document>? allScrapedDocuments,
+  }) {
     final allCitations = <Citation>[];
     final seenUrls = <String>{}; // Only deduplicate by URL, not URL+title
     
     print('📚 Extracting all sources from ${chunks.length} context chunks');
+    if (allScrapedDocuments != null) {
+      print('   📦 Fallback pool: ${allScrapedDocuments.length} scraped documents');
+    }
     
+    // First, extract citations from chunks that made it into the context
     for (int i = 0; i < chunks.length; i++) {
       final chunk = chunks[i];
       print('   📄 Chunk ${i + 1} has ${chunk.citations.length} citation(s)');
@@ -223,7 +238,44 @@ class CitationManager {
       }
     }
     
-    print('📊 Total unique sources found: ${allCitations.length} from ${chunks.length} chunks');
+    // NEW: Add fallback sources from scraped documents that didn't make it into chunks
+    if (allScrapedDocuments != null) {
+      print('📦 Adding fallback sources from scraped documents...');
+      int fallbackAdded = 0;
+      
+      for (final doc in allScrapedDocuments) {
+        // Skip if already in sources
+        if (seenUrls.contains(doc.url)) {
+          continue;
+        }
+        
+        // Only include successfully scraped documents with actual content
+        final wasScraped = doc.metadata['scraped'] == true;
+        final hasContent = doc.content.isNotEmpty && doc.content.length > 100;
+        
+        if (wasScraped && hasContent) {
+          seenUrls.add(doc.url);
+          
+          // Create a citation for this document
+          final citation = Citation(
+            id: 'fallback_${fallbackAdded + 1}',
+            document: doc,
+            startIndex: 0,
+            endIndex: doc.content.length,
+          );
+          
+          allCitations.add(citation);
+          fallbackAdded++;
+          print('   ✓ Fallback source ${allCitations.length}: ${doc.domain} - ${doc.title.length > 50 ? doc.title.substring(0, 50) + "..." : doc.title}');
+        }
+      }
+      
+      if (fallbackAdded > 0) {
+        print('📦 Added $fallbackAdded fallback sources from scraped documents');
+      }
+    }
+    
+    print(' Total unique sources found: ${allCitations.length} from ${chunks.length} chunks + ${allScrapedDocuments?.length ?? 0} scraped docs');
     print('🔍 DEBUG: Unique URLs = ${seenUrls.length}, Total citations = ${allCitations.length}');
     return allCitations;
   }

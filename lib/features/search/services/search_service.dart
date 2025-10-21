@@ -7,15 +7,16 @@ import 'package:searvo/features/search/widgets/search_box.dart' show SearchMode;
 
 import '../../settings/services/search_provider_settings_service.dart';
 import 'searxng_service.dart';
-import '../rag/services/data_ingestion/web_scraper_service.dart';
+import '../rag/services/data_ingestion/rag_scraper_adapter.dart';
 import '../rag/services/data_ingestion/pdf_extractor_service.dart';
 import '../rag/services/query_processing/query_analyzer.dart';
+import '../rag/models/rag_models.dart';
 
 // Export for external use
 export 'searxng_service.dart' show SearchType, SearchRecency;
-export '../rag/services/data_ingestion/web_scraper_service.dart' show ScrapedContent;
 export '../rag/services/data_ingestion/pdf_extractor_service.dart' show PDFContent;
 export '../rag/services/query_processing/query_analyzer.dart' show QueryAnalysis;
+export '../rag/models/rag_models.dart' show Document;
 
 /// Complete search service with RAG, attachment support, and advanced search capabilities
 class SearchService {
@@ -26,7 +27,7 @@ class SearchService {
   final RAGOrchestrator _ragOrchestrator = RAGOrchestrator();
   final LLMSettingsService _llmSettings = LLMSettingsService();
   final SearchProviderSettingsService _searchSettings = SearchProviderSettingsService();
-  final WebScraperService _webScraper = WebScraperService();
+  final RAGScraperAdapter _scraperAdapter = RAGScraperAdapter();
   final PDFExtractorService _pdfExtractor = PDFExtractorService();
   final QueryAnalyzer _queryAnalyzer = QueryAnalyzer();
   
@@ -110,7 +111,7 @@ class SearchService {
     String query, {
     int maxSearchResults = 20,
     int maxRelevantDocuments = 10,
-    int maxContextLength = 8000,
+    int? maxContextLength, // Nullable for auto-detection based on LLM
     bool enableQueryEnhancement = true,
     bool enableAdaptivePrompting = true,
     List<dynamic>? attachments,
@@ -151,20 +152,21 @@ class SearchService {
 
       // Adjust parameters based on search mode
       int effectiveMaxDocs = complexity['recommendations']['maxRelevantDocuments'] as int;
-      int effectiveMaxContext = complexity['recommendations']['maxContextLength'] as int;
+      // Don't override context length - let adaptive system handle it
+      int? effectiveMaxContext = maxContextLength; // Use provided or let RAG orchestrator auto-detect
       
       switch (searchMode) {
         case SearchMode.research:
           // Deep research mode - more documents and context
           effectiveMaxDocs = (effectiveMaxDocs * 1.5).round();
-          effectiveMaxContext = (effectiveMaxContext * 1.5).round();
-          print('🔬 Research mode: Enhanced to $effectiveMaxDocs docs, $effectiveMaxContext context');
+          // Let adaptive system handle context length
+          print('🔬 Research mode: Enhanced to $effectiveMaxDocs docs, adaptive context');
           break;
         case SearchMode.study:
           // Study mode - balanced for learning
           effectiveMaxDocs = (effectiveMaxDocs * 1.2).round();
-          effectiveMaxContext = (effectiveMaxContext * 1.3).round();
-          print('📚 Study mode: Enhanced to $effectiveMaxDocs docs, $effectiveMaxContext context');
+          // Let adaptive system handle context length
+          print('📚 Study mode: Enhanced to $effectiveMaxDocs docs, adaptive context');
           break;
         case SearchMode.search:
           // Fast search mode - keep defaults
@@ -208,7 +210,7 @@ class SearchService {
     List<MessageData> previousMessages, {
     int maxSearchResults = 20,
     int maxRelevantDocuments = 10,
-    int maxContextLength = 8000,
+    int? maxContextLength, // Nullable for auto-detection based on LLM
     int maxHistoryMessages = 3,
     List<dynamic>? attachments,
     Function(MessageData)? onSearchComplete,
@@ -293,18 +295,14 @@ class SearchService {
   ///   url: "https://example.com/article",
   ///   includeImages: true,
   /// );
-  /// print('Content: ${content.text} (${content.wordCount} words)');
+  /// print('Content: ${content.content} (${content.metadata["wordCount"]} words)');
   /// ```
-  Future<ScrapedContent> scrapeUrl({
+  Future<Document> scrapeUrl({
     required String url,
     bool includeImages = false,
     bool includeLinks = false,
   }) async {
-    return await _webScraper.scrape(
-      url,
-      includeImages: includeImages,
-      includeLinks: includeLinks,
-    );
+    return await _scraperAdapter.scrape(url);
   }
 
   /// Scrape multiple URLs in parallel
@@ -314,16 +312,12 @@ class SearchService {
   /// final urls = ["https://example1.com", "https://example2.com"];
   /// final contents = await searchService.scrapeMultipleUrls(urls);
   /// ```
-  Future<List<ScrapedContent>> scrapeMultipleUrls(
+  Future<List<Document>> scrapeMultipleUrls(
     List<String> urls, {
     bool includeImages = false,
     int maxConcurrent = 3,
   }) async {
-    return await _webScraper.scrapeMultiple(
-      urls,
-      includeImages: includeImages,
-      maxConcurrent: maxConcurrent,
-    );
+    return await _scraperAdapter.scrapeMultiple(urls);
   }
 
   /// Extract text content from a PDF URL

@@ -41,6 +41,8 @@ class AppConfig {
   static const String autoSaveKey = 'auto_save_enabled';
   static const String languageKey = 'app_language';
   static const String websiteMappingsKey = 'website_mappings';
+  static const String cloudSyncEnabledKey = 'cloud_sync_enabled';
+  static const String lastSyncTimestampKey = 'last_sync_timestamp';
 
   // Default website mappings for @mentions
   static const Map<String, Map<String, String>> defaultWebsiteMappings = {
@@ -103,5 +105,7 @@ class AppConfig {
     autoSaveKey: false,
     languageKey: 'en',
     websiteMappingsKey: defaultWebsiteMappings,
+    cloudSyncEnabledKey: false, // Disabled by default for privacy
+    lastSyncTimestampKey: null,
   };
 }

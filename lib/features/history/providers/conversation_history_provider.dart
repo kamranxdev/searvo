@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import '../models/conversation_model.dart';
-import '../services/conversation_database_service.dart';
+import '../services/conversation_sync_service.dart';
 import '../../search/models/message_branch_model.dart';
 
 /// Provider for managing conversation history state
 class ConversationHistoryProvider extends ChangeNotifier {
-  final ConversationDatabaseService _dbService =
-      ConversationDatabaseService();
+  final ConversationSyncService _syncService =
+      ConversationSyncService();
 
   List<ConversationModel> _conversations = [];
   Map<String, List<ConversationModel>> _groupedConversations = {};
@@ -33,7 +33,7 @@ class ConversationHistoryProvider extends ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      await _dbService.initialize();
+      await _syncService.initialize();
       await loadConversations();
 
       _isLoading = false;
@@ -42,7 +42,6 @@ class ConversationHistoryProvider extends ChangeNotifier {
       _error = 'Failed to initialize conversation history: $e';
       _isLoading = false;
       notifyListeners();
-      print('❌ History initialization error: $e');
     }
   }
 
@@ -52,8 +51,8 @@ class ConversationHistoryProvider extends ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
-      _conversations = await _dbService.getAllConversations();
-      _groupedConversations = await _dbService.getGroupedConversations();
+      _conversations = await _syncService.getAllConversations();
+      _groupedConversations = await _syncService.getGroupedConversations();
 
       _isLoading = false;
       notifyListeners();
@@ -61,7 +60,6 @@ class ConversationHistoryProvider extends ChangeNotifier {
       _error = 'Failed to load conversations: $e';
       _isLoading = false;
       notifyListeners();
-      print('❌ Load conversations error: $e');
     }
   }
 
@@ -73,7 +71,7 @@ class ConversationHistoryProvider extends ChangeNotifier {
     List<String> tags = const [],
   }) async {
     try {
-      final conversation = await _dbService.saveConversation(
+      final conversation = await _syncService.saveConversation(
         conversationId: conversationId,
         title: title,
         messageBranches: messageBranches,
@@ -85,7 +83,6 @@ class ConversationHistoryProvider extends ChangeNotifier {
     } catch (e) {
       _error = 'Failed to save conversation: $e';
       notifyListeners();
-      print('❌ Save conversation error: $e');
       return null;
     }
   }
@@ -99,7 +96,7 @@ class ConversationHistoryProvider extends ChangeNotifier {
     List<String>? tags,
   }) async {
     try {
-      final conversation = await _dbService.updateConversation(
+      final conversation = await _syncService.updateConversation(
         conversationId: conversationId,
         title: title,
         messageBranches: messageBranches,
@@ -112,7 +109,6 @@ class ConversationHistoryProvider extends ChangeNotifier {
     } catch (e) {
       _error = 'Failed to update conversation: $e';
       notifyListeners();
-      print('❌ Update conversation error: $e');
       return null;
     }
   }
@@ -120,11 +116,10 @@ class ConversationHistoryProvider extends ChangeNotifier {
   /// Get a specific conversation
   Future<ConversationModel?> getConversation(String conversationId) async {
     try {
-      return await _dbService.getConversationByConversationId(conversationId);
+      return await _syncService.getConversationById(conversationId);
     } catch (e) {
       _error = 'Failed to get conversation: $e';
       notifyListeners();
-      print('❌ Get conversation error: $e');
       return null;
     }
   }
@@ -143,14 +138,13 @@ class ConversationHistoryProvider extends ChangeNotifier {
         return;
       }
 
-      _searchResults = await _dbService.searchConversations(query);
+      _searchResults = await _syncService.searchConversations(query);
       _isSearching = false;
       notifyListeners();
     } catch (e) {
       _error = 'Failed to search conversations: $e';
       _isSearching = false;
       notifyListeners();
-      print('❌ Search conversations error: $e');
     }
   }
 
@@ -164,7 +158,7 @@ class ConversationHistoryProvider extends ChangeNotifier {
   /// Delete a conversation
   Future<bool> deleteConversation(String conversationId) async {
     try {
-      final success = await _dbService.deleteConversation(conversationId);
+      final success = await _syncService.deleteConversation(conversationId);
       if (success) {
         await loadConversations();
       }
@@ -172,7 +166,6 @@ class ConversationHistoryProvider extends ChangeNotifier {
     } catch (e) {
       _error = 'Failed to delete conversation: $e';
       notifyListeners();
-      print('❌ Delete conversation error: $e');
       return false;
     }
   }
@@ -180,7 +173,7 @@ class ConversationHistoryProvider extends ChangeNotifier {
   /// Delete multiple conversations
   Future<int> deleteConversations(List<String> conversationIds) async {
     try {
-      final count = await _dbService.deleteConversations(conversationIds);
+      final count = await _syncService.deleteConversations(conversationIds);
       if (count > 0) {
         await loadConversations();
       }
@@ -188,7 +181,6 @@ class ConversationHistoryProvider extends ChangeNotifier {
     } catch (e) {
       _error = 'Failed to delete conversations: $e';
       notifyListeners();
-      print('❌ Delete conversations error: $e');
       return 0;
     }
   }
@@ -196,35 +188,32 @@ class ConversationHistoryProvider extends ChangeNotifier {
   /// Delete all conversations
   Future<void> deleteAllConversations() async {
     try {
-      await _dbService.deleteAllConversations();
+      await _syncService.deleteAllConversations();
       await loadConversations();
     } catch (e) {
       _error = 'Failed to delete all conversations: $e';
       notifyListeners();
-      print('❌ Delete all conversations error: $e');
     }
   }
 
   /// Toggle pin status
   Future<void> togglePin(String conversationId) async {
     try {
-      await _dbService.togglePin(conversationId);
+      await _syncService.togglePin(conversationId);
       await loadConversations();
     } catch (e) {
       _error = 'Failed to toggle pin: $e';
       notifyListeners();
-      print('❌ Toggle pin error: $e');
     }
   }
 
   /// Get pinned conversations
   Future<List<ConversationModel>> getPinnedConversations() async {
     try {
-      return await _dbService.getPinnedConversations();
+      return await _syncService.getPinnedConversations();
     } catch (e) {
       _error = 'Failed to get pinned conversations: $e';
       notifyListeners();
-      print('❌ Get pinned conversations error: $e');
       return [];
     }
   }
@@ -232,9 +221,8 @@ class ConversationHistoryProvider extends ChangeNotifier {
   /// Get conversation count
   Future<int> getConversationCount() async {
     try {
-      return await _dbService.getConversationCount();
+      return await _syncService.getConversationCount();
     } catch (e) {
-      print('❌ Get conversation count error: $e');
       return 0;
     }
   }
@@ -242,7 +230,7 @@ class ConversationHistoryProvider extends ChangeNotifier {
   /// Convert stored messages back to branches for resuming conversation
   List<MessageBranchManager> convertToBranches(
       List<ConversationMessageModel> messages) {
-    return _dbService.convertMessagesToBranches(messages);
+    return _syncService.convertMessagesToBranches(messages);
   }
 
   /// Clear error
@@ -253,7 +241,7 @@ class ConversationHistoryProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    _dbService.close();
+    _syncService.close();
     super.dispose();
   }
 }

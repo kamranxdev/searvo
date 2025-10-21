@@ -5,7 +5,6 @@ import 'package:searvo/core/theme/theme.dart';
 import 'package:searvo/features/settings/services/search_provider_settings_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'section_header.dart';
-import 'setting_item.dart';
 
 class SearchProviderSettingsPanel extends StatefulWidget {
   const SearchProviderSettingsPanel({Key? key}) : super(key: key);
@@ -47,8 +46,6 @@ class _SearchProviderSettingsPanelState extends State<SearchProviderSettingsPane
         ),
         const SizedBox(height: 24),
         _buildSearXNGSettings(colorScheme, isConfigured),
-        const SizedBox(height: 32),
-        _buildGeneralSettings(colorScheme),
       ],
     );
   }
@@ -86,33 +83,6 @@ class _SearchProviderSettingsPanelState extends State<SearchProviderSettingsPane
       ],
     );
   }
-
-  Widget _buildGeneralSettings(ColorScheme colorScheme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('General Settings', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 16),
-        SettingItem(
-          isDark: Theme.of(context).brightness == Brightness.dark,
-          label: 'Request Timeout',
-          description: 'Maximum time to wait for search results (seconds)',
-          child: SizedBox(
-            width: 80,
-            child: TextField(
-              controller: TextEditingController(text: _searchSettings.getSearchTimeout().toString()),
-              keyboardType: TextInputType.number,
-              onChanged: (value) {
-                final timeout = int.tryParse(value);
-                if (timeout != null && timeout > 0) { _searchSettings.setSearchTimeout(timeout); }
-              },
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildTextFieldWithController(ColorScheme colorScheme, String label, String hint, String description, TextEditingController controller, Function(String) onChanged) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

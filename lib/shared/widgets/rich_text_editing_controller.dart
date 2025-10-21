@@ -2,23 +2,20 @@ import 'package:flutter/material.dart';
 
 enum DetectedType {
   mention, // By Default texts starting with @sign
-  hashtag, // By default, texts starting with #hashtag
   url, // By default texts starting with http://xxx.yyy or https://aaa.bbb
   plainText // Any other type falls into this.
 }
 
-// Custom TextEditingController that supports @mention, #hashtag, and URL highlighting
+// Custom TextEditingController that supports @mention and URL highlighting
 class RichTextEditingController extends TextEditingController {
   final Set<String> validMentions;
   final Color mentionColor;
-  final Color hashtagColor;
   final Color urlColor;
   final Color backgroundColor;
 
   RichTextEditingController({
     required this.validMentions,
     this.mentionColor = const Color(0xFF00B4A6), // Teal color equivalent to old primary
-    this.hashtagColor = const Color(0xFF10B981), // Green for hashtags
     this.urlColor = const Color(0xFF3B82F6), // Blue for URLs
     this.backgroundColor = const Color(0xFF1A1A1A), // Dark background
   });
@@ -26,8 +23,6 @@ class RichTextEditingController extends TextEditingController {
   DetectedType _detectType(String text) {
     if (text.startsWith('@')) {
       return DetectedType.mention;
-    } else if (text.startsWith('#')) {
-      return DetectedType.hashtag;
     } else if (text.startsWith('http://') || text.startsWith('https://')) {
       return DetectedType.url;
     }
@@ -43,9 +38,9 @@ class RichTextEditingController extends TextEditingController {
     final List<TextSpan> spans = [];
     final text = this.text;
     
-    // Combined pattern for mentions, hashtags, and URLs
+    // Combined pattern for mentions and URLs
     final pattern = RegExp(
-      r'@\w+|#\w+|https?://[^\s]+',
+      r'@\w+|https?://[^\s]+',
       caseSensitive: false,
     );
     
@@ -75,14 +70,6 @@ class RichTextEditingController extends TextEditingController {
                 ? mentionColor.withOpacity(0.15) 
                 : null,
             fontWeight: isValid ? FontWeight.w600 : style.fontWeight,
-          );
-          break;
-          
-        case DetectedType.hashtag:
-          specialStyle = style?.copyWith(
-            color: hashtagColor,
-            backgroundColor: hashtagColor.withOpacity(0.15),
-            fontWeight: FontWeight.w600,
           );
           break;
           

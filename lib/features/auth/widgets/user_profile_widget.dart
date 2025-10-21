@@ -70,14 +70,14 @@ class UserProfileWidget extends StatelessWidget {
               backgroundImage: user.photoUrl != null
                   ? NetworkImage(user.photoUrl!)
                   : null,
-              backgroundColor: theme.primaryColor,
+              backgroundColor: colorScheme.primary,
               child: user.photoUrl == null
                   ? Text(
                       user.displayName?.substring(0, 1).toUpperCase() ?? 
                       user.email?.substring(0, 1).toUpperCase() ?? 
                       'U',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: colorScheme.onPrimary,
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
@@ -96,7 +96,7 @@ class UserProfileWidget extends StatelessWidget {
                     user.displayName ?? 'User',
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                      color: colorScheme.onSurface,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -106,8 +106,7 @@ class UserProfileWidget extends StatelessWidget {
                     Text(
                       user.email!,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
-                        fontSize: 13,
+                        color: colorScheme.onSurfaceVariant,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -125,8 +124,8 @@ class UserProfileWidget extends StatelessWidget {
                 onPressed: () => _showSignOutDialog(context),
                 tooltip: 'Sign Out',
                 style: IconButton.styleFrom(
-                  backgroundColor: theme.primaryColor.withOpacity(0.1),
-                  foregroundColor: theme.primaryColor,
+                  backgroundColor: colorScheme.error,
+                  foregroundColor: colorScheme.onError,
                 ),
               ),
             ],
@@ -157,14 +156,14 @@ class UserProfileWidget extends StatelessWidget {
               backgroundImage: user.photoUrl != null
                   ? NetworkImage(user.photoUrl!)
                   : null,
-              backgroundColor: theme.primaryColor,
+              backgroundColor: colorScheme.primary,
               child: user.photoUrl == null
                   ? Text(
                       user.displayName?.substring(0, 1).toUpperCase() ?? 
                       user.email?.substring(0, 1).toUpperCase() ?? 
                       'U',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: colorScheme.onPrimary,
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                       ),
@@ -182,6 +181,7 @@ class UserProfileWidget extends StatelessWidget {
                     user.displayName ?? 'User',
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -191,7 +191,7 @@ class UserProfileWidget extends StatelessWidget {
                     Text(
                       user.email!,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
+                        color: colorScheme.onSurfaceVariant,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -207,6 +207,10 @@ class UserProfileWidget extends StatelessWidget {
                 icon: const Icon(Icons.logout_rounded),
                 onPressed: () => _showSignOutDialog(context),
                 tooltip: 'Sign Out',
+                style: IconButton.styleFrom(
+                  backgroundColor: colorScheme.error,
+                  foregroundColor: colorScheme.onError,
+                ),
               ),
           ],
         ),
@@ -235,14 +239,14 @@ class UserProfileWidget extends StatelessWidget {
               backgroundImage: user.photoUrl != null
                   ? NetworkImage(user.photoUrl!)
                   : null,
-              backgroundColor: theme.primaryColor,
+              backgroundColor: colorScheme.primary,
               child: user.photoUrl == null
                   ? Text(
                       user.displayName?.substring(0, 1).toUpperCase() ?? 
                       user.email?.substring(0, 1).toUpperCase() ?? 
                       'U',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: colorScheme.onPrimary,
                         fontSize: 20.sp,
                         fontWeight: FontWeight.bold,
                       ),
@@ -260,6 +264,7 @@ class UserProfileWidget extends StatelessWidget {
                     user.displayName ?? 'User',
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -269,7 +274,7 @@ class UserProfileWidget extends StatelessWidget {
                     Text(
                       user.email!,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
+                        color: colorScheme.onSurfaceVariant,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -285,6 +290,10 @@ class UserProfileWidget extends StatelessWidget {
                 icon: const Icon(Icons.logout_rounded),
                 onPressed: () => _showSignOutDialog(context),
                 tooltip: 'Sign Out',
+                style: IconButton.styleFrom(
+                  backgroundColor: colorScheme.error,
+                  foregroundColor: colorScheme.onError,
+                ),
               ),
           ],
         ),
@@ -293,6 +302,8 @@ class UserProfileWidget extends StatelessWidget {
   }
 
   void _showSignOutDialog(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -312,7 +323,8 @@ class UserProfileWidget extends StatelessWidget {
               await AuthService().signOut();
             },
             style: FilledButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: colorScheme.error,
+              foregroundColor: colorScheme.onError,
             ),
             child: const Text('Sign Out'),
           ),

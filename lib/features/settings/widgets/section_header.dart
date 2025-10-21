@@ -19,6 +19,7 @@ class SectionHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
+          margin: const EdgeInsets.only(top: 24),
           padding: const EdgeInsets.only(bottom: 8),
           decoration: BoxDecoration(
             border: Border(

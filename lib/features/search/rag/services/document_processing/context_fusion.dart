@@ -4,12 +4,21 @@ import 'package:searvo/features/search/rag/models/rag_models.dart';
 /// Implements intelligent chunking, deduplication, and quality optimization
 class ContextFusion {
   /// Fuse documents into optimized context chunks for LLM processing
+  /// 
+  /// Modern LLMs support much larger context windows:
+  /// - GPT-4 Turbo/GPT-4o: 128k tokens (~100k chars)
+  /// - Gemini 1.5/2.0: 1M-2M tokens (~800k chars)  
+  /// - Claude 3: 200k tokens (~160k chars)
+  /// - Llama 3.1/3.2: 128k tokens (~100k chars)
+  /// 
+  /// Default of 32k chars is conservative but works across all providers.
   List<ContextChunk> fuseContext(
     List<Document> documents, {
-    int maxChunkSize = 2000,
-    int maxTotalLength = 10000,
-    int overlapSize = 150,
-    int maxChunksPerDocument = 2, // NEW: Limit chunks per document for diversity
+    int maxChunkSize = 4000, // Increased for larger contexts
+    int maxTotalLength = 32000, // Increased default for modern LLMs
+    int overlapSize = 200, // Increased for better continuity
+    int maxChunksPerDocument = 2, // Limit chunks per document for diversity
+    int maxContentPerDocument = 8000, // Increased for richer content per source
     bool optimizeForQuality = true,
     bool deduplicateContent = true,
   }) {
@@ -26,10 +35,12 @@ class ContextFusion {
 
     print('🔄 Starting context fusion for ${sortedDocs.length} documents');
     print('📊 Max chunks per document: $maxChunksPerDocument');
+    print('📊 Max content per document: $maxContentPerDocument chars');
 
     int totalLength = 0;
     final seenContent = <String>{}; // For deduplication
     int duplicatesSkipped = 0;
+    int truncatedDocs = 0;
 
     for (final doc in sortedDocs) {
       if (totalLength >= maxTotalLength) {
@@ -49,13 +60,20 @@ class ContextFusion {
           ? remainingLength 
           : maxChunkSize;
 
-      // Generate chunks for this document
+      // Generate chunks for this document with content limit
       final docChunks = _chunkDocument(
         doc,
         effectiveChunkSize,
         overlapSize,
+        maxContentLength: maxContentPerDocument, // NEW: Limit content per doc
         optimizeForQuality: optimizeForQuality,
       );
+
+      // Track if we truncated this document
+      if (doc.content.length > maxContentPerDocument) {
+        truncatedDocs++;
+        print('   ✂️  Truncated ${doc.domain} from ${doc.content.length} to $maxContentPerDocument chars');
+      }
 
       // Limit chunks per document to ensure source diversity
       final chunksToAdd = docChunks.take(maxChunksPerDocument).toList();
@@ -85,7 +103,9 @@ class ContextFusion {
     }
 
     print('✅ Fused ${chunks.length} chunks (${totalLength} chars total)');
-    if (duplicatesSkipped > 0) {
+    if (truncatedDocs > 0) {
+      print('✂️  Truncated $truncatedDocs documents for source diversity');
+    }    if (duplicatesSkipped > 0) {
       print('🔍 Skipped $duplicatesSkipped duplicate chunks');
     }
 
@@ -135,10 +155,15 @@ class ContextFusion {
     Document doc,
     int maxChunkSize,
     int overlapSize, {
+    int? maxContentLength, // NEW: Optional max content length for this document
     bool optimizeForQuality = true,
   }) {
     final chunks = <ContextChunk>[];
-    final content = doc.content;
+    
+    // NEW: Truncate content if maxContentLength is specified
+    final content = maxContentLength != null && doc.content.length > maxContentLength
+        ? doc.content.substring(0, maxContentLength)
+        : doc.content;
 
     // Handle empty content
     if (content.isEmpty) {

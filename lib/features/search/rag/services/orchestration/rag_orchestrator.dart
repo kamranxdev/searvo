@@ -1,8 +1,9 @@
 import 'package:searvo/features/llm/services/providers/llm_provider_manager.dart';
+import 'package:searvo/features/llm/services/providers/context_window_config.dart';
 import 'package:searvo/features/search/rag/models/rag_models.dart';
 import 'package:searvo/features/search/services/searxng_service.dart';
 import '../query_processing/query_analyzer.dart';
-import '../data_ingestion/web_scraper_service.dart';
+import '../data_ingestion/rag_scraper_adapter.dart';
 import 'package:searvo/features/search/widgets/search_box.dart' show SearchMode;
 
 import '../../../models/message_data.dart';
@@ -13,7 +14,7 @@ import '../citation/citation_manager.dart';
 import '../query_processing/prompt_engineer.dart';
 import '../data_ingestion/attachment_processor.dart';
 
-/// Advanced RAG orchestrator with attachment support, conversation history, and web scraping
+/// Advanced RAG orchestrator with attachment support, conversation history, and intelligent web scraping
 class RAGOrchestrator {
   final SearXNGService _searxngService;
   final DocumentRanker _documentRanker;
@@ -24,7 +25,7 @@ class RAGOrchestrator {
   final PromptEngineer _promptEngineer;
   final AttachmentProcessor _attachmentProcessor;
   final QueryAnalyzer _queryAnalyzer;
-  final WebScraperService _webScraper;
+  final RAGScraperAdapter _scraperAdapter;
 
   final Map<String, dynamic> _performanceMetrics = {};
 
@@ -38,7 +39,7 @@ class RAGOrchestrator {
     PromptEngineer? promptEngineer,
     AttachmentProcessor? attachmentProcessor,
     QueryAnalyzer? queryAnalyzer,
-    WebScraperService? webScraper,
+    RAGScraperAdapter? scraperAdapter,
   })  : _searxngService = searxngService ?? SearXNGService(),
         _documentRanker = documentRanker ?? DocumentRanker(),
         _mediaRanker = mediaRanker ?? MediaRanker(),
@@ -48,14 +49,61 @@ class RAGOrchestrator {
         _promptEngineer = promptEngineer ?? PromptEngineer(),
         _attachmentProcessor = attachmentProcessor ?? AttachmentProcessor(),
         _queryAnalyzer = queryAnalyzer ?? QueryAnalyzer(),
-        _webScraper = webScraper ?? WebScraperService();
+        _scraperAdapter = scraperAdapter ?? RAGScraperAdapter();
+
+  /// Get adaptive context length based on current LLM provider and model
+  Future<int> _getAdaptiveContextLength({int? overrideLength, String? complexity}) async {
+    // If override provided, use it
+    if (overrideLength != null && overrideLength > 0) return overrideLength;
+
+    try {
+      final providerName = await LLMProviderManager.getActiveProviderName() ?? 'openai';
+      
+      String modelName = '';
+      
+      // Parse provider type from name
+      final providerLower = providerName.toLowerCase();
+      if (providerLower.contains('openai')) {
+        modelName = await LLMProviderManager.getOpenAIModel();
+      } else if (providerLower.contains('google') || providerLower.contains('gemini')) {
+        modelName = await LLMProviderManager.getGoogleModel();
+      } else if (providerLower.contains('ollama')) {
+        modelName = await LLMProviderManager.getOllamaModel();
+      } else if (providerLower.contains('anthropic')) {
+        modelName = await LLMProviderManager.getAnthropicModel();
+      } else if (providerLower.contains('openrouter')) {
+        modelName = await LLMProviderManager.getOpenRouterModel();
+      } else {
+        modelName = 'default';
+      }
+
+      // Get context length based on complexity if provided
+      if (complexity != null) {
+        final adaptiveLength = ContextWindowConfig.getRecommendedContextLength(
+          providerName,
+          modelName,
+          complexity,
+        );
+        print('📊 Adaptive context length: $adaptiveLength chars for $providerName/$modelName ($complexity complexity)');
+        return adaptiveLength;
+      }
+
+      // Otherwise get maximum context length
+      final maxLength = ContextWindowConfig.getMaxContextLength(providerName, modelName);
+      print('📊 Maximum context length: $maxLength chars for $providerName/$modelName');
+      return maxLength;
+    } catch (e) {
+      print('⚠️  Failed to get adaptive context length, using default: $e');
+      return 32000; // Safe default for modern LLMs
+    }
+  }
 
   /// Generate RAG response with optional attachments
   Future<MessageData> generateRAGResponse(
     String query, {
     int maxSearchResults = 20,
     int maxRelevantDocuments = 10,
-    int maxContextLength = 8000,
+    int? maxContextLength, // Changed to nullable to enable auto-detection
     bool enableQueryEnhancement = true,
     bool enableAdaptivePrompting = true,
     List<dynamic>? attachments,
@@ -70,6 +118,12 @@ class RAGOrchestrator {
       if (attachments != null && attachments.isNotEmpty) {
         print('📎 Attachments: ${attachments.length}');
       }
+
+      // Step 0: Determine adaptive context length based on LLM capabilities
+      final effectiveMaxContext = await _getAdaptiveContextLength(
+        overrideLength: maxContextLength,
+      );
+      print('📏 Using context length: $effectiveMaxContext chars');
 
       // Step 0: Process attachments if provided
       String? attachmentContext;
@@ -348,52 +402,53 @@ class RAGOrchestrator {
       final rankDuration = DateTime.now().difference(rankStart);
       print('⭐ Ranked to ${filteredDocuments.length} documents in ${rankDuration.inMilliseconds}ms');
 
-      // Step 3.5: Adaptive scraping with rich content extraction
+      // Step 3.5: Adaptive scraping with intelligent URL routing
       final scrapeStart = DateTime.now();
       final topDocuments = filteredDocuments.take(maxRelevantDocuments).toList();
       final urlsToScrape = topDocuments.map((doc) => doc.url).toList();
       
-      // Adaptive configuration based on search mode
-      final enableRichContent = searchMode == SearchMode.research;
-      final concurrency = searchMode == SearchMode.search ? 5 : (searchMode == SearchMode.study ? 3 : 2);
+      print('🌐 Scraping ${urlsToScrape.length} URLs with intelligent routing (mode: ${searchMode.name})...');
       
-      print('🌐 Scraping ${urlsToScrape.length} URLs (mode: ${searchMode.name}, rich: $enableRichContent, concurrency: $concurrency)...');
-      
-      final scrapedContents = await _webScraper.scrapeMultiple(
+      final scrapedDocuments = await _scraperAdapter.scrapeMultiple(
         urlsToScrape,
-        includeImages: enableRichContent,
-        includeLinks: enableRichContent,
-        maxConcurrent: concurrency,
+        relevanceScore: 1.0,
         onProgress: (completed, total) {
           print('   📊 Progress: $completed/$total URLs scraped');
         },
       );
 
-      // Merge scraped content with documents
+      // Merge scraped content with original documents
       final enrichedDocuments = <Document>[];
       int totalImages = 0;
       int totalLinks = 0;
+      int successfulScrapes = 0;
       
       for (int i = 0; i < topDocuments.length; i++) {
         final doc = topDocuments[i];
-        final scraped = scrapedContents[i];
+        final scraped = scrapedDocuments[i];
         
-        if (scraped.success && scraped.text.isNotEmpty) {
-          // Replace snippet with full scraped content
-          enrichedDocuments.add(scraped.toDocument(doc.relevanceScore));
+        if (scraped.metadata['scraped'] == true && scraped.content.isNotEmpty) {
+          // Use scraped document with original relevance score
+          enrichedDocuments.add(scraped.withRelevanceScore(doc.relevanceScore));
           totalImages += scraped.images.length;
-          totalLinks += scraped.links.length;
-          print('   ✓ ${doc.url} → ${scraped.wordCount} words${enableRichContent ? ", ${scraped.images.length} images, ${scraped.links.length} links" : ""}');
+          totalLinks += scraped.relatedLinks.length;
+          successfulScrapes++;
+          
+          final scraperType = scraped.metadata['scraperType'] ?? 'unknown';
+          final wordCount = scraped.metadata['wordCount'] ?? scraped.content.split(' ').length;
+          print('   ✓ [$scraperType] ${doc.url} → $wordCount words, ${scraped.images.length} images');
         } else {
           // Keep original document
           enrichedDocuments.add(doc);
-          print('   ✗ ${doc.url} → using snippet (${scraped.error ?? "unknown error"})');
+          final error = scraped.metadata['error'] ?? 'unknown error';
+          print('   ✗ ${doc.url} → using snippet ($error)');
         }
       }
 
       final scrapeDuration = DateTime.now().difference(scrapeStart);
       print('🌐 Scraped content in ${scrapeDuration.inMilliseconds}ms');
-      if (enableRichContent) {
+      print('   ✅ Success: $successfulScrapes/${urlsToScrape.length} URLs');
+      if (totalImages > 0 || totalLinks > 0) {
         print('   🖼️  Total images extracted: $totalImages');
         print('   🔗 Total links extracted: $totalLinks');
       }
@@ -402,7 +457,7 @@ class RAGOrchestrator {
       final fusionStart = DateTime.now();
       final contextChunks = _contextFusion.fuseContext(
         enrichedDocuments,
-        maxTotalLength: attachmentContext != null ? maxContextLength ~/ 2 : maxContextLength,
+        maxTotalLength: attachmentContext != null ? effectiveMaxContext ~/ 2 : effectiveMaxContext,
         maxChunksPerDocument: 2, // Limit chunks per document for source diversity
         optimizeForQuality: true,
       );
@@ -457,11 +512,12 @@ class RAGOrchestrator {
       );
       print('✅ Generated ${relatedQuestions.length} follow-up questions');
 
-      // Create final message
+      // Create final message with all scraped documents for comprehensive source list
       final citedMessageData = _citationManager.createCitedMessageData(
         query: query,
         answer: llmResponse,
         contextChunks: contextChunks,
+        allScrapedDocuments: enrichedDocuments, // Pass all scraped docs for fallback sources
         customRelatedQuestions: relatedQuestions,
         attachments: attachmentMetadata,
         images: imageUrls.isNotEmpty ? imageUrls : null,
@@ -483,7 +539,7 @@ class RAGOrchestrator {
         'llmDuration': llmDuration.inMilliseconds,
         'citationDuration': citationDuration.inMilliseconds,
         'documentsUsed': enrichedDocuments.length,
-        'documentsScraped': scrapedContents.where((s) => s.success).length,
+        'documentsScraped': successfulScrapes,
         'searchTypes': searchTypes,
         'hasAttachments': attachmentContext != null,
         'queryComplexity': queryAnalysis.complexity['level'],
@@ -532,7 +588,7 @@ class RAGOrchestrator {
     List<MessageData> previousMessages, {
     int maxSearchResults = 20,
     int maxRelevantDocuments = 10,
-    int maxContextLength = 8000,
+    int? maxContextLength, // Changed to nullable for auto-detection
     int maxHistoryMessages = 3,
     List<dynamic>? attachments,
     Function(MessageData)? onSearchComplete,
@@ -541,6 +597,12 @@ class RAGOrchestrator {
       print('🔄 Multi-turn RAG Started');
       print('📜 History: ${previousMessages.length} messages');
       print('🔍 Original query: "$query"');
+
+      // Step 0: Determine adaptive context length
+      final effectiveMaxContext = await _getAdaptiveContextLength(
+        overrideLength: maxContextLength,
+      );
+      print('📏 Using context length: $effectiveMaxContext chars');
 
       // Step 1: Analyze query context dependency using QueryAnalyzer
       final queryAnalysis = _queryAnalyzer.analyzeQuery(query);
@@ -713,7 +775,7 @@ class RAGOrchestrator {
       // Create context chunks
       final contextChunks = _contextFusion.fuseContext(
         filteredDocuments,
-        maxTotalLength: attachmentContext != null ? maxContextLength ~/ 2 : maxContextLength,
+        maxTotalLength: attachmentContext != null ? effectiveMaxContext ~/ 2 : effectiveMaxContext,
         maxChunksPerDocument: 2, // Limit chunks per document for source diversity
         optimizeForQuality: true,
       );
@@ -747,11 +809,12 @@ class RAGOrchestrator {
       );
       print('✅ Generated ${relatedQuestions.length} follow-up questions');
 
-      // Create final message with ORIGINAL query (not enhanced)
+      // Create final message with ORIGINAL query (not enhanced) and filtered documents for sources
       final citedMessageData = _citationManager.createCitedMessageData(
         query: query,  // Use original query here
         answer: llmResponse,
         contextChunks: contextChunks,
+        allScrapedDocuments: filteredDocuments, // Pass filtered docs for comprehensive sources
         customRelatedQuestions: relatedQuestions,
         attachments: attachmentMetadata,
         images: imageUrls.isNotEmpty ? imageUrls : null,

@@ -10,7 +10,7 @@ import 'package:searvo/features/settings/providers/settings_provider.dart';
 import 'package:searvo/features/settings/services/llm_settings_service.dart';
 import 'package:searvo/features/settings/services/settings_service.dart';
 import 'package:searvo/features/history/providers/conversation_history_provider.dart';
-import 'package:searvo/features/history/services/conversation_database_service.dart';
+import 'package:searvo/features/history/services/conversation_sync_service.dart';
 import 'package:searvo/features/search/providers/search_provider.dart';
 import 'package:searvo/features/search/rag/providers/rag_provider.dart';
 import 'package:searvo/firebase_options.dart';
@@ -31,12 +31,12 @@ void main() async {
   await SettingsService().initialize();
   await ThemeManager().initialize();
   
-  // Initialize conversation database
+  // Initialize conversation sync service
   try {
-    await ConversationDatabaseService().initialize();
-    print('✅ Conversation database initialized');
+    await ConversationSyncService().initialize();
+    print('✅ Conversation sync service initialized');
   } catch (e) {
-    print('❌ Failed to initialize conversation database: $e');
+    print('❌ Failed to initialize conversation sync service: $e');
   }
   
   // Initialize LLM settings service

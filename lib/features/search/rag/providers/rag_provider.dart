@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/rag_models.dart';
 import '../services/orchestration/rag_orchestrator.dart';
 import '../services/data_ingestion/attachment_processor.dart';
-import '../services/data_ingestion/web_scraper_service.dart';
+import '../services/data_ingestion/rag_scraper_adapter.dart';
 import '../services/data_ingestion/pdf_extractor_service.dart';
 import '../services/query_processing/query_analyzer.dart';
 import '../../models/message_data.dart';
@@ -11,7 +11,7 @@ import '../../widgets/search_box.dart';
 class RAGProvider extends ChangeNotifier {
   final RAGOrchestrator _ragOrchestrator = RAGOrchestrator();
   final AttachmentProcessor _attachmentProcessor = AttachmentProcessor();
-  final WebScraperService _webScraper = WebScraperService();
+  final RAGScraperAdapter _scraperAdapter = RAGScraperAdapter();
   final PDFExtractorService _pdfExtractor = PDFExtractorService();
   final QueryAnalyzer _queryAnalyzer = QueryAnalyzer();
 
@@ -75,12 +75,12 @@ class RAGProvider extends ChangeNotifier {
     }
   }
 
-  Future<ScrapedContent> scrapeWebContent(String url) async {
+  Future<Document> scrapeWebContent(String url) async {
     _isProcessingWebScraping = true;
     notifyListeners();
 
     try {
-      return await _webScraper.scrape(url);
+      return await _scraperAdapter.scrape(url);
     } finally {
       _isProcessingWebScraping = false;
       notifyListeners();
