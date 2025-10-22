@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -11,6 +12,8 @@ import 'package:searvo/shared/widgets/streaming_text_widget.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import 'dart:io';
 
 
@@ -46,6 +49,7 @@ class _MessageBoxState extends State<MessageBox>
   
   @override
   void initState() {
+    MediaKit.ensureInitialized();
     super.initState();
     _tabController = TabController(
       length: _getTabCount(), 
@@ -477,6 +481,230 @@ ${_currentMessage.sources.map((s) => '- ${s.title}: ${s.url}').join('\n')}
         await _voiceService.speak(textToSpeak);
       }
     }
+  }
+
+  void _showImageModal(int initialIndex) {
+    int currentIndex = initialIndex;
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) => Dialog(
+            insetPadding: EdgeInsets.zero,
+            backgroundColor: Colors.black,
+            child: Stack(
+              children: [
+                Center(
+                  child: InteractiveViewer(
+                    child: CachedNetworkImage(
+                      imageUrl: _currentMessage.images[currentIndex],
+                      fit: BoxFit.contain,
+                      httpHeaders: const {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                      },
+                      placeholder: (context, url) => const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
+                      errorWidget: (context, url, error) => const Center(
+                        child: Icon(
+                          Icons.broken_image,
+                          color: Colors.white,
+                          size: 64,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                // Close button
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child: IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close, color: Colors.white, size: 32),
+                  ),
+                ),
+                // Left arrow
+                if (currentIndex > 0)
+                  Positioned(
+                    left: 16,
+                    top: MediaQuery.of(context).size.height / 2 - 24,
+                    child: IconButton(
+                      onPressed: () => setState(() => currentIndex--),
+                      icon: const Icon(Icons.arrow_back, color: Colors.white, size: 32),
+                    ),
+                  ),
+                // Right arrow
+                if (currentIndex < _currentMessage.images.length - 1)
+                  Positioned(
+                    right: 16,
+                    top: MediaQuery.of(context).size.height / 2 - 24,
+                    child: IconButton(
+                      onPressed: () => setState(() => currentIndex++),
+                      icon: const Icon(Icons.arrow_forward, color: Colors.white, size: 32),
+                    ),
+                  ),
+                // Image counter
+                Positioned(
+                  bottom: 16,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.7),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        '${currentIndex + 1} / ${_currentMessage.images.length}',
+                        style: const TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showVideoModal(int initialIndex) {
+    // For web, open video in browser instead of modal player
+    if (kIsWeb) {
+      try {
+        final uri = Uri.parse(_currentMessage.videos[initialIndex].url);
+        launchUrl(uri, mode: LaunchMode.externalApplication);
+      } catch (e) {
+        print('Error launching video URL: $e');
+      }
+      return;
+    }
+
+    int currentIndex = initialIndex;
+    final player = Player();
+
+    Future<void> _changeVideo(int newIndex) async {
+      currentIndex = newIndex;
+      try {
+        await player.open(Media(_currentMessage.videos[currentIndex].url));
+      } catch (e) {
+        print('Error opening video: $e');
+        // Fallback to opening in browser
+        try {
+          final uri = Uri.parse(_currentMessage.videos[currentIndex].url);
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+            if (mounted) Navigator.of(context).pop();
+          }
+        } catch (e) {
+          print('Error launching video URL: $e');
+        }
+      }
+    }
+
+    _changeVideo(initialIndex);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) => Dialog(
+            insetPadding: EdgeInsets.zero,
+            backgroundColor: Colors.black,
+            child: Stack(
+              children: [
+                Center(
+                  child: Video(
+                    controller: VideoController(player),
+                  ),
+                ),
+                // Close button
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child: IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close, color: Colors.white, size: 32),
+                  ),
+                ),
+                // Left arrow
+                if (currentIndex > 0)
+                  Positioned(
+                    left: 16,
+                    top: MediaQuery.of(context).size.height / 2 - 24,
+                    child: IconButton(
+                      onPressed: () => _changeVideo(currentIndex - 1),
+                      icon: const Icon(Icons.arrow_back, color: Colors.white, size: 32),
+                    ),
+                  ),
+                // Right arrow
+                if (currentIndex < _currentMessage.videos.length - 1)
+                  Positioned(
+                    right: 16,
+                    top: MediaQuery.of(context).size.height / 2 - 24,
+                    child: IconButton(
+                      onPressed: () => _changeVideo(currentIndex + 1),
+                      icon: const Icon(Icons.arrow_forward, color: Colors.white, size: 32),
+                    ),
+                  ),
+                // Video counter
+                Positioned(
+                  bottom: 16,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.7),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        '${currentIndex + 1} / ${_currentMessage.videos.length}',
+                        style: const TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ),
+                  ),
+                ),
+                // Play/Pause button
+                Positioned(
+                  bottom: 80,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: StreamBuilder(
+                      stream: player.stream.playing,
+                      builder: (context, snapshot) {
+                        final isPlaying = snapshot.data ?? false;
+                        return IconButton(
+                          onPressed: () {
+                            if (isPlaying) {
+                              player.pause();
+                            } else {
+                              player.play();
+                            }
+                          },
+                          icon: Icon(
+                            isPlaying ? Icons.pause : Icons.play_arrow,
+                            color: Colors.white,
+                            size: 48,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    ).then((_) {
+      player.dispose();
+    });
   }
 
   @override
@@ -1029,17 +1257,7 @@ ${_currentMessage.sources.map((s) => '- ${s.title}: ${s.url}').join('\n')}
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: InkWell(
-        onTap: () async {
-          // Open image in browser on tap
-          try {
-            final uri = Uri.parse(imageUrl);
-            if (await canLaunchUrl(uri)) {
-              await launchUrl(uri, mode: LaunchMode.externalApplication);
-            }
-          } catch (e) {
-            print('Failed to launch image URL: $e');
-          }
-        },
+        onTap: () => _showImageModal(index),
         borderRadius: BorderRadius.circular(12),
         child: Container(
           height: height,
@@ -1122,10 +1340,14 @@ ${_currentMessage.sources.map((s) => '- ${s.title}: ${s.url}').join('\n')}
               ),
             )
           else
-            ...(_currentMessage.videos.map((video) => _buildVideoItem(colorScheme, video))),
-          ],
-        ),
-      );
+            ...(_currentMessage.videos.asMap().entries.map((entry) {
+              final index = entry.key;
+              final video = entry.value;
+              return _buildVideoItem(colorScheme, video, index);
+            })),
+        ],
+      ),
+    );
   }
 
   Widget _buildSourcesTab(ColorScheme colorScheme) {
@@ -1142,7 +1364,7 @@ ${_currentMessage.sources.map((s) => '- ${s.title}: ${s.url}').join('\n')}
     );
   }
 
-  Widget _buildVideoItem(ColorScheme colorScheme, VideoItem video) {
+  Widget _buildVideoItem(ColorScheme colorScheme, VideoItem video, int index) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
@@ -1152,16 +1374,7 @@ ${_currentMessage.sources.map((s) => '- ${s.title}: ${s.url}').join('\n')}
         border: Border.all(color: colorScheme.outline),
       ),
       child: InkWell(
-        onTap: () async {
-          try {
-            final uri = Uri.parse(video.url);
-            if (await canLaunchUrl(uri)) {
-              await launchUrl(uri, mode: LaunchMode.externalApplication);
-            }
-          } catch (e) {
-            print('Failed to launch video URL: $e');
-          }
-        },
+        onTap: () => _showVideoModal(index),
         borderRadius: BorderRadius.circular(12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,

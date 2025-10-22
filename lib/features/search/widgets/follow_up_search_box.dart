@@ -219,11 +219,7 @@ class _FollowUpSearchBoxState extends State<FollowUpSearchBox> {
                       
                       VoiceInputWidget(
                         onTextReceived: (text) {
-                          if (widget.controller.text.isEmpty) {
-                            widget.controller.text = text;
-                          } else {
-                            widget.controller.text += ' $text';
-                          }
+                          widget.controller.text = text;
                           widget.controller.selection = TextSelection.fromPosition(
                             TextPosition(offset: widget.controller.text.length),
                           );

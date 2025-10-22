@@ -5,6 +5,7 @@ import 'package:searvo/features/search/widgets/follow_up_search_box.dart';
 import 'package:searvo/features/search/widgets/message_box.dart';
 import 'package:searvo/features/search/widgets/search_box.dart';
 import 'package:searvo/features/history/utils/conversation_auto_saver.dart';
+import 'package:searvo/features/history/providers/conversation_history_provider.dart';
 import 'package:searvo/shared/widgets/attachment_input_widget.dart';
 import 'dart:async';
 import 'dart:io';
@@ -47,6 +48,7 @@ class _SearchResultsContentState extends State<SearchResultsContent> {
 
   void _setupAutoSave() {
     final searchProvider = context.read<SearchProvider>();
+    
     searchProvider.onConversationUpdate = () {
       ConversationAutoSaver.autoSave(context);
     };
@@ -57,10 +59,18 @@ class _SearchResultsContentState extends State<SearchResultsContent> {
     try {
       await searchProvider.initialize();
       
-      if (widget.conversationId != null && searchProvider.currentConversationId == widget.conversationId) {
-        // Conversation already loaded
+      if (widget.conversationId != null) {
+        // Check if conversation is already loaded in memory
+        if (searchProvider.currentConversationId == widget.conversationId && 
+            searchProvider.hasActiveConversation) {
+          // Conversation already loaded in memory
+          print('📌 Conversation already loaded: ${widget.conversationId}');
+        } else {
+          // Load conversation from database (local or cloud)
+          await _loadConversationFromDatabase();
+        }
       } else {
-        // New search or different conversation
+        // New search - no conversation ID provided
         searchProvider.clearMessages();
         await searchProvider.performInitialSearch(
           widget.query,
@@ -71,6 +81,56 @@ class _SearchResultsContentState extends State<SearchResultsContent> {
     } catch (e) {
       print('Failed to initialize: $e');
       _showErrorMessage('Failed to perform search: $e');
+    }
+  }
+
+  Future<void> _loadConversationFromDatabase() async {
+    final searchProvider = context.read<SearchProvider>();
+    
+    try {
+      print('📥 Loading conversation from database: ${widget.conversationId}');
+      
+      // Import the history provider
+      final historyProvider = context.read<ConversationHistoryProvider>();
+      
+      // Get the conversation from database by exact UUID match
+      final conversation = await historyProvider.getConversation(widget.conversationId!);
+      
+      if (conversation != null) {
+        // Convert stored messages back to branches
+        final branches = historyProvider.convertToBranches(conversation.messages);
+        
+        // Load conversation into SearchProvider
+        searchProvider.loadConversation(
+          conversationId: conversation.conversationId,
+          title: conversation.title,
+          branches: branches,
+        );
+        
+        print('✅ Conversation loaded successfully: ${conversation.title}');
+      } else {
+        // Conversation not found in database
+        // This could happen if conversation was deleted or never saved
+        // Perform a new search with the UUID from URL
+        print('⚠️ Conversation not found in database, performing new search with UUID');
+        searchProvider.clearMessages();
+        await searchProvider.performInitialSearch(
+          widget.query,
+          widget.searchMode,
+          widget.initialAttachments,
+          conversationId: widget.conversationId, // Use UUID from URL
+        );
+      }
+    } catch (e) {
+      print('❌ Failed to load conversation from database: $e');
+      // Fall back to new search with UUID from URL
+      searchProvider.clearMessages();
+      await searchProvider.performInitialSearch(
+        widget.query,
+        widget.searchMode,
+        widget.initialAttachments,
+        conversationId: widget.conversationId, // Use UUID from URL
+      );
     }
   }
 

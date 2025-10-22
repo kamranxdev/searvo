@@ -231,8 +231,8 @@ class AppRouter {
     SearchMode searchMode = SearchMode.search,
     String? conversationId,
   }) {
-    // Generate UUID if not provided
-    final uuid = conversationId ?? _generateShortUuid();
+    // Generate UUID if not provided (use full UUID format)
+    final uuid = conversationId ?? _generateUuid();
     
     // Format query for URL: replace spaces with hyphens, lowercase
     final cleaned = query
@@ -251,11 +251,16 @@ class AppRouter {
     context.go('/search/$id$modeParam');
   }
   
-  /// Generate a short UUID (8 characters)
-  static String _generateShortUuid() {
-    final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-    final random = (timestamp.hashCode % 100000000).toRadixString(36);
-    return random.padLeft(8, '0').substring(0, 8);
+  /// Generate a UUID (8-4-4-4-12 format, 36 chars total)
+  static String _generateUuid() {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final random1 = (timestamp.hashCode & 0xFFFFFFFF).toRadixString(16).padLeft(8, '0');
+    final random2 = ((timestamp >> 8).hashCode & 0xFFFF).toRadixString(16).padLeft(4, '0');
+    final random3 = ((timestamp >> 16).hashCode & 0xFFFF).toRadixString(16).padLeft(4, '0');
+    final random4 = ((timestamp >> 24).hashCode & 0xFFFF).toRadixString(16).padLeft(4, '0');
+    final random5 = (timestamp.hashCode & 0xFFFFFFFFFFFF).toRadixString(16).padLeft(12, '0');
+    
+    return '$random1-$random2-$random3-$random4-$random5';
   }
 
   /// Get current route name for debugging

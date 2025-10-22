@@ -777,11 +777,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
                               VoiceInputWidget(
                                 onTextReceived: (text) {
                                   _isSettingTextProgrammatically = true;
-                                  if (widget.controller.text.isEmpty) {
-                                    widget.controller.text = text;
-                                  } else {
-                                    widget.controller.text += ' $text';
-                                  }
+                                  widget.controller.text = text;
                                   widget.controller.selection = TextSelection.fromPosition(
                                     TextPosition(offset: widget.controller.text.length),
                                   );

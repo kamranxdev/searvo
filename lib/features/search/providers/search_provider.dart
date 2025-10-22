@@ -32,9 +32,17 @@ class SearchProvider extends ChangeNotifier {
     return 'branch_${_branchIdCounter++}_${DateTime.now().millisecondsSinceEpoch}';
   }
 
-  /// Generate a unique conversation ID
+  /// Generate a unique conversation ID using UUID format
   String _generateConversationId() {
-    return 'conv_${DateTime.now().millisecondsSinceEpoch}';
+    // Generate a UUID-like ID: 8-4-4-4-12 format
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final random1 = (timestamp.hashCode & 0xFFFFFFFF).toRadixString(16).padLeft(8, '0');
+    final random2 = ((timestamp >> 8).hashCode & 0xFFFF).toRadixString(16).padLeft(4, '0');
+    final random3 = ((timestamp >> 16).hashCode & 0xFFFF).toRadixString(16).padLeft(4, '0');
+    final random4 = ((timestamp >> 24).hashCode & 0xFFFF).toRadixString(16).padLeft(4, '0');
+    final random5 = (timestamp.hashCode & 0xFFFFFFFFFFFF).toRadixString(16).padLeft(12, '0');
+    
+    return '$random1-$random2-$random3-$random4-$random5';
   }
 
   /// Generate conversation title from first query
@@ -59,11 +67,12 @@ class SearchProvider extends ChangeNotifier {
   Future<void> performInitialSearch(
     String query,
     SearchMode searchMode,
-    List<dynamic>? attachments,
-  ) async {
-    // Generate conversation ID and title for new conversation
+    List<dynamic>? attachments, {
+    String? conversationId, // Accept conversation ID from URL
+  }) async {
+    // Use provided conversation ID or generate new one
     if (_currentConversationId == null) {
-      _currentConversationId = _generateConversationId();
+      _currentConversationId = conversationId ?? _generateConversationId();
       _currentConversationTitle = _generateConversationTitle(query);
     }
 

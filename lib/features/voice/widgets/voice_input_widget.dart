@@ -48,6 +48,7 @@ class _VoiceInputWidgetState extends State<VoiceInputWidget>
   
   VoiceInputState _currentState = VoiceInputState.idle;
   bool _isInitialized = false;
+  String _lastRecognizedText = '';
 
   @override
   void initState() {
@@ -98,13 +99,19 @@ class _VoiceInputWidgetState extends State<VoiceInputWidget>
 
   void _setupStreams() {
     _textSubscription = _voiceService.textStream.listen((text) {
-      widget.onTextReceived?.call(text);
+      _lastRecognizedText = text;
     });
     
     _stateSubscription = _voiceService.stateStream.listen((state) {
       setState(() {
         _currentState = state;
       });
+      
+      // Only call onTextReceived when voice input is completed with final result
+      if (state == VoiceInputState.completed && _lastRecognizedText.isNotEmpty) {
+        widget.onTextReceived?.call(_lastRecognizedText);
+        _lastRecognizedText = ''; // Reset for next input
+      }
       
       _handleStateChange(state);
       widget.onStateChanged?.call(state);
