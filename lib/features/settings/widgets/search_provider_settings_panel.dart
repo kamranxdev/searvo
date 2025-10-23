@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:searvo/core/theme/theme.dart';
 import 'package:searvo/features/settings/services/search_provider_settings_service.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'section_header.dart';
+import 'settings_card.dart';
 
 class SearchProviderSettingsPanel extends StatefulWidget {
   const SearchProviderSettingsPanel({Key? key}) : super(key: key);
@@ -42,7 +42,7 @@ class _SearchProviderSettingsPanelState extends State<SearchProviderSettingsPane
       children: [
         const SectionHeader(
           title: 'Search Engine Settings',
-          description: 'Configure your SearXNG search engine endpoint',
+          subtitle: 'Configure your SearXNG search engine endpoint',
         ),
         const SizedBox(height: 24),
         _buildSearXNGSettings(colorScheme, isConfigured),

@@ -3,7 +3,7 @@ import 'package:searvo/core/theme/theme.dart';
 import 'package:searvo/features/settings/services/llm_settings_service.dart';
 import 'package:searvo/features/llm/services/providers/llm_provider_manager.dart';
 import 'api_key_field.dart';
-import 'section_header.dart';
+import 'settings_card.dart';
 
 class LLMProviderSettingsPanel extends StatefulWidget {
   const LLMProviderSettingsPanel({Key? key}) : super(key: key);
@@ -33,7 +33,7 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
       children: [
         const SectionHeader(
           title: 'AI Provider Settings',
-          description: 'Configure your AI providers and API keys',
+          subtitle: 'Configure your AI providers and API keys',
         ),
         const SizedBox(height: 24),
 

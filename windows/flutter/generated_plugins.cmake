@@ -7,6 +7,8 @@ list(APPEND FLUTTER_PLUGIN_LIST
   firebase_auth
   firebase_core
   flutter_tts
+  media_kit_libs_windows_audio
+  media_kit_libs_windows_video
   media_kit_video
   permission_handler_windows
   printing

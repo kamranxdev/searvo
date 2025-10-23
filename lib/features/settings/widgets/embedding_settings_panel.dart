@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:searvo/core/theme/theme.dart';
 import 'package:searvo/features/settings/services/llm_settings_service.dart';
 import 'package:searvo/features/llm/services/providers/llm_provider_manager.dart';
-import 'section_header.dart';
+import 'settings_card.dart';
 
 class EmbeddingSettingsPanel extends StatefulWidget {
   const EmbeddingSettingsPanel({Key? key}) : super(key: key);
@@ -33,7 +33,7 @@ class _EmbeddingSettingsPanelState extends State<EmbeddingSettingsPanel> {
       children: [
         const SectionHeader(
           title: 'Embedding Provider Settings',
-          description: 'Configure your embedding models for vector search and semantic analysis',
+          subtitle: 'Configure your embedding models for vector search and semantic analysis',
         ),
         const SizedBox(height: 24),
 

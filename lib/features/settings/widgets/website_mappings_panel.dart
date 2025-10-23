@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:searvo/features/settings/services/settings_service.dart';
 import '../../../core/theme/theme.dart';
-import 'section_header.dart';
+import 'settings_card.dart';
 
 class WebsiteMappingsPanel extends StatefulWidget {
   const WebsiteMappingsPanel({Key? key}) : super(key: key);
@@ -13,11 +13,96 @@ class WebsiteMappingsPanel extends StatefulWidget {
 class _WebsiteMappingsPanelState extends State<WebsiteMappingsPanel> {
   final SettingsService _settingsService = SettingsService();
   late Map<String, Map<String, String>> _websiteMappings;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  bool _isSelectionMode = false;
+  final Set<String> _selectedMappings = {};
 
   @override
   void initState() {
     super.initState();
     _websiteMappings = _settingsService.getWebsiteMappings();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _toggleSelectionMode() {
+    setState(() {
+      _isSelectionMode = !_isSelectionMode;
+      if (!_isSelectionMode) {
+        _selectedMappings.clear();
+      }
+    });
+  }
+
+  void _toggleMappingSelection(String key) {
+    setState(() {
+      if (_selectedMappings.contains(key)) {
+        _selectedMappings.remove(key);
+      } else {
+        _selectedMappings.add(key);
+      }
+    });
+  }
+
+  Future<void> _deleteSelectedMappings() async {
+    if (_selectedMappings.isEmpty) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Website Mappings'),
+        content: Text(
+          'Are you sure you want to delete ${_selectedMappings.length} mapping(s)? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      for (final key in _selectedMappings) {
+        await _settingsService.removeWebsiteMapping(key);
+      }
+      setState(() {
+        _websiteMappings = _settingsService.getWebsiteMappings();
+        _selectedMappings.clear();
+        _isSelectionMode = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Website mappings deleted')),
+        );
+      }
+    }
+  }
+
+  List<MapEntry<String, Map<String, String>>> _getFilteredMappings() {
+    if (_searchQuery.isEmpty) {
+      return _websiteMappings.entries.toList();
+    }
+    
+    final query = _searchQuery.toLowerCase();
+    return _websiteMappings.entries.where((entry) {
+      final key = entry.key.toLowerCase();
+      final name = (entry.value['name'] ?? '').toLowerCase();
+      final url = (entry.value['url'] ?? '').toLowerCase();
+      return key.contains(query) || name.contains(query) || url.contains(query);
+    }).toList();
   }
 
   void _addWebsiteMapping() {
@@ -89,7 +174,7 @@ class _WebsiteMappingsPanelState extends State<WebsiteMappingsPanel> {
       children: [
         const SectionHeader(
           title: 'Website Mappings',
-          description: 'Configure @mention shortcuts for websites. Type "@youtube search term" to search YouTube directly.',
+          subtitle: 'Configure @mention shortcuts for websites. Type "@youtube search term" to search YouTube directly.',
         ),
         const SizedBox(height: 24),
 
