@@ -15,10 +15,11 @@ class Ollama extends BaseLLMProvider {
   
   late ChatOllama _chatModel;
   late OllamaEmbeddings _embeddings;
-  String _baseUrl;
+  String? _baseUrl;
   String _model;
+  bool _isExplicitlyConfigured = false;
   
-  // Static helper to ensure the baseUrl starts with http/https
+  /// Normalizes the base URL to ensure it has a proper HTTP/HTTPS scheme
   static String _normalizeBaseUrl(String url) {
     final trimmed = url.trim();
     if (trimmed.isEmpty) return defaultBaseUrl;
@@ -31,25 +32,30 @@ class Ollama extends BaseLLMProvider {
   Ollama({
     String? baseUrl,
     String? model,
-  }) : _baseUrl = _normalizeBaseUrl(baseUrl ?? defaultBaseUrl),
-       _model = model ?? defaultModel;
+  }) : _baseUrl = baseUrl != null && baseUrl.isNotEmpty ? _normalizeBaseUrl(baseUrl) : null,
+       _model = model ?? defaultModel,
+       _isExplicitlyConfigured = baseUrl != null && baseUrl.isNotEmpty;
 
   @override
   String get providerName => 'Ollama';
 
   @override
   Future<void> initialize() async {
+    if (!_isExplicitlyConfigured) {
+      throw Exception('Ollama base URL must be configured before initialization');
+    }
+    
     _chatModel = ChatOllama(
       defaultOptions: ChatOllamaOptions(
         model: _model,
         temperature: 0.7,
       ),
-      baseUrl: _baseUrl,
+      baseUrl: _baseUrl!,
     );
 
     _embeddings = OllamaEmbeddings(
       model: _model,
-      baseUrl: _baseUrl,
+      baseUrl: _baseUrl!,
     );
   }
 
@@ -122,7 +128,14 @@ class Ollama extends BaseLLMProvider {
 
   /// Set base URL for Ollama server
   void setBaseUrl(String baseUrl) {
-    _baseUrl = _normalizeBaseUrl(baseUrl);
+    final trimmed = baseUrl.trim();
+    if (trimmed.isEmpty) {
+      _baseUrl = null;
+      _isExplicitlyConfigured = false;
+    } else {
+      _baseUrl = _normalizeBaseUrl(baseUrl);
+      _isExplicitlyConfigured = true;
+    }
   }
 
   /// Set model
@@ -166,7 +179,7 @@ class Ollama extends BaseLLMProvider {
   ];
 
   @override
-  bool get isConfigured => true; // Ollama doesn't require API key
+  bool get isConfigured => _isExplicitlyConfigured && _baseUrl != null && _baseUrl!.isNotEmpty;
 
   @override
   void dispose() {

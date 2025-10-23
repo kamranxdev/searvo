@@ -98,6 +98,19 @@ class RAGOrchestrator {
     }
   }
 
+  /// Extract URLs from query text
+  List<String> _extractUrls(String query) {
+    final urlPattern = RegExp(
+      r'https?://[^\s]+',
+      caseSensitive: false,
+    );
+    
+    return urlPattern
+        .allMatches(query)
+        .map((match) => match.group(0)!)
+        .toList();
+  }
+
   /// Generate RAG response with optional attachments
   Future<MessageData> generateRAGResponse(
     String query, {
@@ -124,6 +137,42 @@ class RAGOrchestrator {
         overrideLength: maxContextLength,
       );
       print('📏 Using context length: $effectiveMaxContext chars');
+
+      // Step 0.1: Detect and scrape URLs in query
+      final urlsInQuery = _extractUrls(query);
+      List<Document> scrapedUrlDocuments = [];
+      bool hasSubstantialScrapedContent = false;
+      
+      if (urlsInQuery.isNotEmpty) {
+        print('🔗 Detected ${urlsInQuery.length} URL(s) in query, scraping...');
+        
+        for (final url in urlsInQuery) {
+          try {
+            print('   🌐 Scraping: $url');
+            final scrapedDoc = await _scraperAdapter.scrape(url);
+            
+            // Give user-provided URLs MAXIMUM relevance score to ensure they're prioritized
+            final prioritizedDoc = scrapedDoc.withRelevanceScore(1000.0);
+            scrapedUrlDocuments.add(prioritizedDoc);
+            
+            // Check if we got substantial content (more than 100 chars)
+            if (scrapedDoc.content.length > 100) {
+              hasSubstantialScrapedContent = true;
+            }
+            
+            print('   ✅ Scraped: ${scrapedDoc.title} (${scrapedDoc.content.length} chars)');
+          } catch (e) {
+            print('   ⚠️  Failed to scrape $url: $e');
+          }
+        }
+        
+        print('✅ Successfully scraped ${scrapedUrlDocuments.length}/${urlsInQuery.length} URLs');
+        
+        // If we have substantial content from user-provided URLs, prioritize them
+        if (hasSubstantialScrapedContent) {
+          print('📌 User-provided URLs contain substantial content - will be prioritized in ranking');
+        }
+      }
 
       // Step 0: Process attachments if provided
       String? attachmentContext;
@@ -180,16 +229,30 @@ class RAGOrchestrator {
 
       // Perform multiple searches across different types
       final allRawDocuments = <Document>[];
-      List<String> searchTypes = queryAnalysis.suggestedSearchTypes.take(3).toList();
       
-      // ALWAYS include images and videos search for every query
-      // This ensures the Images and Videos tabs are always populated with relevant media
-      if (!searchTypes.contains('images')) {
-        searchTypes.add('images');
+      // Add scraped URL documents first (they have highest priority)
+      if (scrapedUrlDocuments.isNotEmpty) {
+        allRawDocuments.addAll(scrapedUrlDocuments);
+        print('📌 Added ${scrapedUrlDocuments.length} scraped URL document(s) to context');
       }
       
-      if (!searchTypes.contains('videos')) {
-        searchTypes.add('videos');
+      List<String> searchTypes = queryAnalysis.suggestedSearchTypes.take(3).toList();
+      
+      // If user provided URLs with substantial content, reduce web search significantly
+      // Focus only on images/videos to populate those tabs
+      if (hasSubstantialScrapedContent) {
+        print('🎯 User-provided URLs detected - limiting search to media only');
+        searchTypes = ['images', 'videos'];
+      } else {
+        // ALWAYS include images and videos search for every query
+        // This ensures the Images and Videos tabs are always populated with relevant media
+        if (!searchTypes.contains('images')) {
+          searchTypes.add('images');
+        }
+        
+        if (!searchTypes.contains('videos')) {
+          searchTypes.add('videos');
+        }
       }
       
       print('🎯 Search types: ${searchTypes.join(", ")}');
@@ -475,12 +538,14 @@ class RAGOrchestrator {
           query, 
           contextChunks,
           attachmentContext: attachmentContext,
+          hasUserProvidedUrls: hasSubstantialScrapedContent,
         );
       } else {
         userPrompt = _promptEngineer.createUserPrompt(
           query, 
           contextChunks,
           attachmentContext: attachmentContext,
+          hasUserProvidedUrls: hasSubstantialScrapedContent,
         );
       }
 
@@ -604,6 +669,27 @@ class RAGOrchestrator {
       );
       print('📏 Using context length: $effectiveMaxContext chars');
 
+      // Step 0.1: Detect and scrape URLs in query
+      final urlsInQuery = _extractUrls(query);
+      List<Document> scrapedUrlDocuments = [];
+      
+      if (urlsInQuery.isNotEmpty) {
+        print('🔗 Detected ${urlsInQuery.length} URL(s) in follow-up query, scraping...');
+        
+        for (final url in urlsInQuery) {
+          try {
+            print('   🌐 Scraping: $url');
+            final scrapedDoc = await _scraperAdapter.scrape(url);
+            scrapedUrlDocuments.add(scrapedDoc);
+            print('   ✅ Scraped: ${scrapedDoc.title} (${scrapedDoc.content.length} chars)');
+          } catch (e) {
+            print('   ⚠️  Failed to scrape $url: $e');
+          }
+        }
+        
+        print('✅ Successfully scraped ${scrapedUrlDocuments.length}/${urlsInQuery.length} URLs');
+      }
+
       // Step 1: Analyze query context dependency using QueryAnalyzer
       final queryAnalysis = _queryAnalyzer.analyzeQuery(query);
       print('📊 Context Analysis:');
@@ -686,6 +772,12 @@ class RAGOrchestrator {
       final rawDocuments = response.results.map((result) {
         return Document.fromSearchResult(result);
       }).toList();
+      
+      // Add scraped URL documents first (they have highest priority)
+      if (scrapedUrlDocuments.isNotEmpty) {
+        rawDocuments.insertAll(0, scrapedUrlDocuments);
+        print('📌 Added ${scrapedUrlDocuments.length} scraped URL document(s) to follow-up context');
+      }
       
       // ALSO search for images and videos for follow-ups
       final List<String> imageUrls = [];

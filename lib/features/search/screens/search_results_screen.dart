@@ -243,19 +243,6 @@ class _SearchResultsContentState extends State<SearchResultsContent> {
     await Share.shareXFiles([XFile(file.path)], text: 'Exported Conversation');
   }
 
-  Future<void> _shareConversation() async {
-    final searchProvider = context.read<SearchProvider>();
-    final messageBranches = searchProvider.messageBranches;
-    String content = '';
-
-    for (var branch in messageBranches) {
-      final message = branch.currentMessage;
-      content += '${message.query}\n\n${message.answer}\n\n';
-    }
-
-    await Share.share(content, subject: 'Shared Conversation');
-  }
-
   @override
   Widget build(BuildContext context) {
     return Consumer<SearchProvider>(
@@ -381,15 +368,6 @@ class _SearchResultsContentState extends State<SearchResultsContent> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Share button
-                    IconButton(
-                      onPressed: () => _shareConversation(),
-                      icon: Icon(
-                        Icons.share,
-                        color: colorScheme.onSurface,
-                      ),
-                      tooltip: 'Share Conversation',
-                    ),
                     // Export button with menu
                     PopupMenuButton<String>(
                       onSelected: _exportConversation,

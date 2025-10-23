@@ -301,9 +301,9 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
         _buildTextField(
           colorScheme,
           'Base URL',
-          'http://localhost:11434',
+          '',
           'Ollama server URL (default: http://localhost:11434)',
-          _llmSettings.getOllamaBaseUrl(),
+          null,
           (value) {
             _llmSettings.setOllamaBaseUrl(value);
             setState(() {}); // Refresh UI
@@ -435,7 +435,7 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
     String label,
     String placeholder,
     String description,
-    String value,
+    String? value,
     Function(String) onChanged,
   ) {
     return Column(

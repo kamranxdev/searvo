@@ -14,7 +14,7 @@ class AppRouter {
   static const String home = '/';
   static const String auth = '/auth';
   static const String search = '/search'; // Same as home, both show search interface
-  static const String searchConversation = '/search/:id'; // Individual search conversation
+  static const String searchConversation = '/search/:id'; // Individual search conversation (format: /search/query+uuid)
   static const String settings = '/settings';
   static const String privacyPolicy = '/privacy-policy';
   static const String conversationHistory = '/history'; // Conversation history
@@ -113,23 +113,34 @@ class AppRouter {
       ),
 
       // Search Conversation Route (Individual search with UUID) - Protected
-      // Format: /search/[query]-[uuid]
-      // Example: /search/flutter-best-practices-a1b2c3d4
+      // Format: /search/[query+uuid] (query and uuid concatenated with +)
+      // Example: /search/what+does+this+page+say+https://linkedin.com/in/kamranxdev+a1b2c3d4-e5f6-7890-abcd-ef1234567890
       GoRoute(
         path: '/search/:id',
         name: 'searchConversation',
         pageBuilder: (context, state) {
-          final id = state.pathParameters['id'] ?? '';
+          // Get the combined id parameter (query+uuid)
+          final combinedId = state.pathParameters['id'] ?? '';
           
-          // Parse the ID to extract query and UUID
-          // Format: query-uuid
-          String? query;
-          String? conversationId;
+          // Split by the last occurrence of a UUID pattern (8-4-4-4-12 format)
+          // UUID pattern: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+          final uuidPattern = RegExp(r'([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$', caseSensitive: false);
+          final match = uuidPattern.firstMatch(combinedId);
           
-          final lastDashIndex = id.lastIndexOf('-');
-          if (lastDashIndex > 0 && lastDashIndex < id.length - 1) {
-            query = id.substring(0, lastDashIndex).replaceAll('-', ' ');
-            conversationId = id.substring(lastDashIndex + 1);
+          String query = '';
+          String conversationId = '';
+          
+          if (match != null) {
+            conversationId = match.group(1)!;
+            // Extract query by removing the UUID and separator
+            final queryPart = combinedId.substring(0, match.start);
+            // Remove trailing + or - separator
+            query = queryPart.replaceAll(RegExp(r'[\+\-]$'), '');
+            // Decode the query (converts + to spaces and decodes URL encoding)
+            query = Uri.decodeComponent(query.replaceAll('+', ' '));
+          } else {
+            // Fallback if no UUID pattern found
+            query = Uri.decodeComponent(combinedId.replaceAll('+', ' '));
           }
           
           final modeStr = state.uri.queryParameters['mode'];
@@ -224,7 +235,7 @@ class AppRouter {
 
   /// Navigate to search conversation with query and optional UUID
   /// If conversationId is not provided, generates a new UUID
-  /// Format: /search/query-uuid
+  /// Format: /search/query+uuid (query and uuid concatenated with +)
   static void goToSearchResults(
     BuildContext context, 
     String query, {
@@ -234,21 +245,18 @@ class AppRouter {
     // Generate UUID if not provided (use full UUID format)
     final uuid = conversationId ?? _generateUuid();
     
-    // Format query for URL: replace spaces with hyphens, lowercase
-    final cleaned = query
-        .trim()
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9\s]'), '')
-        .replaceAll(RegExp(r'\s+'), '-');
-
-    final formattedQuery = cleaned.length > 50 ? cleaned.substring(0, 50) : cleaned;
+    // Encode query for URL path (spaces become +, special chars are encoded)
+    // Keep the full query including URLs
+    final encodedQuery = Uri.encodeComponent(query.trim()).replaceAll('%20', '+');
     
-    final id = '$formattedQuery-$uuid';
+    // Combine query and uuid with + separator
+    final combinedId = '$encodedQuery+$uuid';
+    
     final modeParam = searchMode != SearchMode.search 
         ? '?mode=${searchMode.name}' 
         : '';
     
-    context.go('/search/$id$modeParam');
+    context.go('/search/$combinedId$modeParam');
   }
   
   /// Generate a UUID (8-4-4-4-12 format, 36 chars total)

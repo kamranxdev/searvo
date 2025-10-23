@@ -16,7 +16,7 @@ class RichTextEditingController extends TextEditingController {
   RichTextEditingController({
     required this.validMentions,
     this.mentionColor = const Color(0xFF00B4A6), // Teal color equivalent to old primary
-    this.urlColor = const Color(0xFF3B82F6), // Blue for URLs
+    this.urlColor = const Color(0xFF00B4A6), // Same teal color for URLs
     this.backgroundColor = const Color(0xFF1A1A1A), // Dark background
   });
 
@@ -27,6 +27,25 @@ class RichTextEditingController extends TextEditingController {
       return DetectedType.url;
     }
     return DetectedType.plainText;
+  }
+
+  /// Extract all URLs from the current text
+  List<String> extractUrls() {
+    final text = this.text;
+    final urlPattern = RegExp(
+      r'https?://[^\s]+',
+      caseSensitive: false,
+    );
+    
+    return urlPattern
+        .allMatches(text)
+        .map((match) => match.group(0)!)
+        .toList();
+  }
+
+  /// Check if the text contains any URLs
+  bool containsUrls() {
+    return extractUrls().isNotEmpty;
   }
 
   @override
@@ -66,9 +85,6 @@ class RichTextEditingController extends TextEditingController {
           final isValid = validMentions.contains(mentionKey);
           specialStyle = style?.copyWith(
             color: isValid ? mentionColor : style.color,
-            backgroundColor: isValid 
-                ? mentionColor.withOpacity(0.15) 
-                : null,
             fontWeight: isValid ? FontWeight.w600 : style.fontWeight,
           );
           break;
@@ -76,9 +92,7 @@ class RichTextEditingController extends TextEditingController {
         case DetectedType.url:
           specialStyle = style?.copyWith(
             color: urlColor,
-            decoration: TextDecoration.underline,
-            decorationColor: urlColor.withOpacity(0.5),
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w600, // Same bold weight as mentions
           );
           break;
           

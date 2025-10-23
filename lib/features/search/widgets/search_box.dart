@@ -135,7 +135,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
     _mentionController = RichTextEditingController(
       validMentions: _websiteMappings.keys.toSet(),
       mentionColor: const Color(0xFF00B4A6), // AppTheme.primaryColor equivalent
-      urlColor: const Color(0xFF3B82F6),
+      urlColor: const Color(0xFF00B4A6), // Same teal color for URLs
     );
     
     // Sync with the provided controller

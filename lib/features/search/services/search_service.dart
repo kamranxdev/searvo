@@ -106,6 +106,19 @@ class SearchService {
     }
   }
 
+  /// Extract URLs from query text
+  List<String> _extractUrls(String query) {
+    final urlPattern = RegExp(
+      r'https?://[^\s]+',
+      caseSensitive: false,
+    );
+    
+    return urlPattern
+        .allMatches(query)
+        .map((match) => match.group(0)!)
+        .toList();
+  }
+
   /// Generate search response with optional attachments
   Future<MessageData> generateSearchResponse(
     String query, {
@@ -134,6 +147,16 @@ class SearchService {
     if (attachments != null && attachments.isNotEmpty) {
       print('📎 With ${attachments.length} attachments');
     }
+    
+    // Detect URLs in query
+    final urlsInQuery = _extractUrls(query);
+    if (urlsInQuery.isNotEmpty) {
+      print('🔗 Detected ${urlsInQuery.length} URL(s) in query:');
+      for (final url in urlsInQuery) {
+        print('   - $url');
+      }
+    }
+    
     print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     _totalSearches++;

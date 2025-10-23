@@ -109,6 +109,14 @@ class LLMSettingsService {
 
   // Ollama Settings
   Future<bool> setOllamaBaseUrl(String baseUrl) async {
+    final trimmed = baseUrl.trim();
+    if (trimmed.isEmpty) {
+      final success = await _settingsService.removeSetting(_ollamaBaseUrlKey);
+      if (success) {
+        await _reinitializeProviders();
+      }
+      return success;
+    }
     final normalized = _normalizeBaseUrl(baseUrl);
     final success = await _settingsService.setCustomSetting(_ollamaBaseUrlKey, normalized);
     if (success) {
@@ -117,15 +125,16 @@ class LLMSettingsService {
     return success;
   }
 
-  String getOllamaBaseUrl() {
-    final url = _settingsService.getCustomSetting<String>(_ollamaBaseUrlKey, Ollama.defaultBaseUrl) ?? Ollama.defaultBaseUrl;
+  String? getOllamaBaseUrl() {
+    final url = _settingsService.getCustomSetting<String>(_ollamaBaseUrlKey, null);
+    if (url == null || url.trim().isEmpty) return null;
     return _normalizeBaseUrl(url);
   }
 
-  // Normalize to ensure scheme is present
+  /// Normalize base URL to ensure it has a proper HTTP/HTTPS scheme
   String _normalizeBaseUrl(String url) {
     final trimmed = url.trim();
-    if (trimmed.isEmpty) return Ollama.defaultBaseUrl;
+    if (trimmed.isEmpty) return '';
     if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
     return 'http://$trimmed';
   }
@@ -325,7 +334,7 @@ class LLMSettingsService {
 
   // Check if any provider is configured
   bool hasAnyConfiguredProvider() {
-    return hasOpenAIApiKey() || hasGoogleApiKey() || getOllamaBaseUrl().isNotEmpty || hasOpenRouterApiKey() || hasAnthropicApiKey();
+    return hasOpenAIApiKey() || hasGoogleApiKey() || _settingsService.getCustomSetting<String>(_ollamaBaseUrlKey, null) != null || hasOpenRouterApiKey() || hasAnthropicApiKey();
   }
 
   // Get provider display names
@@ -341,7 +350,7 @@ class LLMSettingsService {
   Map<LLMProviderType, bool> getProviderStatus() => {
     LLMProviderType.openai: hasOpenAIApiKey(),
     LLMProviderType.google: hasGoogleApiKey(),
-    LLMProviderType.ollama: getOllamaBaseUrl().isNotEmpty,
+    LLMProviderType.ollama: _settingsService.getCustomSetting<String>(_ollamaBaseUrlKey, null) != null,
     LLMProviderType.openrouter: hasOpenRouterApiKey(),
     LLMProviderType.anthropic: hasAnthropicApiKey(),
   };

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/gestures.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
@@ -51,6 +52,7 @@ class _MessageBoxState extends State<MessageBox>
   void initState() {
     MediaKit.ensureInitialized();
     super.initState();
+    
     _tabController = TabController(
       length: _getTabCount(), 
       vsync: this,
@@ -367,6 +369,15 @@ ${_currentMessage.sources.map((source) => '${source.title}\n${source.domain}\n${
     }
   }
 
+  Future<void> _copyQueryToClipboard() async {
+    await Clipboard.setData(ClipboardData(text: _currentMessage.query));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Query copied to clipboard')),
+      );
+    }
+  }
+
   Future<void> _shareContent() async {
     try {
       final content = '''
@@ -481,6 +492,85 @@ ${_currentMessage.sources.map((s) => '- ${s.title}: ${s.url}').join('\n')}
         await _voiceService.speak(textToSpeak);
       }
     }
+  }
+
+  Future<void> _handleUrlTap(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to open URL: $e')),
+        );
+      }
+    }
+  }
+
+  TextSpan _buildClickableTextSpan(ColorScheme colorScheme) {
+    final text = _currentMessage.query;
+    final List<InlineSpan> spans = [];
+    
+    // Pattern to match URLs only
+    final pattern = RegExp(
+      r'https?://[^\s]+',
+      caseSensitive: false,
+    );
+    
+    int lastMatchEnd = 0;
+
+    for (final match in pattern.allMatches(text)) {
+      // Add text before the URL
+      if (match.start > lastMatchEnd) {
+        spans.add(TextSpan(
+          text: text.substring(lastMatchEnd, match.start),
+          style: TextStyle(
+            color: colorScheme.onSurface,
+            fontSize: widget.isFirstMessage ? 32 : 24,
+            fontWeight: FontWeight.w600,
+          ),
+        ));
+      }
+
+      final matchedText = match.group(0)!;
+      
+      // Add clickable URL span
+      spans.add(TextSpan(
+        text: matchedText,
+        style: TextStyle(
+          color: const Color(0xFF00B4A6),
+          fontSize: widget.isFirstMessage ? 32 : 24,
+          fontWeight: FontWeight.w600,
+          decoration: TextDecoration.underline,
+        ),
+        recognizer: TapGestureRecognizer()..onTap = () => _handleUrlTap(matchedText),
+      ));
+
+      lastMatchEnd = match.end;
+    }
+
+    // Add remaining text
+    if (lastMatchEnd < text.length) {
+      spans.add(TextSpan(
+        text: text.substring(lastMatchEnd),
+        style: TextStyle(
+          color: colorScheme.onSurface,
+          fontSize: widget.isFirstMessage ? 32 : 24,
+          fontWeight: FontWeight.w600,
+        ),
+      ));
+    }
+
+    return TextSpan(
+      style: TextStyle(
+        color: colorScheme.onSurface,
+        fontSize: widget.isFirstMessage ? 32 : 24,
+        fontWeight: FontWeight.w600,
+      ),
+      children: spans.isEmpty ? [TextSpan(text: text)] : spans,
+    );
   }
 
   void _showImageModal(int initialIndex) {
@@ -785,20 +875,22 @@ ${_currentMessage.sources.map((s) => '- ${s.title}: ${s.url}').join('\n')}
                   Row(
                     children: [
                       Expanded(
-                        child: Text(
-                          _currentMessage.query,
-                          style: TextStyle(
-                            color: colorScheme.onSurface,
-                            fontSize: widget.isFirstMessage ? 32 : 24,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        child: RichText(
+                          text: _buildClickableTextSpan(colorScheme),
                         ),
                       ),
                       if (_currentMessage.generationState == MessageGenerationState.completed) ...[
                         IconButton(
+                          icon: Icon(Icons.content_copy_outlined, color: colorScheme.onSurfaceVariant),
+                          onPressed: _copyQueryToClipboard,
+                          tooltip: 'Copy query',
+                          iconSize: 20,
+                        ),
+                        IconButton(
                           icon: Icon(Icons.edit_outlined, color: colorScheme.onSurfaceVariant),
                           onPressed: _startEditingQuery,
                           tooltip: 'Edit query',
+                          iconSize: 20,
                         ),
                       ],
                     ],

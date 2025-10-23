@@ -48,6 +48,7 @@ AVOID:
     String query,
     List<ContextChunk> contextChunks, {
     String? attachmentContext,
+    bool hasUserProvidedUrls = false,
   }) {
     final buffer = StringBuffer();
 
@@ -105,6 +106,13 @@ AVOID:
     buffer.writeln('QUESTION: $query\n');
     buffer.writeln('INSTRUCTIONS:');
     buffer.writeln('Write a comprehensive answer synthesizing the sources above.');
+    
+    if (hasUserProvidedUrls) {
+      buffer.writeln('- IMPORTANT: The user has provided specific URL(s) in their query. Prioritize content from those URLs (source [1]) in your answer.');
+      buffer.writeln('- Focus primarily on information from the user-specified URL(s)');
+      buffer.writeln('- Use other sources only to supplement or provide additional context');
+    }
+    
     buffer.writeln('- Start immediately with the core answer');
     buffer.writeln('- Cite sources [1], [2] at sentence ends');
     buffer.writeln('- Write in flowing paragraphs, not lists');
@@ -216,6 +224,7 @@ AVOID:
     String query,
     List<ContextChunk> contextChunks, {
     String? attachmentContext,
+    bool hasUserProvidedUrls = false,
   }) {
     final queryLower = query.toLowerCase();
     
@@ -224,7 +233,7 @@ AVOID:
       'pros and cons', 'advantages', 'disadvantages'
     ];
     if (comparativeKeywords.any((kw) => queryLower.contains(kw))) {
-      return _createComparativePrompt(query, contextChunks, attachmentContext);
+      return _createComparativePrompt(query, contextChunks, attachmentContext, hasUserProvidedUrls);
     }
     
     final technicalKeywords = [
@@ -232,16 +241,17 @@ AVOID:
       'algorithm', 'specification', 'api', 'protocol'
     ];
     if (technicalKeywords.any((kw) => queryLower.contains(kw))) {
-      return _createTechnicalPrompt(query, contextChunks, attachmentContext);
+      return _createTechnicalPrompt(query, contextChunks, attachmentContext, hasUserProvidedUrls);
     }
     
-    return createUserPrompt(query, contextChunks, attachmentContext: attachmentContext);
+    return createUserPrompt(query, contextChunks, attachmentContext: attachmentContext, hasUserProvidedUrls: hasUserProvidedUrls);
   }
 
   String _createComparativePrompt(
     String query,
     List<ContextChunk> contextChunks,
     String? attachmentContext,
+    bool hasUserProvidedUrls,
   ) {
     final buffer = StringBuffer();
     
@@ -283,6 +293,9 @@ AVOID:
     buffer.writeln('---\n');
     buffer.writeln('COMPARATIVE QUESTION: $query\n');
     buffer.writeln('INSTRUCTIONS:');
+    if (hasUserProvidedUrls) {
+      buffer.writeln('- IMPORTANT: The user has provided specific URL(s). Prioritize content from those URLs (source [1]).');
+    }
     buffer.writeln('- Present each perspective fairly with citations');
     buffer.writeln('- Highlight key differences and similarities');
     buffer.writeln('- Synthesize into balanced analysis');
@@ -295,6 +308,7 @@ AVOID:
     String query,
     List<ContextChunk> contextChunks,
     String? attachmentContext,
+    bool hasUserProvidedUrls,
   ) {
     final buffer = StringBuffer();
     
@@ -336,6 +350,9 @@ AVOID:
     buffer.writeln('---\n');
     buffer.writeln('TECHNICAL QUESTION: $query\n');
     buffer.writeln('INSTRUCTIONS:');
+    if (hasUserProvidedUrls) {
+      buffer.writeln('- IMPORTANT: The user has provided specific URL(s). Prioritize content from those URLs (source [1]).');
+    }
     buffer.writeln('- Use precise terminology from sources');
     buffer.writeln('- Include specific details and specifications');
     buffer.writeln('- Explain concepts clearly without oversimplifying');
