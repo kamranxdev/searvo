@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:searvo/core/routing/app_router.dart';
 import 'package:searvo/core/theme/theme.dart';
-import 'package:searvo/features/search/widgets/search_box.dart' show SearchBox, SearchMode;
+import 'package:searvo/features/search/widgets/search_box.dart' show SearchBox;
+import 'package:searvo/features/search/models/search_mode.dart';
 import 'package:searvo/features/search/services/search_service.dart';
 import 'package:searvo/features/settings/services/settings_service.dart';
-import 'package:searvo/shared/widgets/attachment_input_widget.dart';
+import 'package:searvo/common/widgets/attachment_input_widget.dart';
+import 'package:searvo/core/di/injection_container.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 // Home screen content widget
@@ -18,9 +20,10 @@ class SearvoHomeContent extends StatefulWidget {
 class _SearvoHomeContentState extends State<SearvoHomeContent> {
   final TextEditingController _searchController = TextEditingController();
   final List<AttachmentData> _attachments = [];
-  final SettingsService _settingsService = SettingsService();
-  final SearchService _searchService = SearchService();
-  
+  final SettingsService _settingsService =
+      SettingsService(); // Consider injecting this too
+  final SearchService _searchService = sl<SearchService>();
+
   bool _isLoading = false;
   SearchMode _currentSearchMode = SearchMode.search;
 
@@ -62,7 +65,7 @@ class _SearvoHomeContentState extends State<SearvoHomeContent> {
       // Navigate to search results using AppRouter to preserve sidebar
       if (mounted) {
         AppRouter.goToSearchResults(
-          context, 
+          context,
           query,
           searchMode: _currentSearchMode,
         );
@@ -98,7 +101,9 @@ class _SearvoHomeContentState extends State<SearvoHomeContent> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Unknown website "@$key". Add it in Settings > Website Mappings.'),
+            content: Text(
+              'Unknown website "@$key". Add it in Settings > Website Mappings.',
+            ),
             backgroundColor: AppThemeConfig.errorColor,
           ),
         );
@@ -110,9 +115,14 @@ class _SearvoHomeContentState extends State<SearvoHomeContent> {
     final searchUrlTemplate = mapping['searchUrl'];
 
     String urlToOpen;
-    if (searchTerm.isNotEmpty && searchUrlTemplate != null && searchUrlTemplate.isNotEmpty) {
+    if (searchTerm.isNotEmpty &&
+        searchUrlTemplate != null &&
+        searchUrlTemplate.isNotEmpty) {
       // Use search URL with query
-      urlToOpen = searchUrlTemplate.replaceAll('{query}', Uri.encodeComponent(searchTerm));
+      urlToOpen = searchUrlTemplate.replaceAll(
+        '{query}',
+        Uri.encodeComponent(searchTerm),
+      );
     } else {
       // Use base URL
       urlToOpen = baseUrl;
@@ -213,13 +223,13 @@ class _SearvoHomeContentState extends State<SearvoHomeContent> {
   Widget build(BuildContext context) {
     final colorScheme = context.colorScheme;
     final screenSize = MediaQuery.of(context).size;
-    
+
     return LayoutBuilder(
       builder: (context, constraints) {
         // Define breakpoint for mobile devices
         const double mobileBreakpoint = 768;
         final bool isMobile = constraints.maxWidth < mobileBreakpoint;
-        
+
         if (isMobile) {
           // Mobile Layout: Title centered, Search box at bottom
           return Stack(
@@ -240,10 +250,10 @@ class _SearvoHomeContentState extends State<SearvoHomeContent> {
                   ),
                 ),
               ),
-              
+
               // Search Box at bottom
               Positioned(
-                bottom: 0,
+                bottom: 75,
                 left: 0,
                 right: 0,
                 child: Container(
@@ -253,34 +263,86 @@ class _SearvoHomeContentState extends State<SearvoHomeContent> {
                     bottom: MediaQuery.of(context).padding.bottom + 16,
                     top: 16,
                   ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface,
-                    boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 20,
-                          offset: const Offset(0, -4),
+                  child: _isLoading
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const CircularProgressIndicator(
+                                color: AppThemeConfig.primaryColor,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Searching...',
+                                style: TextStyle(
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : SearchBox(
+                          controller: _searchController,
+                          onSend: _onSearchSubmit,
+                          onAttachmentsChanged: _onAttachmentsChanged,
+                          onAttachmentAdded: _onAttachmentAdded,
+                          onAttachmentError: _onAttachmentError,
+                          onSearchModeChanged: (mode) {
+                            setState(() {
+                              _currentSearchMode = mode;
+                            });
+                          },
                         ),
-                      ],
+                ),
+              ),
+            ],
+          );
+        } else {
+          // Desktop/Web Layout: Original positioning
+          return Stack(
+            children: [
+              // Title positioned at specific location
+              Positioned(
+                top: screenSize.height * 0.35, // 35% from top
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Text(
+                    'Searvo A!',
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
+                      fontFamily: 'Goldman',
+                      fontSize: 44,
+                      fontWeight: FontWeight.w300,
+                      letterSpacing: -0.5,
                     ),
+                  ),
+                ),
+              ),
+
+              // Search Box positioned below title
+              Positioned(
+                top: screenSize.height * 0.5, // 50% from top
+                left: 32,
+                right: 32,
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 700),
                     child: _isLoading
-                        ? Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const CircularProgressIndicator(
-                                  color: AppThemeConfig.primaryColor,
+                        ? Column(
+                            children: [
+                              const CircularProgressIndicator(
+                                color: AppThemeConfig.primaryColor,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Searching...',
+                                style: TextStyle(
+                                  color: colorScheme.onSurfaceVariant,
                                 ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'Searching...',
-                                  style: TextStyle(
-                                    color: colorScheme.onSurfaceVariant,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
+                              ),
+                            ],
                           )
                         : SearchBox(
                             controller: _searchController,
@@ -296,74 +358,12 @@ class _SearvoHomeContentState extends State<SearvoHomeContent> {
                           ),
                   ),
                 ),
-              ],
-            );
-          } else {
-            // Desktop/Web Layout: Original positioning
-            return Stack(
-              children: [
-                // Title positioned at specific location
-                Positioned(
-                  top: screenSize.height * 0.35, // 35% from top
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Text(
-                      'Searvo A!',
-                      style: TextStyle(
-                        color: colorScheme.onSurface,
-                        fontFamily: 'Goldman',
-                        fontSize: 44,
-                        fontWeight: FontWeight.w300,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                  ),
-                ),
-                
-                // Search Box positioned below title
-                Positioned(
-                  top: screenSize.height * 0.5, // 50% from top
-                  left: 32,
-                  right: 32,
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 700),
-                      child: _isLoading
-                          ? Column(
-                              children: [
-                                const CircularProgressIndicator(
-                                  color: AppThemeConfig.primaryColor,
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'Searching...',
-                                  style: TextStyle(
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            )
-                          : SearchBox(
-                              controller: _searchController,
-                              onSend: _onSearchSubmit,
-                              onAttachmentsChanged: _onAttachmentsChanged,
-                              onAttachmentAdded: _onAttachmentAdded,
-                              onAttachmentError: _onAttachmentError,
-                              onSearchModeChanged: (mode) {
-                                setState(() {
-                                  _currentSearchMode = mode;
-                                });
-                              },
-                            ),
-                    ),
-                  ),
-                ),
-              ],
-            );
-          }
-        },
-      );
+              ),
+            ],
+          );
+        }
+      },
+    );
   }
 
   @override
@@ -372,4 +372,3 @@ class _SearvoHomeContentState extends State<SearvoHomeContent> {
     super.dispose();
   }
 }
-

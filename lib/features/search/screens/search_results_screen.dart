@@ -1,26 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:searvo/core/theme/theme.dart';
+import 'package:searvo/features/search/theme/search_theme.dart';
 import 'package:searvo/features/search/widgets/follow_up_search_box.dart';
 import 'package:searvo/features/search/widgets/message_box.dart';
-import 'package:searvo/features/search/widgets/search_box.dart';
-import 'package:searvo/features/history/utils/conversation_auto_saver.dart';
-import 'package:searvo/features/history/providers/conversation_history_provider.dart';
-import 'package:searvo/shared/widgets/attachment_input_widget.dart';
+
+import 'package:searvo/features/search/models/search_mode.dart';
+import 'package:searvo/features/history/services/conversation_sync_service.dart';
+import 'package:searvo/common/widgets/attachment_input_widget.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/message_branch_model.dart';
-import '../providers/search_provider.dart';
+import '../bloc/search_bloc.dart';
+import '../bloc/search_event.dart';
+import '../bloc/search_state.dart';
 
 class SearchResultsContent extends StatefulWidget {
   final String query;
   final SearchMode searchMode;
   final List<dynamic>? initialAttachments;
   final String? conversationId;
-  
+
   const SearchResultsContent({
     super.key,
     required this.query,
@@ -36,33 +39,25 @@ class SearchResultsContent extends StatefulWidget {
 class _SearchResultsContentState extends State<SearchResultsContent> {
   final TextEditingController _followUpController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeAndSearch();
-      _setupAutoSave();
     });
   }
 
-  void _setupAutoSave() {
-    final searchProvider = context.read<SearchProvider>();
-    
-    searchProvider.onConversationUpdate = () {
-      ConversationAutoSaver.autoSave(context);
-    };
-  }
-
   Future<void> _initializeAndSearch() async {
-    final searchProvider = context.read<SearchProvider>();
+    final searchBloc = context.read<SearchBloc>();
     try {
-      await searchProvider.initialize();
-      
+      searchBloc.add(const SearchEvent.initialize());
+
       if (widget.conversationId != null) {
         // Check if conversation is already loaded in memory
-        if (searchProvider.currentConversationId == widget.conversationId && 
-            searchProvider.hasActiveConversation) {
+        final currentState = searchBloc.state;
+        if (currentState.conversationId == widget.conversationId &&
+            currentState.hasActiveConversation) {
           // Conversation already loaded in memory
           print('📌 Conversation already loaded: ${widget.conversationId}');
         } else {
@@ -71,11 +66,13 @@ class _SearchResultsContentState extends State<SearchResultsContent> {
         }
       } else {
         // New search - no conversation ID provided
-        searchProvider.clearMessages();
-        await searchProvider.performInitialSearch(
-          widget.query,
-          widget.searchMode,
-          widget.initialAttachments,
+        searchBloc.add(const SearchEvent.clearMessages());
+        searchBloc.add(
+          SearchEvent.performInitialSearch(
+            query: widget.query,
+            searchMode: widget.searchMode,
+            attachments: widget.initialAttachments,
+          ),
         );
       }
     } catch (e) {
@@ -85,51 +82,61 @@ class _SearchResultsContentState extends State<SearchResultsContent> {
   }
 
   Future<void> _loadConversationFromDatabase() async {
-    final searchProvider = context.read<SearchProvider>();
-    
+    final searchBloc = context.read<SearchBloc>();
+    final syncService = ConversationSyncService();
+
     try {
       print('📥 Loading conversation from database: ${widget.conversationId}');
-      
-      // Import the history provider
-      final historyProvider = context.read<ConversationHistoryProvider>();
-      
+
       // Get the conversation from database by exact UUID match
-      final conversation = await historyProvider.getConversation(widget.conversationId!);
-      
+      final conversation = await syncService.getConversationById(
+        widget.conversationId!,
+      );
+
       if (conversation != null) {
         // Convert stored messages back to branches
-        final branches = historyProvider.convertToBranches(conversation.messages);
-        
-        // Load conversation into SearchProvider
-        searchProvider.loadConversation(
-          conversationId: conversation.conversationId,
-          title: conversation.title,
-          branches: branches,
+        final branches = syncService.convertMessagesToBranches(
+          conversation.messages,
         );
-        
+
+        // Load conversation into SearchBloc
+        searchBloc.add(
+          SearchEvent.loadConversation(
+            conversationId: conversation.conversationId,
+            title: conversation.title,
+            branches: branches,
+          ),
+        );
+
         print('✅ Conversation loaded successfully: ${conversation.title}');
       } else {
         // Conversation not found in database
         // This could happen if conversation was deleted or never saved
         // Perform a new search with the UUID from URL
-        print('⚠️ Conversation not found in database, performing new search with UUID');
-        searchProvider.clearMessages();
-        await searchProvider.performInitialSearch(
-          widget.query,
-          widget.searchMode,
-          widget.initialAttachments,
-          conversationId: widget.conversationId, // Use UUID from URL
+        print(
+          '⚠️ Conversation not found in database, performing new search with UUID',
+        );
+        searchBloc.add(const SearchEvent.clearMessages());
+        searchBloc.add(
+          SearchEvent.performInitialSearch(
+            query: widget.query,
+            searchMode: widget.searchMode,
+            attachments: widget.initialAttachments,
+            conversationId: widget.conversationId, // Use UUID from URL
+          ),
         );
       }
     } catch (e) {
       print('❌ Failed to load conversation from database: $e');
       // Fall back to new search with UUID from URL
-      searchProvider.clearMessages();
-      await searchProvider.performInitialSearch(
-        widget.query,
-        widget.searchMode,
-        widget.initialAttachments,
-        conversationId: widget.conversationId, // Use UUID from URL
+      searchBloc.add(const SearchEvent.clearMessages());
+      searchBloc.add(
+        SearchEvent.performInitialSearch(
+          query: widget.query,
+          searchMode: widget.searchMode,
+          attachments: widget.initialAttachments,
+          conversationId: widget.conversationId, // Use UUID from URL
+        ),
       );
     }
   }
@@ -153,9 +160,11 @@ class _SearchResultsContentState extends State<SearchResultsContent> {
   }
 
   void _addNewMessage(String query, List<AttachmentData>? attachments) async {
-    final searchProvider = context.read<SearchProvider>();
+    final searchBloc = context.read<SearchBloc>();
     try {
-      await searchProvider.addNewMessage(query, attachments);
+      searchBloc.add(
+        SearchEvent.addNewMessage(query: query, attachments: attachments),
+      );
       _scrollToBottom();
     } catch (e) {
       _showErrorMessage('Failed to send message: $e');
@@ -183,26 +192,30 @@ class _SearchResultsContentState extends State<SearchResultsContent> {
   }
 
   void _onRewriteMessage(int index, MessageBranchManager branchManager) async {
-    final searchProvider = context.read<SearchProvider>();
+    final searchBloc = context.read<SearchBloc>();
     try {
-      await searchProvider.rewriteMessage(index);
+      searchBloc.add(SearchEvent.rewriteMessage(index: index));
     } catch (e) {
       _showErrorMessage('Failed to rewrite message: $e');
     }
   }
 
-  void _onEditQuery(int index, MessageBranchManager branchManager, String newQuery) async {
-    final searchProvider = context.read<SearchProvider>();
+  void _onEditQuery(
+    int index,
+    MessageBranchManager branchManager,
+    String newQuery,
+  ) async {
+    final searchBloc = context.read<SearchBloc>();
     try {
-      await searchProvider.editQuery(index, newQuery);
+      searchBloc.add(SearchEvent.editQuery(index: index, newQuery: newQuery));
     } catch (e) {
       _showErrorMessage('Failed to edit query: $e');
     }
   }
 
   Future<void> _exportConversation(String format) async {
-    final searchProvider = context.read<SearchProvider>();
-    final messageBranches = searchProvider.messageBranches;
+    final searchBloc = context.read<SearchBloc>();
+    final messageBranches = searchBloc.state.messageBranches;
     String content = '';
 
     for (var branch in messageBranches) {
@@ -231,9 +244,7 @@ class _SearchResultsContentState extends State<SearchResultsContent> {
     pdf.addPage(
       pw.MultiPage(
         build: (pw.Context context) {
-          return [
-            pw.Text(content),
-          ];
+          return [pw.Text(content)];
         },
       ),
     );
@@ -245,73 +256,75 @@ class _SearchResultsContentState extends State<SearchResultsContent> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<SearchProvider>(
-      builder: (context, searchProvider, child) {
-        final messageBranches = searchProvider.messageBranches;
-        final isProcessing = searchProvider.isProcessing;
+    return BlocBuilder<SearchBloc, SearchState>(
+      builder: (context, state) {
+        final messageBranches = state.messageBranches;
+        final isProcessing = state.isProcessing;
 
-        final colorScheme = context.colorScheme;
+        final searchColors = SearchTheme.colors(context);
         final screenWidth = MediaQuery.of(context).size.width;
         final isLargeScreen = screenWidth >= 1024;
-        final searchBoxHeight = 120.0; // Approximate height for the search box area
-        
+        final searchBoxHeight =
+            120.0; // Approximate height for the search box area
+
         return Stack(
           children: [
             // Scrollable content area - full screen
             CustomScrollView(
               controller: _scrollController,
               slivers: [
-                SliverToBoxAdapter(
-                  child: Center(
-                    child: Container(
-                      width: isLargeScreen ? 896 : double.infinity,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isLargeScreen ? 0 : 0,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ...messageBranches.asMap().entries.map((entry) {
-                            final index = entry.key;
-                            final branchManager = entry.value;
-                            
-                            return Column(
-                              children: [
-                                if (index > 0) ...[
-                                  const SizedBox(height: 24),
-                                  Container(
-                                    height: 1,
-                                    color: colorScheme.outline,
-                                    margin: const EdgeInsets.symmetric(horizontal: 20),
-                                  ),
-                                  const SizedBox(height: 24),
-                                ],
-                                MessageBox(
-                                  branchManager: branchManager,
-                                  isFirstMessage: index == 0,
-                                  onRelatedQuestionTap: (question) {
-                                    _followUpController.text = question;
-                                    _scrollToBottom();
-                                  },
-                                  onRewrite: () => _onRewriteMessage(index, branchManager),
-                                  onEditQuery: (newQuery) => _onEditQuery(index, branchManager, newQuery),
-                                  onBranchChanged: () {
-                                    setState(() {});
-                                  },
+                SliverList.builder(
+                  itemCount: messageBranches.length + 1,
+                  itemBuilder: (context, index) {
+                    if (index == messageBranches.length) {
+                      return SizedBox(height: searchBoxHeight + 40);
+                    }
+
+                    final branchManager = messageBranches[index];
+
+                    return Center(
+                      child: Container(
+                        width: isLargeScreen ? 896 : double.infinity,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isLargeScreen ? 0 : 0,
+                        ),
+                        child: Column(
+                          children: [
+                            if (index > 0) ...[
+                              const SizedBox(height: 24),
+                              Container(
+                                height: 1,
+                                color: searchColors.divider,
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 20,
                                 ),
-                                if (index == messageBranches.length - 1)
-                                  SizedBox(height: searchBoxHeight + 40),
-                              ],
-                            );
-                          }).toList(),
-                        ],
+                              ),
+                              const SizedBox(height: 24),
+                            ],
+                            MessageBox(
+                              branchManager: branchManager,
+                              isFirstMessage: index == 0,
+                              onRelatedQuestionTap: (question) {
+                                _followUpController.text = question;
+                                _scrollToBottom();
+                              },
+                              onRewrite: () =>
+                                  _onRewriteMessage(index, branchManager),
+                              onEditQuery: (newQuery) =>
+                                  _onEditQuery(index, branchManager, newQuery),
+                              onBranchChanged: () {
+                                setState(() {});
+                              },
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ],
             ),
-            
+
             // Floating follow-up search box at bottom (overlay)
             Positioned(
               left: 0,
@@ -329,9 +342,9 @@ class _SearchResultsContentState extends State<SearchResultsContent> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      colorScheme.surface.withOpacity(0.0),
-                      colorScheme.surface.withOpacity(0.95),
-                      colorScheme.surface,
+                      searchColors.background.withOpacity(0.0),
+                      searchColors.background.withOpacity(0.95),
+                      searchColors.background,
                     ],
                     stops: const [0.0, 0.5, 1.0],
                   ),
@@ -355,11 +368,11 @@ class _SearchResultsContentState extends State<SearchResultsContent> {
               right: 20,
               child: Container(
                 decoration: BoxDecoration(
-                  color: colorScheme.surface.withOpacity(0.9),
+                  color: searchColors.surface.withOpacity(0.9),
                   borderRadius: BorderRadius.circular(8),
                   boxShadow: [
                     BoxShadow(
-                      color: colorScheme.shadow.withOpacity(0.1),
+                      color: searchColors.text.withOpacity(0.1),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -373,14 +386,20 @@ class _SearchResultsContentState extends State<SearchResultsContent> {
                       onSelected: _exportConversation,
                       itemBuilder: (context) => const [
                         PopupMenuItem(value: 'MD', child: Text('Export as MD')),
-                        PopupMenuItem(value: 'PDF', child: Text('Export as PDF')),
-                        PopupMenuItem(value: 'TXT', child: Text('Export as TXT')),
+                        PopupMenuItem(
+                          value: 'PDF',
+                          child: Text('Export as PDF'),
+                        ),
+                        PopupMenuItem(
+                          value: 'TXT',
+                          child: Text('Export as TXT'),
+                        ),
                       ],
                       child: Padding(
                         padding: const EdgeInsets.all(8),
                         child: Icon(
                           Icons.file_download_outlined,
-                          color: colorScheme.onSurface,
+                          color: searchColors.text,
                         ),
                       ),
                     ),
@@ -399,7 +418,7 @@ class SearchResultsScreen extends StatefulWidget {
   final String query;
   final List<dynamic>? initialAttachments;
   final String? conversationId;
-  
+
   const SearchResultsScreen({
     super.key,
     required this.query,
@@ -414,10 +433,10 @@ class SearchResultsScreen extends StatefulWidget {
 class _SearchResultsScreenState extends State<SearchResultsScreen> {
   @override
   Widget build(BuildContext context) {
-    final colorScheme = context.colorScheme;
-    
+    final searchColors = SearchTheme.colors(context);
+
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: searchColors.background,
       body: SearchResultsContent(
         query: widget.query,
         initialAttachments: widget.initialAttachments,

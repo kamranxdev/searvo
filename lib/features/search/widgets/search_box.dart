@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:searvo/core/theme/theme.dart';
+import 'package:searvo/features/search/theme/search_theme.dart';
 import 'package:searvo/features/settings/services/settings_service.dart';
 import 'package:searvo/features/voice/widgets/voice_input_widget.dart';
-import 'package:searvo/shared/widgets/rich_text_editing_controller.dart';
-import 'package:searvo/shared/widgets/attachment_input_widget.dart';
+import 'package:searvo/common/widgets/rich_text_editing_controller.dart';
+import 'package:searvo/common/widgets/attachment_input_widget.dart';
 import 'package:searvo/features/search/services/autocomplete_service.dart';
 import 'dart:ui';
 import 'search_box_mode_tooltip.dart';
 
-enum SearchMode { search, research, study }
+import '../models/search_mode.dart';
 
 class SearchBox extends StatefulWidget {
   final TextEditingController controller;
@@ -48,26 +48,33 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
   FocusNode _textFieldFocusNode = FocusNode();
   List<AttachmentData> _attachments = [];
   bool _isSettingTextProgrammatically = false;
+  // Stores the original text typed by the user while navigating suggestions
+  String? _navigatingOriginalText;
+
   final SettingsService _settingsService = SettingsService();
   Map<String, Map<String, String>> _websiteMappings = {};
   late RichTextEditingController _mentionController;
-  
+
   // Autocomplete service
   late AutocompleteService _autocompleteService;
   List<AutocompleteSuggestion> _dynamicSuggestions = [];
   bool _isLoadingSuggestions = false;
-  
+
+  String get _effectiveQuery =>
+      _navigatingOriginalText ?? widget.controller.text;
+
   // Animation controllers
   late AnimationController _suggestionsAnimationController;
   late Animation<double> _suggestionsHeightAnimation;
   late Animation<double> _suggestionsOpacityAnimation;
   late Animation<double> _containerElevationAnimation;
-  
+
   // Use GlobalKey to access AttachmentInputWidget
-  final GlobalKey<AttachmentInputWidgetState> _attachmentWidgetKey = GlobalKey<AttachmentInputWidgetState>();
+  final GlobalKey<AttachmentInputWidgetState> _attachmentWidgetKey =
+      GlobalKey<AttachmentInputWidgetState>();
 
   SearchMode get selectedMode => _selectedMode;
-  
+
   set selectedMode(SearchMode mode) {
     setState(() {
       _selectedMode = mode;
@@ -76,9 +83,9 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
   }
 
   DetectedType _getCurrentInputType() {
-    final text = widget.controller.text;
+    final text = _effectiveQuery;
     if (text.isEmpty) return DetectedType.plainText;
-    
+
     if (text.startsWith('@')) {
       return DetectedType.mention;
     } else if (text.startsWith('http://') || text.startsWith('https://')) {
@@ -88,13 +95,13 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
   }
 
   List<String> get _filteredSuggestions {
-    final text = widget.controller.text;
+    final text = _effectiveQuery;
     final inputType = _getCurrentInputType();
-    
+
     switch (inputType) {
       case DetectedType.mention:
         final mentionQuery = text.substring(1).toLowerCase();
-        
+
         if (mentionQuery.isEmpty) {
           // Show all available @mentions
           return _websiteMappings.keys.map((key) => '@$key').toList();
@@ -105,11 +112,11 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
               .map((key) => '@$key')
               .toList();
         }
-        
+
       case DetectedType.url:
         // Don't show suggestions for URLs
         return [];
-        
+
       case DetectedType.plainText:
         // Return dynamic suggestions from autocomplete service
         return _dynamicSuggestions.map((s) => s.text).toList();
@@ -119,25 +126,25 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize website mappings
     _websiteMappings = _settingsService.getWebsiteMappings();
-    
+
     // Initialize autocomplete service
     _autocompleteService = AutocompleteService(
       baseUrl: 'http://localhost:4000', // You can make this configurable
     );
-    
+
     // Fetch trending suggestions for empty state
     _fetchTrendingSuggestions();
-    
+
     // Initialize mention controller with valid mentions
     _mentionController = RichTextEditingController(
       validMentions: _websiteMappings.keys.toSet(),
       mentionColor: const Color(0xFF00B4A6), // AppTheme.primaryColor equivalent
       urlColor: const Color(0xFF00B4A6), // Same teal color for URLs
     );
-    
+
     // Sync with the provided controller
     _mentionController.text = widget.controller.text;
     _mentionController.addListener(() {
@@ -146,71 +153,70 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
         widget.controller.selection = _mentionController.selection;
       }
     });
-    
+
     widget.controller.addListener(() {
       if (widget.controller.text != _mentionController.text) {
         _mentionController.text = widget.controller.text;
         _mentionController.selection = widget.controller.selection;
       }
     });
-    
+
     // Initialize animation controller
     _suggestionsAnimationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    
+
     // Initialize animations
-    _suggestionsHeightAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _suggestionsAnimationController,
-      curve: Curves.easeOutCubic,
-    ));
-    
-    _suggestionsOpacityAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _suggestionsAnimationController,
-      curve: Interval(0.3, 1.0, curve: Curves.easeOut),
-    ));
-    
-    _containerElevationAnimation = Tween<double>(
-      begin: 8.0,
-      end: 16.0,
-    ).animate(CurvedAnimation(
-      parent: _suggestionsAnimationController,
-      curve: Curves.easeOut,
-    ));
-    
+    _suggestionsHeightAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _suggestionsAnimationController,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+
+    _suggestionsOpacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _suggestionsAnimationController,
+        curve: Interval(0.3, 1.0, curve: Curves.easeOut),
+      ),
+    );
+
+    _containerElevationAnimation = Tween<double>(begin: 8.0, end: 16.0).animate(
+      CurvedAnimation(
+        parent: _suggestionsAnimationController,
+        curve: Curves.easeOut,
+      ),
+    );
+
     _textFieldFocusNode.addListener(() {
       final hasFocus = _textFieldFocusNode.hasFocus;
       final shouldShowSuggestions = hasFocus && _filteredSuggestions.isNotEmpty;
-      
+
       setState(() {
         _isTextFieldFocused = hasFocus;
         if (!_isTextFieldFocused) {
           _selectedSuggestionIndex = -1;
         }
       });
-      
+
       // Animate suggestions appearance/disappearance
-      if (shouldShowSuggestions && !_suggestionsAnimationController.isCompleted) {
+      if (shouldShowSuggestions &&
+          !_suggestionsAnimationController.isCompleted) {
         _suggestionsAnimationController.forward();
-      } else if (!shouldShowSuggestions && !_suggestionsAnimationController.isDismissed) {
+      } else if (!shouldShowSuggestions &&
+          !_suggestionsAnimationController.isDismissed) {
         _suggestionsAnimationController.reverse();
       }
     });
-    
+
     // Listen to text changes to update filtered suggestions
     _mentionController.addListener(() {
       if (_isTextFieldFocused && !_isSettingTextProgrammatically) {
         setState(() {
           _selectedSuggestionIndex = -1;
         });
-        
+
         // Fetch autocomplete suggestions for plain text
         final inputType = _getCurrentInputType();
         if (inputType == DetectedType.plainText) {
@@ -223,18 +229,30 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
             _fetchAutocompleteSuggestions(query);
           }
         }
-        
+
         // Update animation based on filtered suggestions
-        final shouldShowSuggestions = _isTextFieldFocused && _filteredSuggestions.isNotEmpty;
-        if (shouldShowSuggestions && !_suggestionsAnimationController.isCompleted) {
+        final shouldShowSuggestions =
+            _isTextFieldFocused && _filteredSuggestions.isNotEmpty;
+        if (shouldShowSuggestions &&
+            !_suggestionsAnimationController.isCompleted) {
           _suggestionsAnimationController.forward();
-        } else if (!shouldShowSuggestions && !_suggestionsAnimationController.isDismissed) {
+        } else if (!shouldShowSuggestions &&
+            !_suggestionsAnimationController.isDismissed) {
           _suggestionsAnimationController.reverse();
         }
       }
     });
   }
-  
+
+  void _updateControllerText(String text) {
+    _isSettingTextProgrammatically = true;
+    widget.controller.text = text;
+    widget.controller.selection = TextSelection.fromPosition(
+      TextPosition(offset: text.length),
+    );
+    _isSettingTextProgrammatically = false;
+  }
+
   /// Fetch trending suggestions from SearxNG
   void _fetchTrendingSuggestions() async {
     setState(() {
@@ -258,7 +276,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
       }
     }
   }
-  
+
   /// Fetch autocomplete suggestions with debouncing
   void _fetchAutocompleteSuggestions(String query) {
     if (query.trim().length < 2) {
@@ -298,17 +316,20 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
     'search': const TooltipData(
       title: 'Search',
       subtitle: 'Fast answers to everyday questions',
-      description: 'Get quick, concise answers to your questions with our AI-powered search mode.',
+      description:
+          'Get quick, concise answers to your questions with our AI-powered search mode.',
     ),
     'research': const TooltipData(
       title: 'Research',
       subtitle: 'Deep research on any topic',
-      description: 'In-depth research capabilities to help you explore complex topics thoroughly.',
+      description:
+          'In-depth research capabilities to help you explore complex topics thoroughly.',
     ),
     'study': const TooltipData(
       title: 'Study',
       subtitle: 'Step-by-step explanations and learning',
-      description: 'Interactive learning and study tools that guide you toward deeper understanding beyond quick answers.',
+      description:
+          'Interactive learning and study tools that guide you toward deeper understanding beyond quick answers.',
       badge: 'New',
     ),
   };
@@ -342,33 +363,25 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
   }
 
   Widget _buildAttachmentPill(AttachmentData attachment) {
-    final colorScheme = context.colorScheme;
-    
+    final searchColors = SearchTheme.colors(context);
+
     return Container(
       margin: const EdgeInsets.only(right: 8, bottom: 4),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: colorScheme.outline,
-          width: 1,
-        ),
+        border: Border.all(color: searchColors.border, width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            attachment.icon,
-            size: 14,
-            color: colorScheme.primary,
-          ),
+          Icon(attachment.icon, size: 14, color: searchColors.accent),
           const SizedBox(width: 6),
           Flexible(
             child: Text(
               attachment.name,
               style: TextStyle(
-                color: colorScheme.onSurface,
+                color: searchColors.text,
                 fontSize: 12,
                 fontWeight: FontWeight.w400,
               ),
@@ -378,10 +391,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
           const SizedBox(width: 6),
           Text(
             attachment.formattedSize,
-            style: TextStyle(
-              color: colorScheme.onSurfaceVariant,
-              fontSize: 10,
-            ),
+            style: TextStyle(color: searchColors.caption, fontSize: 10),
           ),
           const SizedBox(width: 6),
           GestureDetector(
@@ -390,14 +400,10 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
               width: 16,
               height: 16,
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withOpacity(0.8),
+                color: searchColors.surface.withOpacity(0.8),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
-                Icons.close,
-                size: 10,
-                color: colorScheme.onSurfaceVariant,
-              ),
+              child: Icon(Icons.close, size: 10, color: searchColors.caption),
             ),
           ),
         ],
@@ -407,14 +413,18 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
 
   void _handleKeyEvent(KeyEvent event) {
     if (!_isTextFieldFocused) return;
-    
+
     if (event is KeyDownEvent || event is KeyRepeatEvent) {
       if (event.logicalKey == LogicalKeyboardKey.enter) {
-        if (_selectedSuggestionIndex >= 0 && _selectedSuggestionIndex < _filteredSuggestions.length) {
-          final selectedSuggestion = _filteredSuggestions[_selectedSuggestionIndex];
-          _isSettingTextProgrammatically = true;
-          widget.controller.text = selectedSuggestion;
-          _isSettingTextProgrammatically = false;
+        if (_selectedSuggestionIndex >= 0 &&
+            _selectedSuggestionIndex < _filteredSuggestions.length) {
+          final selectedSuggestion =
+              _filteredSuggestions[_selectedSuggestionIndex];
+
+          // Clear navigation state as we are making a selection
+          _navigatingOriginalText = null;
+
+          _updateControllerText(selectedSuggestion);
           widget.onSuggestionTap?.call(selectedSuggestion);
           _textFieldFocusNode.unfocus();
           setState(() {
@@ -425,6 +435,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
             _textFieldFocusNode.unfocus();
             setState(() {
               _selectedSuggestionIndex = -1;
+              _navigatingOriginalText = null;
             });
             widget.onSend?.call();
           }
@@ -432,23 +443,42 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
       } else if (_filteredSuggestions.isNotEmpty) {
         if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
           setState(() {
-            if (_selectedSuggestionIndex < 0) {
+            // Start navigation if not already navigating
+            if (_selectedSuggestionIndex == -1) {
+              _navigatingOriginalText = widget.controller.text;
               _selectedSuggestionIndex = 0;
             } else {
-              _selectedSuggestionIndex = (_selectedSuggestionIndex + 1) % _filteredSuggestions.length;
+              _selectedSuggestionIndex =
+                  (_selectedSuggestionIndex + 1) % _filteredSuggestions.length;
             }
+
+            // Update text box with selected suggestion
+            final suggestion = _filteredSuggestions[_selectedSuggestionIndex];
+            _updateControllerText(suggestion);
           });
         } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
           setState(() {
-            if (_selectedSuggestionIndex < 0) {
+            // Start navigation if not already navigating
+            if (_selectedSuggestionIndex == -1) {
+              _navigatingOriginalText = widget.controller.text;
               _selectedSuggestionIndex = _filteredSuggestions.length - 1;
             } else {
-              _selectedSuggestionIndex = _selectedSuggestionIndex <= 0 
-                  ? _filteredSuggestions.length - 1 
+              _selectedSuggestionIndex = _selectedSuggestionIndex <= 0
+                  ? _filteredSuggestions.length - 1
                   : _selectedSuggestionIndex - 1;
             }
+
+            // Update text box with selected suggestion
+            final suggestion = _filteredSuggestions[_selectedSuggestionIndex];
+            _updateControllerText(suggestion);
           });
         } else if (event.logicalKey == LogicalKeyboardKey.escape) {
+          // Restore original text if we were navigating
+          if (_navigatingOriginalText != null) {
+            _updateControllerText(_navigatingOriginalText!);
+            _navigatingOriginalText = null;
+          }
+
           _textFieldFocusNode.unfocus();
           setState(() {
             _selectedSuggestionIndex = -1;
@@ -460,14 +490,14 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
 
   Widget _buildSuggestionItem(String suggestion, int index) {
     final isSelected = index == _selectedSuggestionIndex;
-    final colorScheme = context.colorScheme;
+    final searchColors = SearchTheme.colors(context);
     final isMention = suggestion.startsWith('@');
-    
+
     String displayText = suggestion;
     String? subtitle;
     IconData icon = Icons.search;
-    Color iconColor = colorScheme.onSurfaceVariant;
-    
+    Color iconColor = searchColors.caption;
+
     if (isMention) {
       final key = suggestion.substring(1);
       final mapping = _websiteMappings[key];
@@ -475,14 +505,18 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
         displayText = '@$key';
         subtitle = mapping['name'] ?? key;
         icon = Icons.link;
-        iconColor = isSelected ? colorScheme.primary : colorScheme.primary.withOpacity(0.7);
+        iconColor = isSelected
+            ? searchColors.accent
+            : searchColors.accent.withOpacity(0.7);
       }
     } else {
       // For regular suggestions, use trending_up icon
       icon = Icons.trending_up;
-      iconColor = isSelected ? colorScheme.onSurfaceVariant : colorScheme.onSurfaceVariant.withOpacity(0.7);
+      iconColor = isSelected
+          ? searchColors.caption
+          : searchColors.caption.withOpacity(0.7);
     }
-    
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeOutCubic,
@@ -498,7 +532,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
             _isSettingTextProgrammatically = true;
             widget.controller.text = suggestion;
             _isSettingTextProgrammatically = false;
-            
+
             widget.onSuggestionTap?.call(suggestion);
             setState(() {
               _selectedSuggestionIndex = -1;
@@ -513,13 +547,17 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
             margin: const EdgeInsets.only(bottom: 4),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
-              color: isSelected ? colorScheme.surfaceContainerHighest.withOpacity(0.8) : Colors.transparent,
-              border: isSelected ? Border.all(
-                color: isMention 
-                    ? colorScheme.primary.withOpacity(0.3)
-                    : colorScheme.outline,
-                width: 1,
-              ) : null,
+              color: isSelected
+                  ? searchColors.surface.withOpacity(0.8)
+                  : Colors.transparent,
+              border: isSelected
+                  ? Border.all(
+                      color: isMention
+                          ? searchColors.accent.withOpacity(0.3)
+                          : searchColors.border,
+                      width: 1,
+                    )
+                  : null,
             ),
             child: Row(
               children: [
@@ -528,7 +566,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
                   curve: Curves.easeOutCubic,
                   child: Icon(
                     icon,
-                    color: isSelected ? iconColor : colorScheme.onSurfaceVariant,
+                    color: isSelected ? iconColor : searchColors.caption,
                     size: 16,
                   ),
                 ),
@@ -541,11 +579,13 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
                         duration: const Duration(milliseconds: 200),
                         curve: Curves.easeOutCubic,
                         style: TextStyle(
-                          color: isSelected 
-                              ? colorScheme.onSurface
-                              : colorScheme.onSurfaceVariant,
+                          color: isSelected
+                              ? searchColors.text
+                              : searchColors.caption,
                           fontSize: 14,
-                          fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
+                          fontWeight: isSelected
+                              ? FontWeight.w500
+                              : FontWeight.w400,
                         ),
                         child: Text(displayText),
                       ),
@@ -554,7 +594,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
                         Text(
                           subtitle,
                           style: TextStyle(
-                            color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+                            color: searchColors.caption.withOpacity(0.6),
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
                           ),
@@ -567,9 +607,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
                   duration: const Duration(milliseconds: 200),
                   curve: Curves.easeOutCubic,
                   child: Icon(
-                    isMention 
-                        ? Icons.open_in_new 
-                        : Icons.trending_up,
+                    isMention ? Icons.open_in_new : Icons.trending_up,
                     color: isSelected ? iconColor : iconColor.withOpacity(0.5),
                     size: 16,
                   ),
@@ -584,8 +622,8 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = context.colorScheme;
-    
+    final searchColors = SearchTheme.colors(context);
+
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -597,12 +635,9 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest.withOpacity(0.95),
+                  color: searchColors.inputBackground.withOpacity(0.95),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: colorScheme.outline,
-                    width: 1,
-                  ),
+                  border: Border.all(color: searchColors.border, width: 1),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.1),
@@ -613,7 +648,10 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 40,
-                      offset: Offset(0, _containerElevationAnimation.value + 12),
+                      offset: Offset(
+                        0,
+                        _containerElevationAnimation.value + 12,
+                      ),
                       spreadRadius: 0,
                     ),
                   ],
@@ -629,13 +667,17 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Wrap(
-                              children: _attachments.map((attachment) => 
-                                _buildAttachmentPill(attachment)).toList(),
+                              children: _attachments
+                                  .map(
+                                    (attachment) =>
+                                        _buildAttachmentPill(attachment),
+                                  )
+                                  .toList(),
                             ),
                           ],
                         ),
                       ),
-                    
+
                     Focus(
                       onKeyEvent: (node, event) {
                         if (event.logicalKey == LogicalKeyboardKey.arrowDown ||
@@ -649,21 +691,17 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
                       },
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(
-                          16, 
-                          _attachments.isNotEmpty ? 8 : 16, 
-                          16, 
-                          8
+                          16,
+                          _attachments.isNotEmpty ? 8 : 16,
+                          16,
+                          8,
                         ),
                         child: TextField(
                           controller: _mentionController,
                           focusNode: _textFieldFocusNode,
                           decoration: InputDecoration(
                             hintText: 'Ask anything or @mention a website',
-                            hintStyle: TextStyle(
-                              color: colorScheme.onSurfaceVariant.withOpacity(0.6),
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
-                            ),
+                            hintStyle: SearchTheme.searchPlaceholder(context),
                             filled: false,
                             border: InputBorder.none,
                             focusedBorder: InputBorder.none,
@@ -671,10 +709,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
                             errorBorder: InputBorder.none,
                             contentPadding: EdgeInsets.zero,
                           ),
-                          style: TextStyle(
-                            color: colorScheme.onSurface,
-                            fontSize: 16,
-                          ),
+                          style: SearchTheme.searchInput(context),
                           onSubmitted: (value) {
                             if (value.trim().isNotEmpty) {
                               widget.onSend?.call();
@@ -684,7 +719,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
                         ),
                       ),
                     ),
-                    
+
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                       child: Row(
@@ -694,68 +729,74 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                  MouseRegion(
-                                    onEnter: (_) => _showTooltip('search'),
-                                    onExit: (_) => _hideTooltip(),
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          selectedMode = SearchMode.search;
-                                        });
-                                      },
-                                      child: Icon(
-                                        Icons.search,
-                                        color: selectedMode == SearchMode.search 
-                                            ? colorScheme.primary
-                                            : colorScheme.onSurfaceVariant.withOpacity(0.6),
-                                        size: 20,
-                                      ),
+                                MouseRegion(
+                                  onEnter: (_) => _showTooltip('search'),
+                                  onExit: (_) => _hideTooltip(),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedMode = SearchMode.search;
+                                      });
+                                    },
+                                    child: Icon(
+                                      Icons.search,
+                                      color: selectedMode == SearchMode.search
+                                          ? searchColors.accent
+                                          : searchColors.caption.withOpacity(
+                                              0.6,
+                                            ),
+                                      size: 20,
                                     ),
                                   ),
-                                  const SizedBox(width: 16),
-                                  MouseRegion(
-                                    onEnter: (_) => _showTooltip('research'),
-                                    onExit: (_) => _hideTooltip(),
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          selectedMode = SearchMode.research;
-                                        });
-                                      },
-                                      child: Icon(
-                                        Icons.casino_outlined,
-                                        color: selectedMode == SearchMode.research
-                                            ? colorScheme.primary
-                                            : colorScheme.onSurfaceVariant.withOpacity(0.6),
-                                        size: 20,
-                                      ),
+                                ),
+                                const SizedBox(width: 16),
+                                MouseRegion(
+                                  onEnter: (_) => _showTooltip('research'),
+                                  onExit: (_) => _hideTooltip(),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedMode = SearchMode.research;
+                                      });
+                                    },
+                                    child: Icon(
+                                      Icons.casino_outlined,
+                                      color: selectedMode == SearchMode.research
+                                          ? searchColors.accent
+                                          : searchColors.caption.withOpacity(
+                                              0.6,
+                                            ),
+                                      size: 20,
                                     ),
                                   ),
-                                  const SizedBox(width: 16),
-                                  MouseRegion(
-                                    onEnter: (_) => _showTooltip('study'),
-                                    onExit: (_) => _hideTooltip(),
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          selectedMode = SearchMode.study;
-                                        });
-                                      },
-                                      child: Icon(
-                                        Icons.explore,
-                                        color: selectedMode == SearchMode.study
-                                            ? colorScheme.primary
-                                            : colorScheme.onSurfaceVariant.withOpacity(0.6),
-                                        size: 20,
-                                      ),
+                                ),
+                                const SizedBox(width: 16),
+                                MouseRegion(
+                                  onEnter: (_) => _showTooltip('study'),
+                                  onExit: (_) => _hideTooltip(),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedMode = SearchMode.study;
+                                      });
+                                    },
+                                    child: Icon(
+                                      Icons.explore,
+                                      color: selectedMode == SearchMode.study
+                                          ? searchColors.accent
+                                          : searchColors.caption.withOpacity(
+                                              0.6,
+                                            ),
+                                      size: 20,
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          
+                          ),
+
                           const Spacer(),
-                          
+
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -765,39 +806,46 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
                                 onAttachmentAdded: widget.onAttachmentAdded,
                                 onAttachmentRemoved: _handleAttachmentRemoved,
                                 onError: widget.onAttachmentError,
-                                activeColor: colorScheme.primary,
-                                inactiveColor: colorScheme.onSurfaceVariant.withOpacity(0.6),
+                                activeColor: searchColors.accent,
+                                inactiveColor: searchColors.caption.withOpacity(
+                                  0.6,
+                                ),
                                 iconSize: 20,
                                 maxFileSize: 50 * 1024 * 1024,
                                 maxFiles: 5,
                                 allowMultiple: true,
                               ),
                               const SizedBox(width: 16),
-                              
+
                               VoiceInputWidget(
                                 onTextReceived: (text) {
                                   _isSettingTextProgrammatically = true;
                                   widget.controller.text = text;
-                                  widget.controller.selection = TextSelection.fromPosition(
-                                    TextPosition(offset: widget.controller.text.length),
-                                  );
+                                  widget.controller.selection =
+                                      TextSelection.fromPosition(
+                                        TextPosition(
+                                          offset: widget.controller.text.length,
+                                        ),
+                                      );
                                   _isSettingTextProgrammatically = false;
                                   widget.onVoiceTextReceived?.call(text);
                                 },
                                 onError: widget.onVoiceError,
-                                activeColor: colorScheme.primary,
-                                inactiveColor: colorScheme.onSurfaceVariant.withOpacity(0.6),
+                                activeColor: searchColors.accent,
+                                inactiveColor: searchColors.caption.withOpacity(
+                                  0.6,
+                                ),
                                 iconSize: 20,
                               ),
                               const SizedBox(width: 16),
-                              
+
                               GestureDetector(
                                 onTap: widget.onSend,
                                 child: Container(
                                   width: 32,
                                   height: 32,
                                   decoration: BoxDecoration(
-                                    color: colorScheme.primary,
+                                    color: searchColors.accent,
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: const Icon(
@@ -812,50 +860,71 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
                         ],
                       ),
                     ),
-                    
+
                     AnimatedBuilder(
                       animation: _suggestionsAnimationController,
                       builder: (context, child) {
-                        final shouldShow = _isTextFieldFocused && _filteredSuggestions.isNotEmpty;
-                        
+                        final shouldShow =
+                            _isTextFieldFocused &&
+                            _filteredSuggestions.isNotEmpty;
+
                         return SizeTransition(
                           sizeFactor: _suggestionsHeightAnimation,
                           axisAlignment: -1.0,
                           child: FadeTransition(
                             opacity: _suggestionsOpacityAnimation,
-                            child: shouldShow ? Container(
-                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Divider(
-                                    color: colorScheme.outline,
-                                    height: 1,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  if (_isLoadingSuggestions) ...[
-                                    Center(
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(vertical: 8),
-                                        child: SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation<Color>(
-                                              colorScheme.primary,
+                            child: shouldShow
+                                ? Container(
+                                    padding: const EdgeInsets.fromLTRB(
+                                      16,
+                                      0,
+                                      16,
+                                      16,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Divider(
+                                          color: searchColors.divider,
+                                          height: 1,
+                                        ),
+                                        const SizedBox(height: 16),
+                                        if (_isLoadingSuggestions) ...[
+                                          Center(
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 8,
+                                                  ),
+                                              child: SizedBox(
+                                                width: 20,
+                                                height: 20,
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  valueColor:
+                                                      AlwaysStoppedAnimation<
+                                                        Color
+                                                      >(searchColors.accent),
+                                                ),
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ),
+                                        ] else ...[
+                                          ..._filteredSuggestions
+                                              .asMap()
+                                              .entries
+                                              .map(
+                                                (entry) => _buildSuggestionItem(
+                                                  entry.value,
+                                                  entry.key,
+                                                ),
+                                              ),
+                                        ],
+                                      ],
                                     ),
-                                  ] else ...[
-                                    ..._filteredSuggestions.asMap().entries.map((entry) => 
-                                      _buildSuggestionItem(entry.value, entry.key)),
-                                  ],
-                                ],
-                              ),
-                            ) : const SizedBox.shrink(),
+                                  )
+                                : const SizedBox.shrink(),
                           ),
                         );
                       },
@@ -866,7 +935,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
             ),
           ),
         ),
-        
+
         if (_tooltipVisible)
           Positioned(
             left: 0,

@@ -1,55 +1,30 @@
-import 'package:hive_flutter/hive_flutter.dart';
+import 'dart:convert';
+import '../database/conversation_database.dart';
 import '../models/conversation_model.dart';
 import '../../search/models/message_data.dart';
 import '../../search/models/message_branch_model.dart';
 
-/// Service for managing conversation history in Hive database
+/// Service for managing conversation history in Drift database
 class ConversationDatabaseService {
   static final ConversationDatabaseService _instance =
       ConversationDatabaseService._internal();
   factory ConversationDatabaseService() => _instance;
   ConversationDatabaseService._internal();
 
-  Box<ConversationModel>? _box;
-  int _nextId = 0;
+  ConversationDatabase? _database;
 
   /// Initialize the database
   Future<void> initialize() async {
-    if (_box != null && _box!.isOpen) return;
-
-    await Hive.initFlutter();
-    
-    // Register adapters
-    if (!Hive.isAdapterRegistered(0)) {
-      Hive.registerAdapter(ConversationModelAdapter());
-    }
-    if (!Hive.isAdapterRegistered(1)) {
-      Hive.registerAdapter(ConversationMessageModelAdapter());
-    }
-    if (!Hive.isAdapterRegistered(2)) {
-      Hive.registerAdapter(ConversationSourceModelAdapter());
-    }
-    if (!Hive.isAdapterRegistered(3)) {
-      Hive.registerAdapter(ConversationVideoModelAdapter());
-    }
-    if (!Hive.isAdapterRegistered(4)) {
-      Hive.registerAdapter(ConversationAttachmentModelAdapter());
-    }
-
-    _box = await Hive.openBox<ConversationModel>('conversations');
-    
-    // Find the next available ID
-    if (_box!.isNotEmpty) {
-      _nextId = _box!.keys.cast<int>().reduce((a, b) => a > b ? a : b) + 1;
-    }
+    if (_database != null) return;
+    _database = ConversationDatabase();
   }
 
-  /// Get the Hive box
-  Box<ConversationModel> get box {
-    if (_box == null || !_box!.isOpen) {
+  /// Get the database instance
+  ConversationDatabase get database {
+    if (_database == null) {
       throw Exception('Database not initialized. Call initialize() first.');
     }
-    return _box!;
+    return _database!;
   }
 
   /// Save a new conversation
@@ -59,10 +34,10 @@ class ConversationDatabaseService {
     required List<MessageBranchManager> messageBranches,
     List<String> tags = const [],
   }) async {
+    final db = database;
     final messages = _convertBranchesToMessages(messageBranches);
 
-    final conversation = ConversationModel(
-      id: _nextId++,
+    final conversationCompanion = ConversationModel(
       conversationId: conversationId,
       title: title,
       createdAt: DateTime.now(),
@@ -70,13 +45,42 @@ class ConversationDatabaseService {
       messageCount: messages.length,
       lastQuery: messages.isNotEmpty ? messages.last.query : null,
       lastAnswer: messages.isNotEmpty ? messages.last.answer : null,
-      messages: messages,
       tags: tags,
-    );
+    ).toDriftCompanion();
 
-    await box.put(conversation.id!, conversation);
+    // Insert conversation and get the ID
+    final convId = await db.insertConversation(conversationCompanion);
 
-    return conversation;
+    // Insert messages and their related data
+    for (final message in messages) {
+      final messageCompanion = message.toDriftCompanion(convId);
+      final messageId = await db.insertMessage(messageCompanion);
+
+      // Insert sources
+      if (message.sources.isNotEmpty) {
+        final sourceCompanions =
+            message.sources.map((s) => s.toDriftCompanion(messageId)).toList();
+        await db.insertSources(sourceCompanions);
+      }
+
+      // Insert videos
+      if (message.videos.isNotEmpty) {
+        final videoCompanions =
+            message.videos.map((v) => v.toDriftCompanion(messageId)).toList();
+        await db.insertVideos(videoCompanions);
+      }
+
+      // Insert attachments
+      if (message.attachments.isNotEmpty) {
+        final attachmentCompanions = message.attachments
+            .map((a) => a.toDriftCompanion(messageId))
+            .toList();
+        await db.insertAttachments(attachmentCompanions);
+      }
+    }
+
+    // Return the saved conversation with all messages
+    return _loadFullConversation(convId);
   }
 
   /// Update an existing conversation
@@ -87,6 +91,7 @@ class ConversationDatabaseService {
     bool? isPinned,
     List<String>? tags,
   }) async {
+    final db = database;
     final existing = await getConversationByConversationId(conversationId);
     if (existing == null) {
       throw Exception('Conversation not found: $conversationId');
@@ -107,44 +112,86 @@ class ConversationDatabaseService {
       lastQuery: messages.isNotEmpty ? messages.last.query : existing.lastQuery,
       lastAnswer:
           messages.isNotEmpty ? messages.last.answer : existing.lastAnswer,
-      messages: messages,
       tags: tags ?? existing.tags,
     );
 
-    await box.put(updated.id!, updated);
+    // Update conversation
+    final driftConversation = Conversation(
+      id: updated.id!,
+      conversationId: updated.conversationId,
+      title: updated.title,
+      createdAt: updated.createdAt,
+      updatedAt: updated.updatedAt,
+      isPinned: updated.isPinned,
+      messageCount: updated.messageCount,
+      lastQuery: updated.lastQuery,
+      lastAnswer: updated.lastAnswer,
+      tags: jsonEncode(updated.tags),
+    );
+    await db.updateConversation(driftConversation);
 
-    return updated;
+    // If messages were updated, replace them
+    if (messageBranches != null) {
+      // Delete old messages (cascade will delete related data)
+      await db.deleteMessagesForConversation(updated.id!);
+
+      // Insert new messages
+      for (final message in messages) {
+        final messageCompanion = message.toDriftCompanion(updated.id!);
+        final messageId = await db.insertMessage(messageCompanion);
+
+        // Insert sources
+        if (message.sources.isNotEmpty) {
+          final sourceCompanions =
+              message.sources.map((s) => s.toDriftCompanion(messageId)).toList();
+          await db.insertSources(sourceCompanions);
+        }
+
+        // Insert videos
+        if (message.videos.isNotEmpty) {
+          final videoCompanions =
+              message.videos.map((v) => v.toDriftCompanion(messageId)).toList();
+          await db.insertVideos(videoCompanions);
+        }
+
+        // Insert attachments
+        if (message.attachments.isNotEmpty) {
+          final attachmentCompanions = message.attachments
+              .map((a) => a.toDriftCompanion(messageId))
+              .toList();
+          await db.insertAttachments(attachmentCompanions);
+        }
+      }
+    }
+
+    return _loadFullConversation(updated.id!);
   }
 
   /// Get a conversation by conversation ID
   Future<ConversationModel?> getConversationByConversationId(
       String conversationId) async {
-    try {
-      return box.values
-          .cast<ConversationModel>()
-          .firstWhere((conversation) => conversation.conversationId == conversationId);
-    } catch (e) {
-      return null;
-    }
+    final db = database;
+    final conversation =
+        await db.getConversationByConversationId(conversationId);
+    if (conversation == null) return null;
+
+    return _loadFullConversation(conversation.id);
   }
 
   /// Get all conversations sorted by date
   Future<List<ConversationModel>> getAllConversations({
     bool pinnedFirst = true,
   }) async {
-    final conversations = box.values.toList();
+    final db = database;
+    final conversations = await db.getAllConversations(pinnedFirst: pinnedFirst);
 
-    if (pinnedFirst) {
-      conversations.sort((a, b) {
-        if (a.isPinned && !b.isPinned) return -1;
-        if (!a.isPinned && b.isPinned) return 1;
-        return b.updatedAt.compareTo(a.updatedAt);
-      });
-    } else {
-      conversations.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    final result = <ConversationModel>[];
+    for (final conversation in conversations) {
+      final fullConversation = await _loadFullConversation(conversation.id);
+      result.add(fullConversation);
     }
 
-    return conversations;
+    return result;
   }
 
   /// Get conversations grouped by time period
@@ -162,63 +209,33 @@ class ConversationDatabaseService {
 
   /// Search conversations by query
   Future<List<ConversationModel>> searchConversations(String query) async {
-    final lowerQuery = query.toLowerCase();
+    final db = database;
+    final conversations = await db.searchConversations(query);
 
-    final allConversations = await getAllConversations();
+    final result = <ConversationModel>[];
+    for (final conversation in conversations) {
+      final fullConversation = await _loadFullConversation(conversation.id);
+      result.add(fullConversation);
+    }
 
-    return allConversations.where((conversation) {
-      // Search in title
-      if (conversation.title.toLowerCase().contains(lowerQuery)) return true;
-
-      // Search in queries
-      if (conversation.lastQuery?.toLowerCase().contains(lowerQuery) ?? false) {
-        return true;
-      }
-
-      // Search in answers
-      if (conversation.lastAnswer?.toLowerCase().contains(lowerQuery) ??
-          false) {
-        return true;
-      }
-
-      // Search in messages
-      for (final message in conversation.messages) {
-        if (message.query.toLowerCase().contains(lowerQuery) ||
-            message.answer.toLowerCase().contains(lowerQuery)) {
-          return true;
-        }
-      }
-
-      // Search in tags
-      if (conversation.tags.any((tag) => tag.toLowerCase().contains(lowerQuery))) {
-        return true;
-      }
-
-      return false;
-    }).toList();
+    return result;
   }
 
   /// Delete a conversation
   Future<bool> deleteConversation(String conversationId) async {
-    final conversation = await getConversationByConversationId(conversationId);
-    if (conversation == null) return false;
-
-    await box.delete(conversation.id!);
-
-    return true;
+    final db = database;
+    final count = await db.deleteConversationByConversationId(conversationId);
+    return count > 0;
   }
 
   /// Delete multiple conversations
   Future<int> deleteConversations(List<String> conversationIds) async {
+    final db = database;
     int deletedCount = 0;
 
     for (final conversationId in conversationIds) {
-      final conversation =
-          await getConversationByConversationId(conversationId);
-      if (conversation != null) {
-        await box.delete(conversation.id!);
-        deletedCount++;
-      }
+      final count = await db.deleteConversationByConversationId(conversationId);
+      if (count > 0) deletedCount++;
     }
 
     return deletedCount;
@@ -226,7 +243,8 @@ class ConversationDatabaseService {
 
   /// Delete all conversations
   Future<void> deleteAllConversations() async {
-    await box.clear();
+    final db = database;
+    await db.deleteAllConversations();
   }
 
   /// Pin/Unpin a conversation
@@ -242,15 +260,65 @@ class ConversationDatabaseService {
 
   /// Get conversation count
   Future<int> getConversationCount() async {
-    return box.length;
+    final db = database;
+    return db.getConversationCount();
   }
 
   /// Get pinned conversations
   Future<List<ConversationModel>> getPinnedConversations() async {
-    return box.values
-        .where((conversation) => conversation.isPinned)
-        .toList()
-      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    final db = database;
+    final conversations = await db.getPinnedConversations();
+
+    final result = <ConversationModel>[];
+    for (final conversation in conversations) {
+      final fullConversation = await _loadFullConversation(conversation.id);
+      result.add(fullConversation);
+    }
+
+    return result;
+  }
+
+  /// Load a full conversation with all messages and related data
+  Future<ConversationModel> _loadFullConversation(int conversationId) async {
+    final db = database;
+    final conversation = await db.select(db.conversations)
+      ..where((c) => c.id.equals(conversationId));
+    final conversationData = await conversation.getSingle();
+
+    // Load all messages for this conversation
+    final messagesList = await db.getMessagesForConversation(conversationId);
+
+    final messages = <ConversationMessageModel>[];
+    for (final message in messagesList) {
+      // Load sources
+      final sourcesList = await db.getSourcesForMessage(message.id);
+      final sources = sourcesList
+          .map((s) => ConversationSourceModel.fromDrift(s))
+          .toList();
+
+      // Load videos
+      final videosList = await db.getVideosForMessage(message.id);
+      final videos = videosList
+          .map((v) => ConversationVideoModel.fromDrift(v))
+          .toList();
+
+      // Load attachments
+      final attachmentsList = await db.getAttachmentsForMessage(message.id);
+      final attachments = attachmentsList
+          .map((a) => ConversationAttachmentModel.fromDrift(a))
+          .toList();
+
+      messages.add(
+        ConversationMessageModel.fromDrift(
+          message,
+          sources,
+          videos,
+          attachments,
+        ),
+      );
+    }
+
+    return ConversationModel.fromDrift(conversationData, messages);
   }
 
   /// Convert MessageBranchManager list to ConversationMessageModel list
@@ -386,7 +454,7 @@ class ConversationDatabaseService {
 
   /// Close the database
   Future<void> close() async {
-    await _box?.close();
-    _box = null;
+    await _database?.close();
+    _database = null;
   }
 }

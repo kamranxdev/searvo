@@ -9,8 +9,8 @@ class CacheManager {
   /// Gets cached data if it exists and is not expired
   static Future<Map<String, dynamic>?> get(String key, String type, [int? maxAgeMs]) async {
     final prefs = await SharedPreferences.getInstance();
-    final cacheKey = '${_cachePrefix}${type}_$key';
-    final timestampKey = '${_timestampPrefix}${type}_$key';
+    final cacheKey = '$_cachePrefix${type}_$key';
+    final timestampKey = '$_timestampPrefix${type}_$key';
 
     final cachedData = prefs.getString(cacheKey);
     final timestamp = prefs.getInt(timestampKey);
@@ -43,8 +43,8 @@ class CacheManager {
   /// Sets cache data with timestamp
   static Future<void> set(String key, Map<String, dynamic> data, String type, [int? maxAgeMs]) async {
     final prefs = await SharedPreferences.getInstance();
-    final cacheKey = '${_cachePrefix}${type}_$key';
-    final timestampKey = '${_timestampPrefix}${type}_$key';
+    final cacheKey = '$_cachePrefix${type}_$key';
+    final timestampKey = '$_timestampPrefix${type}_$key';
 
     await prefs.setString(cacheKey, json.encode(data));
     await prefs.setInt(timestampKey, DateTime.now().millisecondsSinceEpoch);
@@ -56,7 +56,7 @@ class CacheManager {
     final keys = prefs.getKeys();
     
     for (final key in keys) {
-      if (key.startsWith('${_cachePrefix}$type') || key.startsWith('${_timestampPrefix}$type')) {
+      if (key.startsWith('$_cachePrefix$type') || key.startsWith('$_timestampPrefix$type')) {
         await prefs.remove(key);
       }
     }

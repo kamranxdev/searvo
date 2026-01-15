@@ -1,43 +1,20 @@
-import 'package:hive/hive.dart';
+import 'dart:convert';
+import 'package:drift/drift.dart' as drift;
+import '../database/conversation_database.dart';
 
-part 'conversation_model.g.dart';
-
-/// Main conversation model stored in Hive database
-@HiveType(typeId: 0)
+/// Main conversation model for use in the app layer
 class ConversationModel {
-  @HiveField(0)
-  int? id;
-
-  @HiveField(1)
-  late String conversationId;
-
-  @HiveField(2)
-  late String title;
-
-  @HiveField(3)
-  late DateTime createdAt;
-
-  @HiveField(4)
-  late DateTime updatedAt;
-
-  @HiveField(5)
-  bool isPinned;
-
-  @HiveField(6)
-  int messageCount;
-
-  @HiveField(7)
-  String? lastQuery;
-
-  @HiveField(8)
-  String? lastAnswer;
-
-  @HiveField(9)
-  List<String> tags;
-
-  /// Embedded messages in the conversation
-  @HiveField(10)
-  List<ConversationMessageModel> messages;
+  final int? id;
+  final String conversationId;
+  final String title;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final bool isPinned;
+  final int messageCount;
+  final String? lastQuery;
+  final String? lastAnswer;
+  final List<String> tags;
+  final List<ConversationMessageModel> messages;
 
   ConversationModel({
     this.id,
@@ -74,61 +51,81 @@ class ConversationModel {
     if (difference.inDays < 30) return 'Last 30 Days';
     return 'Older';
   }
+
+  /// Convert from Drift Conversation to ConversationModel
+  static ConversationModel fromDrift(Conversation conversation, List<ConversationMessageModel> messages) {
+    return ConversationModel(
+      id: conversation.id,
+      conversationId: conversation.conversationId,
+      title: conversation.title,
+      createdAt: conversation.createdAt,
+      updatedAt: conversation.updatedAt,
+      isPinned: conversation.isPinned,
+      messageCount: conversation.messageCount,
+      lastQuery: conversation.lastQuery,
+      lastAnswer: conversation.lastAnswer,
+      tags: _decodeTags(conversation.tags),
+      messages: messages,
+    );
+  }
+
+  /// Convert to Drift ConversationsCompanion
+  ConversationsCompanion toDriftCompanion() {
+    return ConversationsCompanion(
+      id: id != null ? drift.Value(id!) : const drift.Value.absent(),
+      conversationId: drift.Value(conversationId),
+      title: drift.Value(title),
+      createdAt: drift.Value(createdAt),
+      updatedAt: drift.Value(updatedAt),
+      isPinned: drift.Value(isPinned),
+      messageCount: drift.Value(messageCount),
+      lastQuery: drift.Value(lastQuery),
+      lastAnswer: drift.Value(lastAnswer),
+      tags: drift.Value(_encodeTags(tags)),
+    );
+  }
+
+  /// Encode tags to JSON string
+  static String _encodeTags(List<String> tags) {
+    return jsonEncode(tags);
+  }
+
+  /// Decode tags from JSON string
+  static List<String> _decodeTags(String tagsJson) {
+    try {
+      final decoded = jsonDecode(tagsJson);
+      return List<String>.from(decoded);
+    } catch (e) {
+      return [];
+    }
+  }
 }
 
-/// Embedded message model within a conversation
-@HiveType(typeId: 1)
+/// Message model within a conversation
 class ConversationMessageModel {
-  @HiveField(0)
-  late String messageId;
-
-  @HiveField(1)
-  late String query;
-
-  @HiveField(2)
-  late String answer;
-
-  @HiveField(3)
-  late DateTime timestamp;
-
-  @HiveField(4)
-  List<ConversationSourceModel> sources;
-
-  @HiveField(5)
-  List<String> relatedQuestions;
-
-  @HiveField(6)
-  List<String> images;
-
-  @HiveField(7)
-  List<ConversationVideoModel> videos;
-
-  @HiveField(8)
-  List<ConversationAttachmentModel> attachments;
-
-  @HiveField(9)
-  late bool isFallback;
-
-  @HiveField(10)
-  String? errorMessage;
-
-  /// Branch information for multi-branch conversations
-  @HiveField(11)
-  String? branchId;
-
-  @HiveField(12)
-  String? parentBranchId;
-
-  @HiveField(13)
-  late int branchIndex;
-
-  @HiveField(14)
-  late int totalBranches;
+  final int? id;
+  final String messageId;
+  final String query;
+  final String answer;
+  final DateTime timestamp;
+  final List<ConversationSourceModel> sources;
+  final List<String> relatedQuestions;
+  final List<String> images;
+  final List<ConversationVideoModel> videos;
+  final List<ConversationAttachmentModel> attachments;
+  final bool isFallback;
+  final String? errorMessage;
+  final String? branchId;
+  final String? parentBranchId;
+  final int branchIndex;
+  final int totalBranches;
 
   ConversationMessageModel({
+    this.id,
     this.messageId = '',
     this.query = '',
     this.answer = '',
+    required this.timestamp,
     this.sources = const [],
     this.relatedQuestions = const [],
     this.images = const [],
@@ -140,12 +137,11 @@ class ConversationMessageModel {
     this.parentBranchId,
     this.branchIndex = 0,
     this.totalBranches = 1,
-  }) {
-    timestamp = DateTime.now();
-  }
+  });
 
   /// Create a message with specific timestamp
   static ConversationMessageModel create({
+    int? id,
     String messageId = '',
     String query = '',
     String answer = '',
@@ -162,10 +158,12 @@ class ConversationMessageModel {
     int branchIndex = 0,
     int totalBranches = 1,
   }) {
-    final message = ConversationMessageModel(
+    return ConversationMessageModel(
+      id: id,
       messageId: messageId,
       query: query,
       answer: answer,
+      timestamp: timestamp,
       sources: sources,
       relatedQuestions: relatedQuestions,
       images: images,
@@ -178,39 +176,85 @@ class ConversationMessageModel {
       branchIndex: branchIndex,
       totalBranches: totalBranches,
     );
-    message.timestamp = timestamp;
-    return message;
+  }
+
+  /// Convert from Drift Message to ConversationMessageModel
+  static ConversationMessageModel fromDrift(
+    Message message,
+    List<ConversationSourceModel> sources,
+    List<ConversationVideoModel> videos,
+    List<ConversationAttachmentModel> attachments,
+  ) {
+    return ConversationMessageModel(
+      id: message.id,
+      messageId: message.messageId,
+      query: message.query,
+      answer: message.answer,
+      timestamp: message.timestamp,
+      isFallback: message.isFallback,
+      errorMessage: message.errorMessage,
+      branchId: message.branchId,
+      parentBranchId: message.parentBranchId,
+      branchIndex: message.branchIndex,
+      totalBranches: message.totalBranches,
+      relatedQuestions: _decodeStringList(message.relatedQuestions),
+      images: _decodeStringList(message.images),
+      sources: sources,
+      videos: videos,
+      attachments: attachments,
+    );
+  }
+
+  /// Convert to Drift MessagesCompanion
+  MessagesCompanion toDriftCompanion(int conversationId) {
+    return MessagesCompanion(
+      id: id != null ? drift.Value(id!) : const drift.Value.absent(),
+      conversationId: drift.Value(conversationId),
+      messageId: drift.Value(messageId),
+      query: drift.Value(query),
+      answer: drift.Value(answer),
+      timestamp: drift.Value(timestamp),
+      isFallback: drift.Value(isFallback),
+      errorMessage: drift.Value(errorMessage),
+      branchId: drift.Value(branchId),
+      parentBranchId: drift.Value(parentBranchId),
+      branchIndex: drift.Value(branchIndex),
+      totalBranches: drift.Value(totalBranches),
+      relatedQuestions: drift.Value(_encodeStringList(relatedQuestions)),
+      images: drift.Value(_encodeStringList(images)),
+    );
+  }
+
+  /// Encode string list to JSON
+  static String _encodeStringList(List<String> list) {
+    return jsonEncode(list);
+  }
+
+  /// Decode string list from JSON
+  static List<String> _decodeStringList(String json) {
+    try {
+      final decoded = jsonDecode(json);
+      return List<String>.from(decoded);
+    } catch (e) {
+      return [];
+    }
   }
 }
 
-/// Embedded source model
-@HiveType(typeId: 2)
+/// Source model
 class ConversationSourceModel {
-  @HiveField(0)
-  late String thumbnail;
-
-  @HiveField(1)
-  String? favicon;
-
-  @HiveField(2)
-  late String url;
-
-  @HiveField(3)
-  late String title;
-
-  @HiveField(4)
-  late String description;
-
-  @HiveField(5)
-  late String domain;
-
-  @HiveField(6)
-  DateTime? publishedDate;
-
-  @HiveField(7)
-  String? source;
+  final int? id;
+  final String thumbnail;
+  final String? favicon;
+  final String url;
+  final String title;
+  final String description;
+  final String domain;
+  final DateTime? publishedDate;
+  final String? source;
 
   ConversationSourceModel({
+    this.id,
     this.thumbnail = '',
     this.favicon,
     this.url = '',
@@ -220,36 +264,53 @@ class ConversationSourceModel {
     this.publishedDate,
     this.source,
   });
+
+  /// Convert from Drift Source to ConversationSourceModel
+  static ConversationSourceModel fromDrift(Source source) {
+    return ConversationSourceModel(
+      id: source.id,
+      thumbnail: source.thumbnail,
+      favicon: source.favicon,
+      url: source.url,
+      title: source.title,
+      description: source.description,
+      domain: source.domain,
+      publishedDate: source.publishedDate,
+      source: source.source,
+    );
+  }
+
+  /// Convert to Drift SourcesCompanion
+  SourcesCompanion toDriftCompanion(int messageId) {
+    return SourcesCompanion(
+      id: id != null ? drift.Value(id!) : const drift.Value.absent(),
+      messageId: drift.Value(messageId),
+      thumbnail: drift.Value(thumbnail),
+      favicon: drift.Value(favicon),
+      url: drift.Value(url),
+      title: drift.Value(title),
+      description: drift.Value(description),
+      domain: drift.Value(domain),
+      publishedDate: drift.Value(publishedDate),
+      source: drift.Value(source),
+    );
+  }
 }
 
-/// Embedded video model
-@HiveType(typeId: 3)
+/// Video model
 class ConversationVideoModel {
-  @HiveField(0)
-  late String thumbnail;
-
-  @HiveField(1)
-  late String url;
-
-  @HiveField(2)
-  late String title;
-
-  @HiveField(3)
-  late String description;
-
-  @HiveField(4)
-  late String domain;
-
-  @HiveField(5)
-  String? duration;
-
-  @HiveField(6)
-  DateTime? publishedDate;
-
-  @HiveField(7)
-  int? views;
+  final int? id;
+  final String thumbnail;
+  final String url;
+  final String title;
+  final String description;
+  final String domain;
+  final String? duration;
+  final DateTime? publishedDate;
+  final int? views;
 
   ConversationVideoModel({
+    this.id,
     this.thumbnail = '',
     this.url = '',
     this.title = '',
@@ -259,45 +320,64 @@ class ConversationVideoModel {
     this.publishedDate,
     this.views,
   });
+
+  /// Convert from Drift Video to ConversationVideoModel
+  static ConversationVideoModel fromDrift(Video video) {
+    return ConversationVideoModel(
+      id: video.id,
+      thumbnail: video.thumbnail,
+      url: video.url,
+      title: video.title,
+      description: video.description,
+      domain: video.domain,
+      duration: video.duration,
+      publishedDate: video.publishedDate,
+      views: video.views,
+    );
+  }
+
+  /// Convert to Drift VideosCompanion
+  VideosCompanion toDriftCompanion(int messageId) {
+    return VideosCompanion(
+      id: id != null ? drift.Value(id!) : const drift.Value.absent(),
+      messageId: drift.Value(messageId),
+      thumbnail: drift.Value(thumbnail),
+      url: drift.Value(url),
+      title: drift.Value(title),
+      description: drift.Value(description),
+      domain: drift.Value(domain),
+      duration: drift.Value(duration),
+      publishedDate: drift.Value(publishedDate),
+      views: drift.Value(views),
+    );
+  }
 }
 
-/// Embedded attachment model
-@HiveType(typeId: 4)
+/// Attachment model
 class ConversationAttachmentModel {
-  @HiveField(0)
-  late String attachmentId;
-
-  @HiveField(1)
-  late String name;
-
-  @HiveField(2)
-  late String path;
-
-  @HiveField(3)
-  late String type;
-
-  @HiveField(4)
-  late int size;
-
-  @HiveField(5)
-  late DateTime uploadedAt;
-
-  @HiveField(6)
-  String? extractedText;
+  final int? id;
+  final String attachmentId;
+  final String name;
+  final String path;
+  final String type;
+  final int size;
+  final DateTime uploadedAt;
+  final String? extractedText;
 
   ConversationAttachmentModel({
+    this.id,
     this.attachmentId = '',
     this.name = '',
     this.path = '',
     this.type = '',
     this.size = 0,
+    required this.uploadedAt,
     this.extractedText,
-  }) {
-    uploadedAt = DateTime.now();
-  }
+  });
 
   /// Create an attachment with specific timestamp
   static ConversationAttachmentModel create({
+    int? id,
     String attachmentId = '',
     String name = '',
     String path = '',
@@ -306,15 +386,44 @@ class ConversationAttachmentModel {
     required DateTime uploadedAt,
     String? extractedText,
   }) {
-    final attachment = ConversationAttachmentModel(
+    return ConversationAttachmentModel(
+      id: id,
       attachmentId: attachmentId,
       name: name,
       path: path,
       type: type,
       size: size,
+      uploadedAt: uploadedAt,
       extractedText: extractedText,
     );
-    attachment.uploadedAt = uploadedAt;
-    return attachment;
+  }
+
+  /// Convert from Drift Attachment to ConversationAttachmentModel
+  static ConversationAttachmentModel fromDrift(Attachment attachment) {
+    return ConversationAttachmentModel(
+      id: attachment.id,
+      attachmentId: attachment.attachmentId,
+      name: attachment.name,
+      path: attachment.path,
+      type: attachment.type,
+      size: attachment.size,
+      uploadedAt: attachment.uploadedAt,
+      extractedText: attachment.extractedText,
+    );
+  }
+
+  /// Convert to Drift AttachmentsCompanion
+  AttachmentsCompanion toDriftCompanion(int messageId) {
+    return AttachmentsCompanion(
+      id: id != null ? drift.Value(id!) : const drift.Value.absent(),
+      messageId: drift.Value(messageId),
+      attachmentId: drift.Value(attachmentId),
+      name: drift.Value(name),
+      path: drift.Value(path),
+      type: drift.Value(type),
+      size: drift.Value(size),
+      uploadedAt: drift.Value(uploadedAt),
+      extractedText: drift.Value(extractedText),
+    );
   }
 }

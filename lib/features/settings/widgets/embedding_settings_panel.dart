@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:searvo/core/theme/theme.dart';
+import 'package:searvo/features/settings/theme/settings_theme.dart';
 import 'package:searvo/features/settings/services/llm_settings_service.dart';
 import 'package:searvo/features/llm/services/providers/llm_provider_manager.dart';
 import 'settings_card.dart';
 
 class EmbeddingSettingsPanel extends StatefulWidget {
-  const EmbeddingSettingsPanel({Key? key}) : super(key: key);
+  final bool isDesktop;
+  final bool isTablet;
+
+  const EmbeddingSettingsPanel({
+    super.key,
+    this.isDesktop = false,
+    this.isTablet = false,
+  });
 
   @override
   State<EmbeddingSettingsPanel> createState() => _EmbeddingSettingsPanelState();
@@ -18,13 +26,14 @@ class _EmbeddingSettingsPanelState extends State<EmbeddingSettingsPanel> {
   @override
   void initState() {
     super.initState();
-    _selectedEmbeddingProvider = _llmSettings.getActiveEmbeddingProvider() ?? 
-        _llmSettings.getActiveProvider(); // Default to chat provider if no embedding provider set
+    _selectedEmbeddingProvider =
+        _llmSettings.getActiveEmbeddingProvider() ??
+        _llmSettings
+            .getActiveProvider(); // Default to chat provider if no embedding provider set
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = context.colorScheme;
     final providerStatus = _llmSettings.getProviderStatus();
     final providerNames = _llmSettings.getProviderDisplayNames();
 
@@ -33,52 +42,60 @@ class _EmbeddingSettingsPanelState extends State<EmbeddingSettingsPanel> {
       children: [
         const SectionHeader(
           title: 'Embedding Provider Settings',
-          subtitle: 'Configure your embedding models for vector search and semantic analysis',
+          subtitle:
+              'Configure your embedding models for vector search and semantic analysis',
         ),
         const SizedBox(height: 24),
 
         // Active Embedding Provider Selection
-        _buildEmbeddingProviderSelector(colorScheme, providerStatus, providerNames),
-        
+        _buildEmbeddingProviderSelector(context, providerStatus, providerNames),
+
         const SizedBox(height: 32),
 
         // OpenAI Embedding Settings
         if (_selectedEmbeddingProvider == LLMProviderType.openai)
-          _buildOpenAIEmbeddingSettings(colorScheme, providerStatus[LLMProviderType.openai] ?? false),
-        
+          _buildOpenAIEmbeddingSettings(
+            context,
+            providerStatus[LLMProviderType.openai] ?? false,
+          ),
+
         // Google Embedding Settings
         if (_selectedEmbeddingProvider == LLMProviderType.google)
-          _buildGoogleEmbeddingSettings(colorScheme, providerStatus[LLMProviderType.google] ?? false),
-        
+          _buildGoogleEmbeddingSettings(
+            context,
+            providerStatus[LLMProviderType.google] ?? false,
+          ),
+
         // Ollama Embedding Settings
         if (_selectedEmbeddingProvider == LLMProviderType.ollama)
-          _buildOllamaEmbeddingSettings(colorScheme, providerStatus[LLMProviderType.ollama] ?? false),
+          _buildOllamaEmbeddingSettings(
+            context,
+            providerStatus[LLMProviderType.ollama] ?? false,
+          ),
       ],
     );
   }
 
   Widget _buildEmbeddingProviderSelector(
-    ColorScheme colorScheme,
+    BuildContext context,
     Map<LLMProviderType, bool> providerStatus,
     Map<LLMProviderType, String> providerNames,
   ) {
+    final settingsColors = SettingsTheme.colors(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Active Embedding Provider',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: colorScheme.onSurface,
-          ),
+          style: SettingsTheme.settingTitle(context),
         ),
         const SizedBox(height: 12),
         Container(
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest,
+            color: settingsColors.inputBackground,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: colorScheme.outline),
+            border: Border.all(color: settingsColors.border),
           ),
           child: Column(
             children: LLMProviderType.values.map((provider) {
@@ -90,29 +107,38 @@ class _EmbeddingSettingsPanelState extends State<EmbeddingSettingsPanel> {
                 leading: Radio<LLMProviderType>(
                   value: provider,
                   groupValue: _selectedEmbeddingProvider,
-                  onChanged: isConfigured ? (value) {
-                    setState(() {
-                      _selectedEmbeddingProvider = value;
-                    });
-                    if (value != null) {
-                      _llmSettings.setActiveEmbeddingProvider(value);
-                    }
-                  } : null,
-                  activeColor: colorScheme.primary,
+                  onChanged: isConfigured
+                      ? (value) {
+                          setState(() {
+                            _selectedEmbeddingProvider = value;
+                          });
+                          if (value != null) {
+                            _llmSettings.setActiveEmbeddingProvider(value);
+                          }
+                        }
+                      : null,
+                  activeColor: settingsColors.accent,
                 ),
                 title: Row(
                   children: [
                     Text(
                       '$name Embeddings',
                       style: TextStyle(
-                        color: isConfigured ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                        color: isConfigured
+                            ? settingsColors.text
+                            : settingsColors.subtitle,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                       ),
                     ),
                     const SizedBox(width: 8),
                     if (isConfigured)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.green.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
@@ -132,9 +158,12 @@ class _EmbeddingSettingsPanelState extends State<EmbeddingSettingsPanel> {
                       )
                     else
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
-                          color: colorScheme.onSurfaceVariant.withOpacity(0.1),
+                          color: settingsColors.subtitle.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -142,7 +171,7 @@ class _EmbeddingSettingsPanelState extends State<EmbeddingSettingsPanel> {
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w500,
-                            color: colorScheme.onSurfaceVariant,
+                            color: settingsColors.subtitle,
                           ),
                         ),
                       ),
@@ -152,7 +181,7 @@ class _EmbeddingSettingsPanelState extends State<EmbeddingSettingsPanel> {
                   _getEmbeddingProviderDescription(provider),
                   style: TextStyle(
                     fontSize: 12,
-                    color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+                    color: settingsColors.subtitle.withOpacity(0.6),
                   ),
                 ),
                 enabled: isConfigured,
@@ -179,32 +208,31 @@ class _EmbeddingSettingsPanelState extends State<EmbeddingSettingsPanel> {
     }
   }
 
-  Widget _buildOpenAIEmbeddingSettings(ColorScheme colorScheme, bool isConfigured) {
+  Widget _buildOpenAIEmbeddingSettings(
+    BuildContext context,
+    bool isConfigured,
+  ) {
+    final settingsColors = SettingsTheme.colors(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(
-              Icons.memory,
-              size: 20,
-              color: colorScheme.onSurface,
-            ),
+            Icon(Icons.memory, size: 20, color: settingsColors.text),
             const SizedBox(width: 8),
             Text(
               'OpenAI Embedding Configuration',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
-              ),
+              style: SettingsTheme.settingTitle(
+                context,
+              ).copyWith(fontWeight: FontWeight.w600),
             ),
           ],
         ),
         const SizedBox(height: 16),
         if (isConfigured) ...[
           _buildModelSelector(
-            colorScheme,
+            context,
             'OpenAI Embedding Model',
             _llmSettings.getOpenAIEmbeddingModel(),
             _llmSettings.getAvailableOpenAIEmbeddingModels(),
@@ -214,24 +242,28 @@ class _EmbeddingSettingsPanelState extends State<EmbeddingSettingsPanel> {
             },
           ),
           const SizedBox(height: 16),
-          _buildModelInfo(colorScheme, _llmSettings.getOpenAIEmbeddingModel()),
+          _buildModelInfo(context, _llmSettings.getOpenAIEmbeddingModel()),
         ] else
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              color: settingsColors.inputBackground.withOpacity(0.5),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: colorScheme.outline),
+              border: Border.all(color: settingsColors.border),
             ),
             child: Row(
               children: [
-                Icon(Icons.info_outline, color: colorScheme.onSurfaceVariant, size: 20),
+                Icon(
+                  Icons.info_outline,
+                  color: settingsColors.subtitle,
+                  size: 20,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'OpenAI API key is required. Please configure it in the AI Providers tab first.',
                     style: TextStyle(
-                      color: colorScheme.onSurfaceVariant,
+                      color: settingsColors.subtitle,
                       fontSize: 14,
                     ),
                   ),
@@ -243,32 +275,31 @@ class _EmbeddingSettingsPanelState extends State<EmbeddingSettingsPanel> {
     );
   }
 
-  Widget _buildGoogleEmbeddingSettings(ColorScheme colorScheme, bool isConfigured) {
+  Widget _buildGoogleEmbeddingSettings(
+    BuildContext context,
+    bool isConfigured,
+  ) {
+    final settingsColors = SettingsTheme.colors(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(
-              Icons.memory,
-              size: 20,
-              color: colorScheme.onSurface,
-            ),
+            Icon(Icons.memory, size: 20, color: settingsColors.text),
             const SizedBox(width: 8),
             Text(
               'Google Embedding Configuration',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
-              ),
+              style: SettingsTheme.settingTitle(
+                context,
+              ).copyWith(fontWeight: FontWeight.w600),
             ),
           ],
         ),
         const SizedBox(height: 16),
         if (isConfigured) ...[
           _buildModelSelector(
-            colorScheme,
+            context,
             'Google Embedding Model',
             _llmSettings.getGoogleEmbeddingModel(),
             _llmSettings.getAvailableGoogleEmbeddingModels(),
@@ -278,24 +309,28 @@ class _EmbeddingSettingsPanelState extends State<EmbeddingSettingsPanel> {
             },
           ),
           const SizedBox(height: 16),
-          _buildModelInfo(colorScheme, _llmSettings.getGoogleEmbeddingModel()),
+          _buildModelInfo(context, _llmSettings.getGoogleEmbeddingModel()),
         ] else
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              color: settingsColors.inputBackground.withOpacity(0.5),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: colorScheme.outline),
+              border: Border.all(color: settingsColors.border),
             ),
             child: Row(
               children: [
-                Icon(Icons.info_outline, color: colorScheme.onSurfaceVariant, size: 20),
+                Icon(
+                  Icons.info_outline,
+                  color: settingsColors.subtitle,
+                  size: 20,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'Google AI API key is required. Please configure it in the AI Providers tab first.',
                     style: TextStyle(
-                      color: colorScheme.onSurfaceVariant,
+                      color: settingsColors.subtitle,
                       fontSize: 14,
                     ),
                   ),
@@ -307,31 +342,30 @@ class _EmbeddingSettingsPanelState extends State<EmbeddingSettingsPanel> {
     );
   }
 
-  Widget _buildOllamaEmbeddingSettings(ColorScheme colorScheme, bool isConfigured) {
+  Widget _buildOllamaEmbeddingSettings(
+    BuildContext context,
+    bool isConfigured,
+  ) {
+    final settingsColors = SettingsTheme.colors(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(
-              Icons.memory,
-              size: 20,
-              color: colorScheme.onSurface,
-            ),
+            Icon(Icons.memory, size: 20, color: settingsColors.text),
             const SizedBox(width: 8),
             Text(
               'Ollama Embedding Configuration',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
-              ),
+              style: SettingsTheme.settingTitle(
+                context,
+              ).copyWith(fontWeight: FontWeight.w600),
             ),
           ],
         ),
         const SizedBox(height: 16),
         _buildModelSelector(
-          colorScheme,
+          context,
           'Ollama Embedding Model',
           _llmSettings.getOllamaEmbeddingModel(),
           _llmSettings.getAvailableOllamaEmbeddingModels(),
@@ -341,7 +375,7 @@ class _EmbeddingSettingsPanelState extends State<EmbeddingSettingsPanel> {
           },
         ),
         const SizedBox(height: 16),
-        _buildModelInfo(colorScheme, _llmSettings.getOllamaEmbeddingModel()),
+        _buildModelInfo(context, _llmSettings.getOllamaEmbeddingModel()),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(16),
@@ -373,60 +407,42 @@ class _EmbeddingSettingsPanelState extends State<EmbeddingSettingsPanel> {
   }
 
   Widget _buildModelSelector(
-    ColorScheme colorScheme,
+    BuildContext context,
     String label,
     String currentModel,
     List<String> availableModels,
     Function(String) onChanged,
   ) {
+    final settingsColors = SettingsTheme.colors(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: colorScheme.onSurface,
-          ),
-        ),
+        Text(label, style: SettingsTheme.inputLabel(context)),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: currentModel,
+          initialValue: currentModel,
           decoration: InputDecoration(
             filled: true,
-            fillColor: colorScheme.surfaceContainerHighest,
+            fillColor: settingsColors.inputBackground,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                color: colorScheme.outline,
-              ),
+              borderSide: BorderSide(color: settingsColors.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                color: colorScheme.outline,
-              ),
+              borderSide: BorderSide(color: settingsColors.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                color: colorScheme.primary,
-                width: 2,
-              ),
+              borderSide: BorderSide(color: settingsColors.accent, width: 2),
             ),
           ),
-          dropdownColor: colorScheme.surfaceContainerHighest,
+          dropdownColor: settingsColors.inputBackground,
           items: availableModels.map((model) {
             return DropdownMenuItem<String>(
               value: model,
-              child: Text(
-                model,
-                style: TextStyle(
-                  color: colorScheme.onSurface,
-                  fontSize: 14,
-                ),
-              ),
+              child: Text(model, style: SettingsTheme.inputText(context)),
             );
           }).toList(),
           onChanged: (value) {
@@ -439,27 +455,32 @@ class _EmbeddingSettingsPanelState extends State<EmbeddingSettingsPanel> {
     );
   }
 
-  Widget _buildModelInfo(ColorScheme colorScheme, String model) {
+  Widget _buildModelInfo(BuildContext context, String model) {
+    final settingsColors = SettingsTheme.colors(context);
     final info = _getModelInfo(model);
     if (info.isEmpty) return const SizedBox.shrink();
 
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
+        color: settingsColors.inputBackground,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: colorScheme.outline),
+        border: Border.all(color: settingsColors.border),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline, color: colorScheme.onSurfaceVariant.withOpacity(0.6), size: 16),
+          Icon(
+            Icons.info_outline,
+            color: settingsColors.subtitle.withOpacity(0.6),
+            size: 16,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               info,
               style: TextStyle(
-                color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+                color: settingsColors.subtitle.withOpacity(0.6),
                 fontSize: 12,
               ),
             ),
@@ -471,17 +492,28 @@ class _EmbeddingSettingsPanelState extends State<EmbeddingSettingsPanel> {
 
   String _getModelInfo(String model) {
     final modelInfo = {
-      'text-embedding-ada-002': 'OpenAI\'s most popular embedding model. 1536 dimensions, good for most use cases.',
-      'text-embedding-3-small': 'OpenAI\'s latest small embedding model. Faster and more efficient than ada-002.',
-      'text-embedding-3-large': 'OpenAI\'s largest embedding model. Best performance for complex tasks.',
-      'text-embedding-004': 'Google\'s latest embedding model with improved performance and multilingual support.',
-      'embedding-001': 'Google\'s general-purpose embedding model for text similarity and semantic search.',
-      'all-minilm': 'Lightweight embedding model, good for general text similarity tasks.',
-      'nomic-embed-text': 'High-quality open-source embedding model with good performance.',
-      'mxbai-embed-large': 'Large embedding model with excellent semantic understanding.',
-      'snowflake-arctic-embed': 'High-performance embedding model optimized for retrieval tasks.',
-      'bge-base': 'Base version of BGE (Beijing Academy of Artificial Intelligence) embedding model.',
-      'bge-large': 'Large version of BGE embedding model with superior performance.',
+      'text-embedding-ada-002':
+          'OpenAI\'s most popular embedding model. 1536 dimensions, good for most use cases.',
+      'text-embedding-3-small':
+          'OpenAI\'s latest small embedding model. Faster and more efficient than ada-002.',
+      'text-embedding-3-large':
+          'OpenAI\'s largest embedding model. Best performance for complex tasks.',
+      'text-embedding-004':
+          'Google\'s latest embedding model with improved performance and multilingual support.',
+      'embedding-001':
+          'Google\'s general-purpose embedding model for text similarity and semantic search.',
+      'all-minilm':
+          'Lightweight embedding model, good for general text similarity tasks.',
+      'nomic-embed-text':
+          'High-quality open-source embedding model with good performance.',
+      'mxbai-embed-large':
+          'Large embedding model with excellent semantic understanding.',
+      'snowflake-arctic-embed':
+          'High-performance embedding model optimized for retrieval tasks.',
+      'bge-base':
+          'Base version of BGE (Beijing Academy of Artificial Intelligence) embedding model.',
+      'bge-large':
+          'Large version of BGE embedding model with superior performance.',
     };
 
     return modelInfo[model] ?? '';

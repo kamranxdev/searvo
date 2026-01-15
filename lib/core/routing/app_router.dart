@@ -3,9 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'package:searvo/features/auth/screens/auth_screen.dart';
 import 'package:searvo/features/auth/services/auth_service.dart';
 import 'package:searvo/features/auth/widgets/auth_guard.dart';
-import 'package:searvo/features/search/widgets/search_box.dart' show SearchMode;
+import 'package:searvo/features/onboarding/onboarding.dart';
+import 'package:searvo/features/search/models/search_mode.dart';
 import 'package:searvo/features/settings/screens/privacy_policy_screen.dart';
-import 'package:searvo/shared/navigation/root_navigation_screen.dart';
+import 'package:searvo/common/navigation/root_navigation_screen.dart';
 
 /// Centralized routing configuration using Go Router
 /// Supports all platforms including web, mobile, desktop, and deep linking
@@ -13,16 +14,22 @@ class AppRouter {
   // Route paths for consistency and type safety
   static const String home = '/';
   static const String auth = '/auth';
-  static const String search = '/search'; // Same as home, both show search interface
-  static const String searchConversation = '/search/:id'; // Individual search conversation (format: /search/query+uuid)
+  static const String setup = '/setup'; // Setup wizard for new users
+  static const String search =
+      '/search'; // Same as home, both show search interface
+  static const String searchConversation =
+      '/search/:id'; // Individual search conversation (format: /search/query+uuid)
   static const String settings = '/settings';
   static const String privacyPolicy = '/privacy-policy';
   static const String conversationHistory = '/history'; // Conversation history
+  static const String discover = '/discover'; // Discover news articles
+  static const String assistant = '/assistant'; // AI Orchestrator Assistant
 
   // Navigation indices for bottom nav and sidebar
   static const int homeIndex = 0;
-  static const int historyIndex = 1;
-  static const int settingsIndex = 2;
+  static const int discoverIndex = 1;
+  static const int historyIndex = 2;
+  static const int settingsIndex = 3;
 
   // Public routes that don't require authentication
   // Add any new public routes to this list
@@ -42,13 +49,16 @@ class AppRouter {
   static final GoRouter router = GoRouter(
     initialLocation: home,
     debugLogDiagnostics: true,
-    redirect: (context, state){
+    redirect: (context, state) {
       final authService = AuthService();
+      final setupService = SetupService();
       final isAuthenticated = authService.isAuthenticated;
       final isInitialized = authService.isInitialized;
+      final isSetupInitialized = setupService.isInitialized;
+      final needsSetup = setupService.needsSetup;
       final currentPath = state.uri.path;
 
-       // Wait for auth to initialize
+      // Wait for auth to initialize
       if (!isInitialized) {
         return null;
       }
@@ -65,6 +75,24 @@ class AppRouter {
 
       // Redirect to home if authenticated and going to auth
       if (isAuthenticated && currentPath == auth) {
+        // Check if setup is needed
+        if (isSetupInitialized && needsSetup) {
+          return setup;
+        }
+        return home;
+      }
+
+      // Redirect to setup if authenticated but setup not complete
+      // Allow staying on setup route
+      if (isAuthenticated &&
+          isSetupInitialized &&
+          needsSetup &&
+          currentPath != setup) {
+        return setup;
+      }
+
+      // Don't allow going to setup if already completed
+      if (isAuthenticated && currentPath == setup && !needsSetup) {
         return home;
       }
 
@@ -75,14 +103,21 @@ class AppRouter {
       child: NotFoundScreen(error: state.error.toString()),
     ),
     routes: [
-
       // Authentication Route
       GoRoute(
         path: auth,
         name: 'auth',
+        pageBuilder: (context, state) =>
+            MaterialPage<void>(key: state.pageKey, child: const AuthScreen()),
+      ),
+
+      // Setup Wizard Route - For new users after authentication
+      GoRoute(
+        path: setup,
+        name: 'setup',
         pageBuilder: (context, state) => MaterialPage<void>(
           key: state.pageKey,
-          child: const AuthScreen(),
+          child: const SetupWizardScreen(),
         ),
       ),
 
@@ -94,9 +129,7 @@ class AppRouter {
           return MaterialPage<void>(
             key: state.pageKey,
             child: AuthGuard(
-              child: const RootNavigationScreen(
-                currentIndex: homeIndex,
-              ),
+              child: const RootNavigationScreen(currentIndex: homeIndex),
             ),
           );
         },
@@ -108,7 +141,9 @@ class AppRouter {
         name: 'search',
         pageBuilder: (context, state) => MaterialPage<void>(
           key: state.pageKey,
-          child: AuthGuard(child: const RootNavigationScreen(currentIndex: homeIndex)),
+          child: AuthGuard(
+            child: const RootNavigationScreen(currentIndex: homeIndex),
+          ),
         ),
       ),
 
@@ -121,15 +156,18 @@ class AppRouter {
         pageBuilder: (context, state) {
           // Get the combined id parameter (query+uuid)
           final combinedId = state.pathParameters['id'] ?? '';
-          
+
           // Split by the last occurrence of a UUID pattern (8-4-4-4-12 format)
           // UUID pattern: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-          final uuidPattern = RegExp(r'([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$', caseSensitive: false);
+          final uuidPattern = RegExp(
+            r'([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$',
+            caseSensitive: false,
+          );
           final match = uuidPattern.firstMatch(combinedId);
-          
+
           String query = '';
           String conversationId = '';
-          
+
           if (match != null) {
             conversationId = match.group(1)!;
             // Extract query by removing the UUID and separator
@@ -142,15 +180,15 @@ class AppRouter {
             // Fallback if no UUID pattern found
             query = Uri.decodeComponent(combinedId.replaceAll('+', ' '));
           }
-          
+
           final modeStr = state.uri.queryParameters['mode'];
-          final searchMode = modeStr != null 
+          final searchMode = modeStr != null
               ? SearchMode.values.firstWhere(
                   (m) => m.name == modeStr,
                   orElse: () => SearchMode.search,
                 )
               : SearchMode.search;
-          
+
           return MaterialPage<void>(
             key: state.pageKey,
             child: AuthGuard(
@@ -185,13 +223,27 @@ class AppRouter {
         ),
       ),
 
+      // Discover Route - Protected
+      GoRoute(
+        path: discover,
+        name: 'discover',
+        pageBuilder: (context, state) => MaterialPage<void>(
+          key: state.pageKey,
+          child: AuthGuard(
+            child: const RootNavigationScreen(currentIndex: discoverIndex),
+          ),
+        ),
+      ),
+
       // Conversation History Route - Protected
       GoRoute(
         path: conversationHistory,
         name: 'conversationHistory',
         pageBuilder: (context, state) => MaterialPage<void>(
           key: state.pageKey,
-          child: AuthGuard(child: const RootNavigationScreen(currentIndex: historyIndex)),
+          child: AuthGuard(
+            child: const RootNavigationScreen(currentIndex: historyIndex),
+          ),
         ),
       ),
     ],
@@ -207,6 +259,9 @@ class AppRouter {
     switch (index) {
       case homeIndex:
         context.go(home);
+        break;
+      case discoverIndex:
+        context.go(discover);
         break;
       case historyIndex:
         context.go(conversationHistory);
@@ -237,37 +292,49 @@ class AppRouter {
   /// If conversationId is not provided, generates a new UUID
   /// Format: /search/query+uuid (query and uuid concatenated with +)
   static void goToSearchResults(
-    BuildContext context, 
+    BuildContext context,
     String query, {
     SearchMode searchMode = SearchMode.search,
     String? conversationId,
   }) {
     // Generate UUID if not provided (use full UUID format)
     final uuid = conversationId ?? _generateUuid();
-    
+
     // Encode query for URL path (spaces become +, special chars are encoded)
     // Keep the full query including URLs
-    final encodedQuery = Uri.encodeComponent(query.trim()).replaceAll('%20', '+');
-    
+    final encodedQuery = Uri.encodeComponent(
+      query.trim(),
+    ).replaceAll('%20', '+');
+
     // Combine query and uuid with + separator
     final combinedId = '$encodedQuery+$uuid';
-    
-    final modeParam = searchMode != SearchMode.search 
-        ? '?mode=${searchMode.name}' 
+
+    final modeParam = searchMode != SearchMode.search
+        ? '?mode=${searchMode.name}'
         : '';
-    
+
     context.go('/search/$combinedId$modeParam');
   }
-  
+
   /// Generate a UUID (8-4-4-4-12 format, 36 chars total)
   static String _generateUuid() {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final random1 = (timestamp.hashCode & 0xFFFFFFFF).toRadixString(16).padLeft(8, '0');
-    final random2 = ((timestamp >> 8).hashCode & 0xFFFF).toRadixString(16).padLeft(4, '0');
-    final random3 = ((timestamp >> 16).hashCode & 0xFFFF).toRadixString(16).padLeft(4, '0');
-    final random4 = ((timestamp >> 24).hashCode & 0xFFFF).toRadixString(16).padLeft(4, '0');
-    final random5 = (timestamp.hashCode & 0xFFFFFFFFFFFF).toRadixString(16).padLeft(12, '0');
-    
+    final random1 = (timestamp.hashCode & 0xFFFFFFFF)
+        .toRadixString(16)
+        .padLeft(8, '0');
+    final random2 = ((timestamp >> 8).hashCode & 0xFFFF)
+        .toRadixString(16)
+        .padLeft(4, '0');
+    final random3 = ((timestamp >> 16).hashCode & 0xFFFF)
+        .toRadixString(16)
+        .padLeft(4, '0');
+    final random4 = ((timestamp >> 24).hashCode & 0xFFFF)
+        .toRadixString(16)
+        .padLeft(4, '0');
+    final random5 = (timestamp.hashCode & 0xFFFFFFFFFFFF)
+        .toRadixString(16)
+        .padLeft(12, '0');
+
     return '$random1-$random2-$random3-$random4-$random5';
   }
 
@@ -295,7 +362,7 @@ class AppRouter {
 /// Enhanced 404 Not Found screen
 class NotFoundScreen extends StatelessWidget {
   final String? error;
-  
+
   const NotFoundScreen({super.key, this.error});
 
   @override
@@ -314,11 +381,7 @@ class NotFoundScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.white54,
-            ),
+            const Icon(Icons.error_outline, size: 64, color: Colors.white54),
             const SizedBox(height: 16),
             const Text(
               '404 - Page Not Found',
@@ -348,10 +411,7 @@ class NotFoundScreen extends StatelessWidget {
                 ),
                 child: Text(
                   'Error: $error',
-                  style: TextStyle(
-                    color: Colors.red.shade300,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.red.shade300, fontSize: 14),
                 ),
               ),
             ],
@@ -361,7 +421,10 @@ class NotFoundScreen extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF4A9EFF),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
               child: const Text('Go Home'),
             ),

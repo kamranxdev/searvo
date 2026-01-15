@@ -5,18 +5,16 @@ import 'base_llm_provider.dart';
 /// OpenRouter provider implementation
 class OpenRouterProvider extends BaseLLMProvider {
   static const String _baseUrl = 'https://openrouter.ai/api/v1';
-  
+
   /// Default chat model for OpenRouter
   static const String defaultModel = 'openai/gpt-4o';
-  
+
   String? _apiKey;
   String _model;
 
-  OpenRouterProvider({
-    String? apiKey,
-    String? model,
-  }) : _apiKey = apiKey,
-       _model = model ?? defaultModel;
+  OpenRouterProvider({String? apiKey, String? model})
+    : _apiKey = apiKey,
+      _model = model ?? defaultModel;
 
   @override
   String get providerName => 'OpenRouter';
@@ -38,7 +36,7 @@ class OpenRouterProvider extends BaseLLMProvider {
         body: jsonEncode({
           'model': _model,
           'messages': [
-            {'role': 'user', 'content': 'Hello'}
+            {'role': 'user', 'content': 'Hello'},
           ],
           'max_tokens': 1,
         }),
@@ -64,7 +62,7 @@ class OpenRouterProvider extends BaseLLMProvider {
         body: jsonEncode({
           'model': _model,
           'messages': [
-            {'role': 'user', 'content': message}
+            {'role': 'user', 'content': message},
           ],
         }),
       );
@@ -73,7 +71,9 @@ class OpenRouterProvider extends BaseLLMProvider {
         final data = jsonDecode(response.body);
         return data['choices'][0]['message']['content'];
       } else {
-        throw Exception('API request failed: ${response.statusCode} - ${response.body}');
+        throw Exception(
+          'API request failed: ${response.statusCode} - ${response.body}',
+        );
       }
     } catch (e) {
       throw Exception('Failed to generate response from OpenRouter: $e');
@@ -94,18 +94,12 @@ class OpenRouterProvider extends BaseLLMProvider {
         final content = historyItem['content'] as String;
 
         if (role == 'user' || role == 'assistant') {
-          messages.add({
-            'role': role,
-            'content': content,
-          });
+          messages.add({'role': role, 'content': content});
         }
       }
 
       // Add current message
-      messages.add({
-        'role': 'user',
-        'content': message,
-      });
+      messages.add({'role': 'user', 'content': message});
 
       final response = await http.post(
         Uri.parse('$_baseUrl/chat/completions'),
@@ -113,20 +107,21 @@ class OpenRouterProvider extends BaseLLMProvider {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $_apiKey',
         },
-        body: jsonEncode({
-          'model': _model,
-          'messages': messages,
-        }),
+        body: jsonEncode({'model': _model, 'messages': messages}),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return data['choices'][0]['message']['content'];
       } else {
-        throw Exception('API request failed: ${response.statusCode} - ${response.body}');
+        throw Exception(
+          'API request failed: ${response.statusCode} - ${response.body}',
+        );
       }
     } catch (e) {
-      throw Exception('Failed to generate response with history from OpenRouter: $e');
+      throw Exception(
+        'Failed to generate response with history from OpenRouter: $e',
+      );
     }
   }
 
@@ -162,6 +157,58 @@ class OpenRouterProvider extends BaseLLMProvider {
   @override
   void dispose() {
     // Clean up resources if needed
+  }
+
+  /// Generate chat completion with streaming
+  Stream<String> generateResponseStream(String message) async* {
+    final client = http.Client();
+    try {
+      final request = http.Request(
+        'POST',
+        Uri.parse('$_baseUrl/chat/completions'),
+      );
+      request.headers.addAll({
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $_apiKey',
+      });
+      request.body = jsonEncode({
+        'model': _model,
+        'messages': [
+          {'role': 'user', 'content': message},
+        ],
+        'stream': true,
+      });
+
+      final response = await client.send(request);
+
+      if (response.statusCode != 200) {
+        throw Exception('API request failed: ${response.statusCode}');
+      }
+
+      await for (final line
+          in response.stream
+              .transform(utf8.decoder)
+              .transform(const LineSplitter())) {
+        if (line.startsWith('data: ')) {
+          final data = line.substring(6);
+          if (data == '[DONE]') break;
+
+          try {
+            final json = jsonDecode(data);
+            final content = json['choices']?[0]?['delta']?['content'];
+            if (content != null) {
+              yield content as String;
+            }
+          } catch (e) {
+            // Ignore parsing errors for keep-alive comments etc
+          }
+        }
+      }
+    } catch (e) {
+      throw Exception('Failed to stream response from OpenRouter: $e');
+    } finally {
+      client.close();
+    }
   }
 
   /// Get available OpenRouter models

@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/user_model.dart';
+import 'package:searvo/features/auth/data/models/user_model.dart';
 
 /// Authentication service handling all auth operations
 /// Implements secure authentication with Firebase and Google Sign-In
@@ -217,7 +217,7 @@ class AuthService extends ChangeNotifier {
       return null;
     } catch (e) {
       _setLoading(false);
-      throw e; // Re-throw to be handled by the parent function
+      rethrow; // Re-throw to be handled by the parent function
     }
   }
 
@@ -262,11 +262,11 @@ class AuthService extends ChangeNotifier {
     }
 
     try {
-      final UserCredential? userCredential = 
+      final UserCredential userCredential = 
           await _auth.getRedirectResult();
 
-      if (userCredential?.user != null) {
-        _currentUser = UserModel.fromFirebaseUser(userCredential!.user!);
+      if (userCredential.user != null) {
+        _currentUser = UserModel.fromFirebaseUser(userCredential.user!);
         // Create user profile in Firestore if it doesn't exist
         await _createUserProfileIfNotExists(userCredential.user!);
         notifyListeners();

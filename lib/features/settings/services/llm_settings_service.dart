@@ -233,6 +233,20 @@ class LLMSettingsService {
   Future<bool> setActiveProvider(LLMProviderType provider) => 
       _settingsService.setCustomSetting(_activeProviderKey, provider.name);
 
+  /// Set active provider by string name (useful for setup wizard)
+  Future<bool> setActiveProviderByName(String providerName) async {
+    try {
+      final provider = LLMProviderType.values.firstWhere(
+        (e) => e.name == providerName,
+        orElse: () => throw Exception('Invalid provider name: $providerName'),
+      );
+      return await setActiveProvider(provider);
+    } catch (e) {
+      print('Failed to set active provider by name: $e');
+      return false;
+    }
+  }
+
   LLMProviderType? getActiveProvider() {
     final providerName = _settingsService.getCustomSetting<String>(_activeProviderKey, null);
     if (providerName == null) return null;

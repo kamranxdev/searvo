@@ -1,15 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:searvo/core/theme/theme.dart';
+import 'package:searvo/features/settings/theme/settings_theme.dart';
 import 'package:searvo/features/settings/services/llm_settings_service.dart';
 import 'package:searvo/features/llm/services/providers/llm_provider_manager.dart';
 import 'api_key_field.dart';
 import 'settings_card.dart';
 
 class LLMProviderSettingsPanel extends StatefulWidget {
-  const LLMProviderSettingsPanel({Key? key}) : super(key: key);
+  final bool isDesktop;
+  final bool isTablet;
+
+  const LLMProviderSettingsPanel({
+    super.key,
+    this.isDesktop = false,
+    this.isTablet = false,
+  });
 
   @override
-  State<LLMProviderSettingsPanel> createState() => _LLMProviderSettingsPanelState();
+  State<LLMProviderSettingsPanel> createState() =>
+      _LLMProviderSettingsPanelState();
 }
 
 class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
@@ -24,7 +33,6 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = context.colorScheme;
     final providerStatus = _llmSettings.getProviderStatus();
     final providerNames = _llmSettings.getProviderDisplayNames();
 
@@ -38,58 +46,243 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
         const SizedBox(height: 24),
 
         // Active Provider Selection
-        _buildProviderSelector(colorScheme, providerStatus, providerNames),
-        
+        _buildProviderSelector(context, providerStatus, providerNames),
+
         const SizedBox(height: 32),
 
-        // OpenAI Settings
-        _buildOpenAISettings(colorScheme, providerStatus[LLMProviderType.openai] ?? false),
-        
-        const SizedBox(height: 32),
-
-        // Google Settings
-        _buildGoogleSettings(colorScheme, providerStatus[LLMProviderType.google] ?? false),
-        
-        const SizedBox(height: 32),
-
-        // Ollama Settings
-        _buildOllamaSettings(colorScheme, providerStatus[LLMProviderType.ollama] ?? false),
-        
-        const SizedBox(height: 32),
-
-        // OpenRouter Settings
-        _buildOpenRouterSettings(colorScheme, providerStatus[LLMProviderType.openrouter] ?? false),
-        
-        const SizedBox(height: 32),
-
-        // Anthropic Settings
-        _buildAnthropicSettings(colorScheme, providerStatus[LLMProviderType.anthropic] ?? false),
+        // Provider settings based on screen size
+        if (widget.isDesktop)
+          _buildDesktopProviderLayout(context, providerStatus)
+        else
+          _buildMobileProviderLayout(context, providerStatus),
       ],
     );
   }
 
+  Widget _buildDesktopProviderLayout(
+    BuildContext context,
+    Map<LLMProviderType, bool> providerStatus,
+  ) {
+    return Column(
+      children: [
+        // First row: OpenAI and Google
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _buildProviderCard(
+                context,
+                Icons.psychology,
+                'OpenAI Configuration',
+                _buildOpenAISettings(
+                  context,
+                  providerStatus[LLMProviderType.openai] ?? false,
+                ),
+              ),
+            ),
+            const SizedBox(width: 24),
+            Expanded(
+              child: _buildProviderCard(
+                context,
+                Icons.auto_awesome,
+                'Google Gemini Configuration',
+                _buildGoogleSettings(
+                  context,
+                  providerStatus[LLMProviderType.google] ?? false,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+
+        // Second row: Ollama and OpenRouter
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _buildProviderCard(
+                context,
+                Icons.computer,
+                'Ollama Configuration',
+                _buildOllamaSettings(
+                  context,
+                  providerStatus[LLMProviderType.ollama] ?? false,
+                ),
+              ),
+            ),
+            const SizedBox(width: 24),
+            Expanded(
+              child: _buildProviderCard(
+                context,
+                Icons.router,
+                'OpenRouter Configuration',
+                _buildOpenRouterSettings(
+                  context,
+                  providerStatus[LLMProviderType.openrouter] ?? false,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+
+        // Third row: Anthropic
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _buildProviderCard(
+                context,
+                Icons.psychology_alt,
+                'Anthropic Claude Configuration',
+                _buildAnthropicSettings(
+                  context,
+                  providerStatus[LLMProviderType.anthropic] ?? false,
+                ),
+              ),
+            ),
+            const Expanded(child: SizedBox()), // Empty space for alignment
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileProviderLayout(
+    BuildContext context,
+    Map<LLMProviderType, bool> providerStatus,
+  ) {
+    return Column(
+      children: [
+        // OpenAI Settings
+        _buildProviderCard(
+          context,
+          Icons.psychology,
+          'OpenAI Configuration',
+          _buildOpenAISettings(
+            context,
+            providerStatus[LLMProviderType.openai] ?? false,
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // Google Settings
+        _buildProviderCard(
+          context,
+          Icons.auto_awesome,
+          'Google Gemini Configuration',
+          _buildGoogleSettings(
+            context,
+            providerStatus[LLMProviderType.google] ?? false,
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // Ollama Settings
+        _buildProviderCard(
+          context,
+          Icons.computer,
+          'Ollama Configuration',
+          _buildOllamaSettings(
+            context,
+            providerStatus[LLMProviderType.ollama] ?? false,
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // OpenRouter Settings
+        _buildProviderCard(
+          context,
+          Icons.router,
+          'OpenRouter Configuration',
+          _buildOpenRouterSettings(
+            context,
+            providerStatus[LLMProviderType.openrouter] ?? false,
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        // Anthropic Settings
+        _buildProviderCard(
+          context,
+          Icons.psychology_alt,
+          'Anthropic Claude Configuration',
+          _buildAnthropicSettings(
+            context,
+            providerStatus[LLMProviderType.anthropic] ?? false,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProviderCard(
+    BuildContext context,
+    IconData icon,
+    String title,
+    Widget content,
+  ) {
+    // Note: colorScheme here is likely still needed for the icon container background if we don't have settings specific one,
+    // but better to use context to get settings colors again or pass them.
+    // For simplicity, let's get settings colors from context inside.
+    final settingsColors = SettingsTheme.colors(context);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: settingsColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: settingsColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: settingsColors.accent.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 20, color: settingsColors.accent),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: SettingsTheme.settingTitle(
+                    context,
+                  ).copyWith(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          content,
+        ],
+      ),
+    );
+  }
+
   Widget _buildProviderSelector(
-    ColorScheme colorScheme,
+    BuildContext context,
     Map<LLMProviderType, bool> providerStatus,
     Map<LLMProviderType, String> providerNames,
   ) {
+    final settingsColors = SettingsTheme.colors(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Active Provider',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: colorScheme.onSurface,
-          ),
-        ),
+        Text('Active Provider', style: SettingsTheme.settingTitle(context)),
         const SizedBox(height: 12),
         Container(
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest,
+            color: settingsColors.inputBackground,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: colorScheme.outline),
+            border: Border.all(color: settingsColors.border),
           ),
           child: Column(
             children: LLMProviderType.values.map((provider) {
@@ -101,30 +294,39 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
                 leading: Radio<LLMProviderType>(
                   value: provider,
                   groupValue: _selectedProvider,
-                  onChanged: isConfigured ? (value) {
-                    setState(() {
-                      _selectedProvider = value;
-                    });
-                    if (value != null) {
-                      _llmSettings.setActiveProvider(value);
-                      _llmSettings.initializeLLMManager();
-                    }
-                  } : null,
-                  activeColor: colorScheme.primary,
+                  onChanged: isConfigured
+                      ? (value) {
+                          setState(() {
+                            _selectedProvider = value;
+                          });
+                          if (value != null) {
+                            _llmSettings.setActiveProvider(value);
+                            _llmSettings.initializeLLMManager();
+                          }
+                        }
+                      : null,
+                  activeColor: settingsColors.accent,
                 ),
                 title: Row(
                   children: [
                     Text(
                       name,
                       style: TextStyle(
-                        color: isConfigured ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                        color: isConfigured
+                            ? settingsColors.text
+                            : settingsColors.subtitle,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                       ),
                     ),
                     const SizedBox(width: 8),
                     if (isConfigured)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.green.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
@@ -144,9 +346,12 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
                       )
                     else
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
-                          color: colorScheme.onSurfaceVariant.withOpacity(0.1),
+                          color: settingsColors.subtitle.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -154,7 +359,7 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w500,
-                            color: colorScheme.onSurfaceVariant,
+                            color: settingsColors.subtitle,
                           ),
                         ),
                       ),
@@ -169,33 +374,15 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
     );
   }
 
-  Widget _buildOpenAISettings(ColorScheme colorScheme, bool isConfigured) {
+  Widget _buildOpenAISettings(BuildContext context, bool isConfigured) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Icon(
-              Icons.psychology,
-              size: 20,
-              color: colorScheme.onSurface,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'OpenAI Configuration',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
         ApiKeyField(
           label: 'OpenAI API Key',
           placeholder: 'sk-...',
-          description: 'Your OpenAI API key from https://platform.openai.com/account/api-keys',
+          description:
+              'Your OpenAI API key from https://platform.openai.com/account/api-keys',
           value: _llmSettings.getOpenAIApiKey() ?? '',
           obscuredValue: _llmSettings.getObscuredOpenAIApiKey(),
           onChanged: (value) {
@@ -209,7 +396,7 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
         ),
         const SizedBox(height: 16),
         _buildModelSelector(
-          colorScheme,
+          context,
           'OpenAI Model',
           _llmSettings.getOpenAIModel(),
           _llmSettings.getAvailableOpenAIModels(),
@@ -222,33 +409,15 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
     );
   }
 
-  Widget _buildGoogleSettings(ColorScheme colorScheme, bool isConfigured) {
+  Widget _buildGoogleSettings(BuildContext context, bool isConfigured) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Icon(
-              Icons.auto_awesome,
-              size: 20,
-              color: colorScheme.onSurface,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Google Gemini Configuration',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
         ApiKeyField(
           label: 'Google AI API Key',
           placeholder: 'AIza...',
-          description: 'Your Google AI API key from https://aistudio.google.com/app/api-keys',
+          description:
+              'Your Google AI API key from https://aistudio.google.com/app/api-keys',
           value: _llmSettings.getGoogleApiKey() ?? '',
           obscuredValue: _llmSettings.getObscuredGoogleApiKey(),
           onChanged: (value) {
@@ -262,7 +431,7 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
         ),
         const SizedBox(height: 16),
         _buildModelSelector(
-          colorScheme,
+          context,
           'Gemini Model',
           _llmSettings.getGoogleModel(),
           _llmSettings.getAvailableGoogleModels(),
@@ -275,31 +444,12 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
     );
   }
 
-  Widget _buildOllamaSettings(ColorScheme colorScheme, bool isConfigured) {
+  Widget _buildOllamaSettings(BuildContext context, bool isConfigured) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Icon(
-              Icons.computer,
-              size: 20,
-              color: colorScheme.onSurface,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Ollama Configuration',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
         _buildTextField(
-          colorScheme,
+          context,
           'Base URL',
           '',
           'Ollama server URL (default: http://localhost:11434)',
@@ -311,7 +461,7 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
         ),
         const SizedBox(height: 16),
         _buildModelSelector(
-          colorScheme,
+          context,
           'Ollama Model',
           _llmSettings.getOllamaModel(),
           _llmSettings.getAvailableOllamaModels(),
@@ -324,33 +474,15 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
     );
   }
 
-  Widget _buildOpenRouterSettings(ColorScheme colorScheme, bool isConfigured) {
+  Widget _buildOpenRouterSettings(BuildContext context, bool isConfigured) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Icon(
-              Icons.router,
-              size: 20,
-              color: colorScheme.onSurface,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'OpenRouter Configuration',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
         ApiKeyField(
           label: 'OpenRouter API Key',
           placeholder: 'sk-or-v1-...',
-          description: 'Your OpenRouter API key from https://openrouter.ai/keys',
+          description:
+              'Your OpenRouter API key from https://openrouter.ai/keys',
           value: _llmSettings.getOpenRouterApiKey() ?? '',
           obscuredValue: _llmSettings.getObscuredOpenRouterApiKey(),
           onChanged: (value) {
@@ -364,7 +496,7 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
         ),
         const SizedBox(height: 16),
         _buildModelSelector(
-          colorScheme,
+          context,
           'OpenRouter Model',
           _llmSettings.getOpenRouterModel(),
           _llmSettings.getAvailableOpenRouterModels(),
@@ -377,33 +509,15 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
     );
   }
 
-  Widget _buildAnthropicSettings(ColorScheme colorScheme, bool isConfigured) {
+  Widget _buildAnthropicSettings(BuildContext context, bool isConfigured) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Icon(
-              Icons.psychology_alt,
-              size: 20,
-              color: colorScheme.onSurface,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Anthropic Claude Configuration',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
         ApiKeyField(
           label: 'Anthropic API Key',
           placeholder: 'sk-ant-...',
-          description: 'Your Anthropic API key from https://console.anthropic.com/settings/keys',
+          description:
+              'Your Anthropic API key from https://console.anthropic.com/settings/keys',
           value: _llmSettings.getAnthropicApiKey() ?? '',
           obscuredValue: _llmSettings.getObscuredAnthropicApiKey(),
           onChanged: (value) {
@@ -417,7 +531,7 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
         ),
         const SizedBox(height: 16),
         _buildModelSelector(
-          colorScheme,
+          context,
           'Claude Model',
           _llmSettings.getAnthropicModel(),
           _llmSettings.getAvailableAnthropicModels(),
@@ -431,24 +545,19 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
   }
 
   Widget _buildTextField(
-    ColorScheme colorScheme,
+    BuildContext context,
     String label,
     String placeholder,
     String description,
     String? value,
     Function(String) onChanged,
   ) {
+    final settingsColors = SettingsTheme.colors(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: colorScheme.onSurface,
-          ),
-        ),
+        Text(label, style: SettingsTheme.inputLabel(context)),
         const SizedBox(height: 8),
         TextFormField(
           textDirection: TextDirection.ltr,
@@ -456,35 +565,25 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
           decoration: InputDecoration(
             hintText: placeholder,
             hintStyle: TextStyle(
-              color: colorScheme.onSurfaceVariant,
+              color: settingsColors.subtitle.withOpacity(0.5),
               fontSize: 14,
             ),
             filled: true,
-            fillColor: colorScheme.surfaceContainerHighest,
+            fillColor: settingsColors.inputBackground,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                color: colorScheme.outline,
-              ),
+              borderSide: BorderSide(color: settingsColors.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                color: colorScheme.outline,
-              ),
+              borderSide: BorderSide(color: settingsColors.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                color: colorScheme.primary,
-                width: 2,
-              ),
+              borderSide: BorderSide(color: settingsColors.accent, width: 2),
             ),
           ),
-          style: TextStyle(
-            color: colorScheme.onSurface,
-            fontSize: 14,
-          ),
+          style: SettingsTheme.inputText(context),
           onChanged: onChanged,
         ),
         const SizedBox(height: 4),
@@ -492,7 +591,7 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
           description,
           style: TextStyle(
             fontSize: 12,
-            color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+            color: settingsColors.subtitle.withOpacity(0.6),
           ),
         ),
       ],
@@ -500,60 +599,42 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
   }
 
   Widget _buildModelSelector(
-    ColorScheme colorScheme,
+    BuildContext context,
     String label,
     String currentModel,
     List<String> availableModels,
     Function(String) onChanged,
   ) {
+    final settingsColors = SettingsTheme.colors(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: colorScheme.onSurface,
-          ),
-        ),
+        Text(label, style: SettingsTheme.inputLabel(context)),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: currentModel,
+          initialValue: currentModel,
           decoration: InputDecoration(
             filled: true,
-            fillColor: colorScheme.surfaceContainerHighest,
+            fillColor: settingsColors.inputBackground,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                color: colorScheme.outline,
-              ),
+              borderSide: BorderSide(color: settingsColors.border),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                color: colorScheme.outline,
-              ),
+              borderSide: BorderSide(color: settingsColors.border),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(
-                color: colorScheme.primary,
-                width: 2,
-              ),
+              borderSide: BorderSide(color: settingsColors.accent, width: 2),
             ),
           ),
-          dropdownColor: colorScheme.surfaceContainerHighest,
+          dropdownColor: settingsColors.inputBackground,
           items: availableModels.map((model) {
             return DropdownMenuItem<String>(
               value: model,
-              child: Text(
-                model,
-                style: TextStyle(
-                  color: colorScheme.onSurface,
-                  fontSize: 14,
-                ),
-              ),
+              child: Text(model, style: SettingsTheme.inputText(context)),
             );
           }).toList(),
           onChanged: (value) {

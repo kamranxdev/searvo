@@ -1,12 +1,9 @@
-import 'dart:async';
+import 'package:searvo/features/search/models/search_step.dart';
+import 'package:searvo/features/search/models/tool_widget_data.dart';
+import 'search_mode.dart';
 
 /// Generation states for streaming responses
-enum MessageGenerationState {
-  searching,
-  generating,
-  streaming,
-  completed,
-}
+enum MessageGenerationState { searching, generating, streaming, completed }
 
 /// Main message data model with streaming support
 class MessageData {
@@ -22,6 +19,9 @@ class MessageData {
   final List<AttachmentMetadata> attachments;
   final DateTime timestamp;
   final String? errorMessage;
+  final SearchMode searchMode;
+  final List<SearchStep> steps;
+  final List<ToolWidgetData> toolWidgets;
 
   MessageData({
     required this.query,
@@ -36,6 +36,9 @@ class MessageData {
     this.attachments = const [],
     DateTime? timestamp,
     this.errorMessage,
+    this.searchMode = SearchMode.search,
+    this.steps = const [],
+    this.toolWidgets = const [],
   }) : timestamp = timestamp ?? DateTime.now();
 
   MessageData copyWith({
@@ -51,6 +54,9 @@ class MessageData {
     List<AttachmentMetadata>? attachments,
     DateTime? timestamp,
     String? errorMessage,
+    SearchMode? searchMode,
+    List<SearchStep>? steps,
+    List<ToolWidgetData>? toolWidgets,
   }) {
     return MessageData(
       query: query ?? this.query,
@@ -65,6 +71,9 @@ class MessageData {
       attachments: attachments ?? this.attachments,
       timestamp: timestamp ?? this.timestamp,
       errorMessage: errorMessage ?? this.errorMessage,
+      searchMode: searchMode ?? this.searchMode,
+      steps: steps ?? this.steps,
+      toolWidgets: toolWidgets ?? this.toolWidgets,
     );
   }
 
@@ -72,7 +81,7 @@ class MessageData {
   bool get hasAttachments => attachments.isNotEmpty;
 
   /// Check if message is still being generated
-  bool get isGenerating => 
+  bool get isGenerating =>
       generationState == MessageGenerationState.generating ||
       generationState == MessageGenerationState.streaming;
 
@@ -270,16 +279,16 @@ class VideoItem {
     if (views! < 1000000) return '${(views! / 1000).toStringAsFixed(1)}K views';
     return '${(views! / 1000000).toStringAsFixed(1)}M views';
   }
-  
+
   /// Check if this is a valid embeddable video (has YouTube, Vimeo, etc.)
   bool get isEmbeddable {
     final lowerUrl = url.toLowerCase();
-    return lowerUrl.contains('youtube.com') || 
-           lowerUrl.contains('youtu.be') ||
-           lowerUrl.contains('vimeo.com') ||
-           lowerUrl.contains('dailymotion.com');
+    return lowerUrl.contains('youtube.com') ||
+        lowerUrl.contains('youtu.be') ||
+        lowerUrl.contains('vimeo.com') ||
+        lowerUrl.contains('dailymotion.com');
   }
-  
+
   /// Get embeddable URL for iframe
   String get embeddableUrl {
     if (url.contains('youtube.com/watch?v=')) {

@@ -2,13 +2,19 @@ import 'package:searvo/features/llm/services/providers/llm_provider_manager.dart
 import 'package:searvo/features/llm/services/providers/context_window_config.dart';
 import 'package:searvo/features/search/rag/models/rag_models.dart';
 import 'package:searvo/features/search/services/searxng_service.dart';
+import 'package:searvo/features/search/services/search_cache_service.dart';
+import 'package:searvo/features/search/services/intent/intent_classifier.dart';
+import 'package:searvo/features/search/models/search_intent.dart';
+import 'package:searvo/features/search/tools/search_tools.dart';
+import 'package:searvo/features/search/models/search_step.dart';
+import 'package:uuid/uuid.dart';
 import '../query_processing/query_analyzer.dart';
 import '../data_ingestion/rag_scraper_adapter.dart';
-import 'package:searvo/features/search/widgets/search_box.dart' show SearchMode;
+import 'package:searvo/features/search/models/search_mode.dart';
 
 import '../../../models/message_data.dart';
 import '../document_processing/document_ranker.dart';
-import '../document_processing/media_ranker.dart';
+
 import '../document_processing/context_fusion.dart';
 import '../citation/citation_manager.dart';
 import '../query_processing/prompt_engineer.dart';
@@ -18,7 +24,7 @@ import '../data_ingestion/attachment_processor.dart';
 class RAGOrchestrator {
   final SearXNGService _searxngService;
   final DocumentRanker _documentRanker;
-  final MediaRanker _mediaRanker;
+
   final ContextFusion _contextFusion;
   final CitationManager _citationManager;
   final LLMProviderManager _llmManager;
@@ -27,12 +33,15 @@ class RAGOrchestrator {
   final QueryAnalyzer _queryAnalyzer;
   final RAGScraperAdapter _scraperAdapter;
 
+  final IntentClassifier _intentClassifier;
+  late final List<SearchTool> _tools;
+
   final Map<String, dynamic> _performanceMetrics = {};
 
   RAGOrchestrator({
     SearXNGService? searxngService,
     DocumentRanker? documentRanker,
-    MediaRanker? mediaRanker,
+
     ContextFusion? contextFusion,
     CitationManager? citationManager,
     LLMProviderManager? llmManager,
@@ -40,32 +49,42 @@ class RAGOrchestrator {
     AttachmentProcessor? attachmentProcessor,
     QueryAnalyzer? queryAnalyzer,
     RAGScraperAdapter? scraperAdapter,
-  })  : _searxngService = searxngService ?? SearXNGService(),
-        _documentRanker = documentRanker ?? DocumentRanker(),
-        _mediaRanker = mediaRanker ?? MediaRanker(),
-        _contextFusion = contextFusion ?? ContextFusion(),
-        _citationManager = citationManager ?? CitationManager(),
-        _llmManager = llmManager ?? LLMProviderManager(),
-        _promptEngineer = promptEngineer ?? PromptEngineer(),
-        _attachmentProcessor = attachmentProcessor ?? AttachmentProcessor(),
-        _queryAnalyzer = queryAnalyzer ?? QueryAnalyzer(),
-        _scraperAdapter = scraperAdapter ?? RAGScraperAdapter();
+    SearchCacheService? cacheService,
+    IntentClassifier? intentClassifier,
+  }) : _searxngService = searxngService ?? SearXNGService(),
+       _documentRanker = documentRanker ?? DocumentRanker(),
+
+       _contextFusion = contextFusion ?? ContextFusion(),
+       _citationManager = citationManager ?? CitationManager(),
+       _llmManager = llmManager ?? LLMProviderManager(),
+       _promptEngineer = promptEngineer ?? PromptEngineer(),
+       _attachmentProcessor = attachmentProcessor ?? AttachmentProcessor(),
+       _queryAnalyzer = queryAnalyzer ?? QueryAnalyzer(),
+       _scraperAdapter = scraperAdapter ?? RAGScraperAdapter(),
+       _intentClassifier = intentClassifier ?? IntentClassifier() {
+    _tools = [WebSearchTool(_searxngService), ImageSearchTool(_searxngService)];
+  }
 
   /// Get adaptive context length based on current LLM provider and model
-  Future<int> _getAdaptiveContextLength({int? overrideLength, String? complexity}) async {
+  Future<int> _getAdaptiveContextLength({
+    int? overrideLength,
+    String? complexity,
+  }) async {
     // If override provided, use it
     if (overrideLength != null && overrideLength > 0) return overrideLength;
 
     try {
-      final providerName = await LLMProviderManager.getActiveProviderName() ?? 'openai';
-      
+      final providerName =
+          await LLMProviderManager.getActiveProviderName() ?? 'openai';
+
       String modelName = '';
-      
+
       // Parse provider type from name
       final providerLower = providerName.toLowerCase();
       if (providerLower.contains('openai')) {
         modelName = await LLMProviderManager.getOpenAIModel();
-      } else if (providerLower.contains('google') || providerLower.contains('gemini')) {
+      } else if (providerLower.contains('google') ||
+          providerLower.contains('gemini')) {
         modelName = await LLMProviderManager.getGoogleModel();
       } else if (providerLower.contains('ollama')) {
         modelName = await LLMProviderManager.getOllamaModel();
@@ -84,13 +103,20 @@ class RAGOrchestrator {
           modelName,
           complexity,
         );
-        print('📊 Adaptive context length: $adaptiveLength chars for $providerName/$modelName ($complexity complexity)');
+        print(
+          '📊 Adaptive context length: $adaptiveLength chars for $providerName/$modelName ($complexity complexity)',
+        );
         return adaptiveLength;
       }
 
       // Otherwise get maximum context length
-      final maxLength = ContextWindowConfig.getMaxContextLength(providerName, modelName);
-      print('📊 Maximum context length: $maxLength chars for $providerName/$modelName');
+      final maxLength = ContextWindowConfig.getMaxContextLength(
+        providerName,
+        modelName,
+      );
+      print(
+        '📊 Maximum context length: $maxLength chars for $providerName/$modelName',
+      );
       return maxLength;
     } catch (e) {
       print('⚠️  Failed to get adaptive context length, using default: $e');
@@ -98,553 +124,423 @@ class RAGOrchestrator {
     }
   }
 
-  /// Extract URLs from query text
-  List<String> _extractUrls(String query) {
-    final urlPattern = RegExp(
-      r'https?://[^\s]+',
-      caseSensitive: false,
+  /// Generate RAG stream with optional history support
+  Stream<RAGUpdate> generateRAGStream(
+    String query, {
+    int maxSearchResults = 20,
+    int maxRelevantDocuments = 10,
+    int? maxContextLength,
+    bool enableQueryEnhancement = true,
+    bool enableAdaptivePrompting = true,
+    List<dynamic>? attachments,
+    SearchMode searchMode = SearchMode.search,
+    List<MessageData>? previousMessages,
+    int maxHistoryMessages = 3,
+  }) async* {
+    final List<SearchStep> steps = [];
+    final uuid = Uuid();
+
+    // Helper to emit step update
+    SearchStep createStep(String title, {String? description}) {
+      final step = SearchStep(
+        id: uuid.v4(),
+        title: title,
+        description: description,
+        status: SearchStepStatus.inProgress,
+      );
+      steps.add(step);
+      return step;
+    }
+
+    void updateStep(
+      String id, {
+      SearchStepStatus? status,
+      String? description,
+      Duration? duration,
+    }) {
+      final index = steps.indexWhere((s) => s.id == id);
+      if (index != -1) {
+        steps[index] = steps[index].copyWith(
+          status: status,
+          description: description,
+          duration: duration,
+        );
+      }
+    }
+
+    // Initial yield
+    yield RAGUpdate(
+      status: RAGStatus.planning,
+      message: 'Starting search...',
+      steps: List.from(steps),
     );
-    
-    return urlPattern
-        .allMatches(query)
-        .map((match) => match.group(0)!)
-        .toList();
+
+    // 1. Intent Classification Step
+    final intentStep = createStep("Analyzing query intent");
+    yield RAGUpdate(status: RAGStatus.planning, steps: List.from(steps));
+
+    final stopwatch = Stopwatch()..start();
+    final intent = await _intentClassifier.classify(query);
+    stopwatch.stop();
+
+    updateStep(
+      intentStep.id,
+      status: SearchStepStatus.completed,
+      description: "Identified as ${intent.name} search",
+      duration: stopwatch.elapsed,
+    );
+    yield RAGUpdate(status: RAGStatus.planning, steps: List.from(steps));
+
+    String effectiveQuery = query;
+    if (previousMessages != null && previousMessages.isNotEmpty) {
+      // Analyze dependency
+      final analysis = _queryAnalyzer.analyzeQuery(query);
+
+      if (analysis.requiresContext) {
+        yield RAGUpdate(
+          status: RAGStatus.planning,
+          message: 'Resolving context...',
+          steps: List.from(steps),
+        );
+        effectiveQuery = _promptEngineer.resolveContextualQuery(
+          query,
+          previousMessages,
+          maxHistoryMessages: maxHistoryMessages,
+        );
+      }
+    }
+
+    // Step 0: Process attachments (Parallel)
+    String? attachmentContext;
+    final List<AttachmentMetadata> attachmentMetadata = [];
+
+    if (attachments != null && attachments.isNotEmpty) {
+      final attachmentStep = createStep(
+        "Processing ${attachments.length} attachments",
+      );
+      yield RAGUpdate(
+        status: RAGStatus.planning,
+        message: 'Processing attachments...',
+        steps: List.from(steps),
+      );
+
+      final stopwatch = Stopwatch()..start();
+      final attachmentResults = await _processAttachments(attachments);
+      stopwatch.stop();
+
+      attachmentContext = _attachmentProcessor.createAttachmentContext(
+        attachmentResults.where((r) => r.success).toList(),
+      );
+
+      for (int i = 0; i < attachments.length; i++) {
+        final attachment = attachments[i];
+        final result = attachmentResults[i];
+        attachmentMetadata.add(
+          AttachmentMetadata.fromAttachmentData(
+            attachment,
+            result.extractedText,
+          ),
+        );
+      }
+
+      updateStep(
+        attachmentStep.id,
+        status: SearchStepStatus.completed,
+        description:
+            "Processed ${attachmentResults.where((r) => r.success).length} files",
+        duration: stopwatch.elapsed,
+      );
+    }
+
+    // Step 0.5: Determine adaptive context length
+    final effectiveMaxContext = await _getAdaptiveContextLength(
+      overrideLength: maxContextLength,
+    );
+    try {
+      // 2. Tool Selection & Execution
+
+      // Determine tools based on intent
+      final toolsToUse = <SearchTool>[];
+
+      if (intent == SearchIntent.visual) {
+        toolsToUse.add(_tools.firstWhere((t) => t is ImageSearchTool));
+        // Also add web search for context
+        toolsToUse.add(_tools.firstWhere((t) => t is WebSearchTool));
+      } else if (intent == SearchIntent.coding) {
+        toolsToUse.add(_tools.firstWhere((t) => t is WebSearchTool));
+        // In future: add CodeSearchTool
+      } else {
+        toolsToUse.add(_tools.firstWhere((t) => t is WebSearchTool));
+      }
+
+      final allRawDocuments = <Document>[];
+      final imageUrls = <String>[];
+
+      // Execute Tools in Parallel
+      final toolFutures = toolsToUse.map((tool) async {
+        final step = createStep("Searching ${tool.name}...");
+        // Yield inside map is tricky, we'll rely on periodic yields or just final yield of this block
+
+        final toolStopwatch = Stopwatch()..start();
+        final result = await tool.execute(effectiveQuery);
+        toolStopwatch.stop();
+
+        if (result.success) {
+          updateStep(
+            step.id,
+            status: SearchStepStatus.completed,
+            description: "Found ${result.documents.length} results",
+            duration: toolStopwatch.elapsed,
+          );
+
+          if (tool is ImageSearchTool) {
+            // Extract images specifically
+            // Logic to extract image URLs from documents/result
+            // For now assuming documents have metadata or specific handling
+            // Adapting existing logic:
+            for (final doc in result.documents) {
+              if (doc.thumbnail != null)
+                imageUrls.add(doc.thumbnail!);
+              else if (doc.url.endsWith('.jpg') || doc.url.endsWith('.png'))
+                imageUrls.add(doc.url);
+            }
+          }
+
+          allRawDocuments.addAll(result.documents);
+        } else {
+          updateStep(
+            step.id,
+            status: SearchStepStatus.failed,
+            description: result.errorMessage,
+            duration: toolStopwatch.elapsed,
+          );
+        }
+      });
+
+      yield RAGUpdate(status: RAGStatus.searching, steps: List.from(steps));
+
+      // Execute all tools in parallel and wait for results
+      await Future.wait(toolFutures);
+
+      yield RAGUpdate(
+        status: RAGStatus.ranking,
+        steps: List.from(steps),
+        images: imageUrls,
+      );
+
+      // ... Proceed with existing ranking/scraping/generation logic ...
+      // But wrapping "Scraping" and "Ranking" in steps
+
+      if (allRawDocuments.isNotEmpty) {
+        final rankingStep = createStep("Ranking & Filtering results");
+        yield RAGUpdate(status: RAGStatus.ranking, steps: List.from(steps));
+
+        final rankStopwatch = Stopwatch()..start();
+        var rankedDocuments = await _documentRanker.rankDocuments(
+          effectiveQuery,
+          allRawDocuments,
+        );
+        final filteredDocuments = _documentRanker.filterDocuments(
+          rankedDocuments,
+          maxDocuments: maxRelevantDocuments,
+        );
+        rankStopwatch.stop();
+
+        updateStep(
+          rankingStep.id,
+          status: SearchStepStatus.completed,
+          description:
+              "Selected ${filteredDocuments.length} most relevant sources",
+          duration: rankStopwatch.elapsed,
+        );
+
+        // Scraping Step
+        final scrapingStep = createStep("Reading content from sources");
+        yield RAGUpdate(status: RAGStatus.scraping, steps: List.from(steps));
+
+        final scrapeStopwatch = Stopwatch()..start();
+        final urlsToScrape = filteredDocuments.map((doc) => doc.url).toList();
+        final scrapedDocuments = await _scraperAdapter.scrapeMultiple(
+          urlsToScrape,
+          relevanceScore: 1.0,
+        );
+        scrapeStopwatch.stop();
+
+        updateStep(
+          scrapingStep.id,
+          status: SearchStepStatus.completed,
+          description: "Read ${scrapedDocuments.length} pages",
+          duration: scrapeStopwatch.elapsed,
+        );
+
+        // Merge logic ...
+        final enrichedDocuments = <Document>[];
+        for (int i = 0; i < filteredDocuments.length; i++) {
+          final doc = filteredDocuments[i];
+          // simplified merge for brevity
+          if (i < scrapedDocuments.length) {
+            enrichedDocuments.add(
+              scrapedDocuments[i].withRelevanceScore(doc.relevanceScore),
+            );
+          } else {
+            enrichedDocuments.add(doc);
+          }
+        }
+
+        // Context Fusion
+        final contextChunks = _contextFusion.fuseContext(
+          enrichedDocuments,
+          maxTotalLength: attachmentContext != null
+              ? effectiveMaxContext ~/ 2
+              : effectiveMaxContext,
+        );
+
+        // Generation Step
+        final thinkingStep = createStep("Generating answer");
+        yield RAGUpdate(status: RAGStatus.thinking, steps: List.from(steps));
+
+        // ... Prompt Generation ...
+        final systemPrompt = _promptEngineer.createSystemPrompt(
+          searchMode: searchMode,
+        );
+        final userPrompt = enableAdaptivePrompting
+            ? _promptEngineer.createAdaptivePrompt(
+                effectiveQuery, // Use effectiveQuery
+                contextChunks,
+                attachmentContext: attachmentContext,
+              )
+            : _promptEngineer.createUserPrompt(
+                effectiveQuery,
+                contextChunks,
+                attachmentContext: attachmentContext,
+              );
+        final fullPrompt = '$systemPrompt\n\n$userPrompt';
+
+        final StringBuffer fullAnswer = StringBuffer();
+
+        updateStep(
+          thinkingStep.id,
+          status: SearchStepStatus.inProgress,
+          description: "Streaming response...",
+        );
+
+        await for (final token in _llmManager.generateResponseStream(
+          fullPrompt,
+        )) {
+          fullAnswer.write(token);
+          yield RAGUpdate(
+            status: RAGStatus.streaming,
+            token: token,
+            steps: List.from(steps),
+          );
+        }
+
+        updateStep(
+          thinkingStep.id,
+          status: SearchStepStatus.completed,
+          description: "Completed",
+        );
+
+        // Final Result Construction
+        final citedMessageData = _citationManager.createCitedMessageData(
+          query: query,
+          answer: fullAnswer.toString(),
+          contextChunks: contextChunks,
+          allScrapedDocuments: enrichedDocuments,
+          images: imageUrls,
+        );
+
+        // Update message with steps!!
+        final finalDataWithSteps = citedMessageData.copyWith(steps: steps);
+
+        yield RAGUpdate(
+          status: RAGStatus.completed,
+          finalResult: finalDataWithSteps,
+          steps: List.from(steps),
+        );
+      } else {
+        // Fallback
+        yield RAGUpdate(
+          status: RAGStatus.completed,
+          finalResult: await _generateFallbackResponse(query),
+        );
+      }
+    } catch (e) {
+      print('RAG Stream Error: $e');
+      yield RAGUpdate(
+        status: RAGStatus.failed,
+        message: e.toString(),
+        steps: List.from(steps),
+      );
+    }
   }
 
-  /// Generate RAG response with optional attachments
+  /// Generate RAG response (Legacy Wrapper)
   Future<MessageData> generateRAGResponse(
     String query, {
     int maxSearchResults = 20,
     int maxRelevantDocuments = 10,
-    int? maxContextLength, // Changed to nullable to enable auto-detection
+    int? maxContextLength,
     bool enableQueryEnhancement = true,
     bool enableAdaptivePrompting = true,
     List<dynamic>? attachments,
     SearchMode searchMode = SearchMode.search,
     Function(MessageData)? onSearchComplete,
   }) async {
-    final stopwatch = Stopwatch()..start();
-
-    try {
-      print('🔍 RAG Pipeline Started (Mode: ${searchMode.name})');
-      print('📝 Query: $query');
-      if (attachments != null && attachments.isNotEmpty) {
-        print('📎 Attachments: ${attachments.length}');
+    MessageData? lastData;
+    await for (final update in generateRAGStream(
+      query,
+      maxSearchResults: maxSearchResults,
+      maxRelevantDocuments: maxRelevantDocuments,
+      maxContextLength: maxContextLength,
+      enableQueryEnhancement: enableQueryEnhancement,
+      enableAdaptivePrompting: enableAdaptivePrompting,
+      attachments: attachments,
+      searchMode: searchMode,
+    )) {
+      if (update.finalResult != null) {
+        lastData = update.finalResult;
       }
-
-      // Step 0: Determine adaptive context length based on LLM capabilities
-      final effectiveMaxContext = await _getAdaptiveContextLength(
-        overrideLength: maxContextLength,
-      );
-      print('📏 Using context length: $effectiveMaxContext chars');
-
-      // Step 0.1: Detect and scrape URLs in query
-      final urlsInQuery = _extractUrls(query);
-      List<Document> scrapedUrlDocuments = [];
-      bool hasSubstantialScrapedContent = false;
-      
-      if (urlsInQuery.isNotEmpty) {
-        print('🔗 Detected ${urlsInQuery.length} URL(s) in query, scraping...');
-        
-        for (final url in urlsInQuery) {
-          try {
-            print('   🌐 Scraping: $url');
-            final scrapedDoc = await _scraperAdapter.scrape(url);
-            
-            // Give user-provided URLs MAXIMUM relevance score to ensure they're prioritized
-            final prioritizedDoc = scrapedDoc.withRelevanceScore(1000.0);
-            scrapedUrlDocuments.add(prioritizedDoc);
-            
-            // Check if we got substantial content (more than 100 chars)
-            if (scrapedDoc.content.length > 100) {
-              hasSubstantialScrapedContent = true;
-            }
-            
-            print('   ✅ Scraped: ${scrapedDoc.title} (${scrapedDoc.content.length} chars)');
-          } catch (e) {
-            print('   ⚠️  Failed to scrape $url: $e');
-          }
-        }
-        
-        print('✅ Successfully scraped ${scrapedUrlDocuments.length}/${urlsInQuery.length} URLs');
-        
-        // If we have substantial content from user-provided URLs, prioritize them
-        if (hasSubstantialScrapedContent) {
-          print('📌 User-provided URLs contain substantial content - will be prioritized in ranking');
-        }
-      }
-
-      // Step 0: Process attachments if provided
-      String? attachmentContext;
-      final List<AttachmentMetadata> attachmentMetadata = [];
-      
-      if (attachments != null && attachments.isNotEmpty) {
-        final attachmentResults = await _processAttachments(attachments);
-        attachmentContext = _attachmentProcessor.createAttachmentContext(
-          attachmentResults.where((r) => r.success).toList(),
-        );
-        
-        for (int i = 0; i < attachments.length; i++) {
-          final attachment = attachments[i];
-          final result = attachmentResults[i];
-          
-          attachmentMetadata.add(
-            AttachmentMetadata.fromAttachmentData(
-              attachment,
-              result.extractedText,
-            ),
-          );
-        }
-        
-        print('✅ Processed ${attachmentResults.where((r) => r.success).length} attachments');
-      }
-
-      // Step 0.5: Analyze query using QueryAnalyzer
-      final queryAnalysis = _queryAnalyzer.analyzeQuery(query);
-      print('📊 Query Analysis:');
-      print('   Intent: ${queryAnalysis.intentType}');
-      print('   Complexity: ${queryAnalysis.complexity['level']}');
-      print('   Temporal: ${queryAnalysis.hasTemporalContext}');
-      print('   Sub-queries: ${queryAnalysis.subQueries.length}');
-      print('   Suggested types: ${queryAnalysis.suggestedSearchTypes.join(", ")}');
-
-      // Step 1: Query enhancement
-      String processedQuery = query;
-      if (enableQueryEnhancement) {
-        final validation = _promptEngineer.validateQuery(query);
-        print('✓ Query Quality: ${validation['quality']}/100');
-
-        if (validation['quality'] < 60) {
-          processedQuery = _promptEngineer.enhanceQuery(query);
-          print('✨ Enhanced Query: $processedQuery');
-        }
-      }
-
-      // Step 2: Multi-type search with recency filters
-      final searchStart = DateTime.now();
-
-      if (!_searxngService.isConfigured) {
-        throw Exception('SearXNG is not configured');
-      }
-
-      // Perform multiple searches across different types
-      final allRawDocuments = <Document>[];
-      
-      // Add scraped URL documents first (they have highest priority)
-      if (scrapedUrlDocuments.isNotEmpty) {
-        allRawDocuments.addAll(scrapedUrlDocuments);
-        print('📌 Added ${scrapedUrlDocuments.length} scraped URL document(s) to context');
-      }
-      
-      List<String> searchTypes = queryAnalysis.suggestedSearchTypes.take(3).toList();
-      
-      // If user provided URLs with substantial content, reduce web search significantly
-      // Focus only on images/videos to populate those tabs
-      if (hasSubstantialScrapedContent) {
-        print('🎯 User-provided URLs detected - limiting search to media only');
-        searchTypes = ['images', 'videos'];
-      } else {
-        // ALWAYS include images and videos search for every query
-        // This ensures the Images and Videos tabs are always populated with relevant media
-        if (!searchTypes.contains('images')) {
-          searchTypes.add('images');
-        }
-        
-        if (!searchTypes.contains('videos')) {
-          searchTypes.add('videos');
-        }
-      }
-      
-      print('🎯 Search types: ${searchTypes.join(", ")}');
-      
-      // Collections for images and videos
-      final List<String> imageUrls = [];
-      final List<VideoItem> videoItems = [];
-      
-      // Map recency
-      SearchRecency searchRecency = SearchRecency.any;
-      if (queryAnalysis.hasTemporalContext && queryAnalysis.recency != null) {
-        switch (queryAnalysis.recency) {
-          case 'day':
-            searchRecency = SearchRecency.day;
-            break;
-          case 'week':
-            searchRecency = SearchRecency.week;
-            break;
-          case 'month':
-            searchRecency = SearchRecency.month;
-            break;
-          case 'year':
-            searchRecency = SearchRecency.year;
-            break;
-        }
-      }
-
-      // Perform searches
-      for (final searchTypeStr in searchTypes) {
-        SearchType searchType = SearchType.general;
-        switch (searchTypeStr) {
-          case 'news':
-            searchType = SearchType.news;
-            break;
-          case 'scholar':
-            searchType = SearchType.scholar;
-            break;
-          case 'shopping':
-            searchType = SearchType.shopping;
-            break;
-          case 'images':
-            searchType = SearchType.images;
-            break;
-          case 'videos':
-            searchType = SearchType.videos;
-            break;
-          default:
-            searchType = SearchType.general;
-        }
-
-        if (!_searxngService.supportsSearchType(searchType)) {
-          continue;
-        }
-
-        try {
-          final response = await _searxngService.search(
-            processedQuery,
-            resultsPerPage: maxSearchResults ~/ searchTypes.length,
-            searchType: searchType,
-            recency: searchRecency,
-          );
-
-          final docs = response.results.map((result) {
-            return Document.fromSearchResult(result);
-          }).toList();
-
-          allRawDocuments.addAll(docs);
-          
-          // Collect images if this is an image search
-          if (searchType == SearchType.images) {
-            int validImages = 0;
-            int rejectedImages = 0;
-            for (final result in response.results) {
-              // For image searches, SearxNG returns img_src field with the actual image URL
-              final imageUrl = result.imgSrc ?? result.url;
-              if (imageUrl.isNotEmpty && imageUrls.length < 12) {
-                // Validate it's a proper image URL
-                if (_isValidImageUrl(imageUrl)) {
-                  imageUrls.add(imageUrl);
-                  validImages++;
-                } else {
-                  rejectedImages++;
-                  if (rejectedImages <= 3) {
-                    print('   ⚠️  Rejected non-image URL: $imageUrl');
-                  }
-                }
-              }
-            }
-            print('   ✓ ${searchTypeStr}: ${docs.length} results (${validImages} valid images, ${rejectedImages} rejected)');
-          }
-          // Collect videos if this is a video search
-          else if (searchType == SearchType.videos) {
-            int validVideos = 0;
-            int rejectedVideos = 0;
-            for (final result in response.results) {
-              if (videoItems.length < 12) {
-                // For video searches, SearxNG returns iframe_src or url for the video
-                final videoUrl = result.iframeSrc ?? result.url;
-                // Check if this looks like a valid video result
-                final isVideo = _isValidVideoResult(result);
-                if (isVideo && videoUrl.isNotEmpty) {
-                  final domain = _extractDomain(result.url);
-                  videoItems.add(VideoItem(
-                    thumbnail: result.thumbnailSrc ?? result.thumbnail ?? '',
-                    url: result.url,
-                    title: result.title,
-                    description: result.snippet,
-                    domain: domain,
-                    duration: result.length,
-                    publishedDate: result.publishedDate,
-                    views: result.views != null ? int.tryParse(result.views!) : null,
-                  ));
-                  validVideos++;
-                } else {
-                  rejectedVideos++;
-                  if (rejectedVideos <= 3) {
-                    print('   ⚠️  Rejected non-video URL: ${result.url}');
-                  }
-                }
-              }
-            }
-            print('   ✓ ${searchTypeStr}: ${docs.length} results (${validVideos} valid videos, ${rejectedVideos} rejected)');
-          }
-          else {
-            print('   ✓ ${searchTypeStr}: ${docs.length} results');
-          }
-        } catch (e) {
-          print('   ✗ ${searchTypeStr} search failed: $e');
-        }
-      }
-
-      // Perform sub-query searches for complex queries
-      if (queryAnalysis.isComplex && queryAnalysis.subQueries.isNotEmpty) {
-        print('🔍 Executing ${queryAnalysis.subQueries.length} sub-queries...');
-        for (final subQuery in queryAnalysis.subQueries.take(2)) {
-          try {
-            final subResponse = await _searxngService.search(
-              subQuery,
-              resultsPerPage: 5,
-              searchType: SearchType.general,
-            );
-
-            final subDocs = subResponse.results.map((result) {
-              return Document.fromSearchResult(result);
-            }).toList();
-
-            allRawDocuments.addAll(subDocs);
-            print('   ✓ Sub-query: "$subQuery" → ${subDocs.length} results');
-          } catch (e) {
-            print('   ✗ Sub-query failed: $e');
-          }
-        }
-      }
-
-      final searchDuration = DateTime.now().difference(searchStart);
-      print('🔎 Found ${allRawDocuments.length} total documents in ${searchDuration.inMilliseconds}ms');
-
-      // Step 2.5: Media ranking using relevance scoring
-      final mediaRankStart = DateTime.now();
-      
-      // Rank images if any were found
-      if (imageUrls.isNotEmpty) {
-        print('🖼️  Ranking ${imageUrls.length} images...');
-        final rankedImages = _mediaRanker.rankImages(query, imageUrls);
-        imageUrls.clear();
-        imageUrls.addAll(rankedImages);
-        print('✅ Ranked images by relevance');
-      }
-      
-      // Rank videos if any were found
-      if (videoItems.isNotEmpty) {
-        print('🎥 Ranking ${videoItems.length} videos...');
-        final rankedVideos = _mediaRanker.rankVideos(query, videoItems);
-        videoItems.clear();
-        videoItems.addAll(rankedVideos);
-        print('✅ Ranked videos by relevance');
-      }
-      
-      final mediaRankDuration = DateTime.now().difference(mediaRankStart);
-      print('🎯 Media ranking completed in ${mediaRankDuration.inMilliseconds}ms');
-
-      // Call callback with search results if provided
-      if (onSearchComplete != null) {
-        final partialMessageData = MessageData(
-          query: query,
-          answer: '',
-          images: imageUrls,
-          videos: videoItems,
-          generationState: MessageGenerationState.generating,
-        );
-        onSearchComplete(partialMessageData);
-      }
-
-      if (allRawDocuments.isEmpty && attachmentContext == null) {
-        return await _generateFallbackResponse(query);
-      }
-
-      // Step 3: Document ranking
-      final rankStart = DateTime.now();
-      final rankedDocuments = _documentRanker.rankDocuments(
-        processedQuery,
-        allRawDocuments,
-      );
-      
-      final filteredDocuments = _documentRanker.filterDocuments(
-        rankedDocuments,
-        maxDocuments: maxRelevantDocuments * 2, // Get more docs for scraping
-      );
-      
-      final rankDuration = DateTime.now().difference(rankStart);
-      print('⭐ Ranked to ${filteredDocuments.length} documents in ${rankDuration.inMilliseconds}ms');
-
-      // Step 3.5: Adaptive scraping with intelligent URL routing
-      final scrapeStart = DateTime.now();
-      final topDocuments = filteredDocuments.take(maxRelevantDocuments).toList();
-      final urlsToScrape = topDocuments.map((doc) => doc.url).toList();
-      
-      print('🌐 Scraping ${urlsToScrape.length} URLs with intelligent routing (mode: ${searchMode.name})...');
-      
-      final scrapedDocuments = await _scraperAdapter.scrapeMultiple(
-        urlsToScrape,
-        relevanceScore: 1.0,
-        onProgress: (completed, total) {
-          print('   📊 Progress: $completed/$total URLs scraped');
-        },
-      );
-
-      // Merge scraped content with original documents
-      final enrichedDocuments = <Document>[];
-      int totalImages = 0;
-      int totalLinks = 0;
-      int successfulScrapes = 0;
-      
-      for (int i = 0; i < topDocuments.length; i++) {
-        final doc = topDocuments[i];
-        final scraped = scrapedDocuments[i];
-        
-        if (scraped.metadata['scraped'] == true && scraped.content.isNotEmpty) {
-          // Use scraped document with original relevance score
-          enrichedDocuments.add(scraped.withRelevanceScore(doc.relevanceScore));
-          totalImages += scraped.images.length;
-          totalLinks += scraped.relatedLinks.length;
-          successfulScrapes++;
-          
-          final scraperType = scraped.metadata['scraperType'] ?? 'unknown';
-          final wordCount = scraped.metadata['wordCount'] ?? scraped.content.split(' ').length;
-          print('   ✓ [$scraperType] ${doc.url} → $wordCount words, ${scraped.images.length} images');
-        } else {
-          // Keep original document
-          enrichedDocuments.add(doc);
-          final error = scraped.metadata['error'] ?? 'unknown error';
-          print('   ✗ ${doc.url} → using snippet ($error)');
-        }
-      }
-
-      final scrapeDuration = DateTime.now().difference(scrapeStart);
-      print('🌐 Scraped content in ${scrapeDuration.inMilliseconds}ms');
-      print('   ✅ Success: $successfulScrapes/${urlsToScrape.length} URLs');
-      if (totalImages > 0 || totalLinks > 0) {
-        print('   🖼️  Total images extracted: $totalImages');
-        print('   🔗 Total links extracted: $totalLinks');
-      }
-
-      // Step 4: Context fusion with enriched content
-      final fusionStart = DateTime.now();
-      final contextChunks = _contextFusion.fuseContext(
-        enrichedDocuments,
-        maxTotalLength: attachmentContext != null ? effectiveMaxContext ~/ 2 : effectiveMaxContext,
-        maxChunksPerDocument: 2, // Limit chunks per document for source diversity
-        optimizeForQuality: true,
-      );
-      
-      final fusionDuration = DateTime.now().difference(fusionStart);
-      print('🧩 Created ${contextChunks.length} context chunks in ${fusionDuration.inMilliseconds}ms');
-
-      // Step 5: Adaptive prompt generation
-      final promptStart = DateTime.now();
-      final systemPrompt = _promptEngineer.createSystemPrompt();
-      
-      String userPrompt;
-      if (enableAdaptivePrompting) {
-        userPrompt = _promptEngineer.createAdaptivePrompt(
-          query, 
-          contextChunks,
-          attachmentContext: attachmentContext,
-          hasUserProvidedUrls: hasSubstantialScrapedContent,
-        );
-      } else {
-        userPrompt = _promptEngineer.createUserPrompt(
-          query, 
-          contextChunks,
-          attachmentContext: attachmentContext,
-          hasUserProvidedUrls: hasSubstantialScrapedContent,
+      // Handle partial updates like images/videos if needed
+      if (update.status == RAGStatus.ranking &&
+          update.documents != null &&
+          onSearchComplete != null) {
+        onSearchComplete(
+          MessageData(
+            query: query,
+            answer: '',
+            images: update.images ?? const [],
+            videos: update.videos ?? const [],
+            generationState: MessageGenerationState.generating,
+          ),
         );
       }
-
-      final fullPrompt = '$systemPrompt\n\n$userPrompt';
-      final promptDuration = DateTime.now().difference(promptStart);
-      print('📄 Prompt ready in ${promptDuration.inMilliseconds}ms');
-
-      // Step 6: LLM response generation
-      final llmStart = DateTime.now();
-      final llmResponse = await _llmManager.generateResponse(fullPrompt);
-      final llmDuration = DateTime.now().difference(llmStart);
-      print('🤖 LLM responded in ${llmDuration.inSeconds}s');
-
-      // Step 7: Citation processing
-      final citationStart = DateTime.now();
-      final citationValidation = _citationManager.validateCitations(
-        llmResponse,
-        contextChunks,
-      );
-      
-      print('📚 Citations: ${citationValidation['stats']['totalCitations']}');
-
-      // Step 8: Generate related questions based on actual content
-      print('💡 Generating follow-up questions from ${contextChunks.length} chunks');
-      final relatedQuestions = _promptEngineer.generateFollowUpQuestions(
-        query,
-        contextChunks,
-        hasAttachments: attachmentContext != null,
-      );
-      print('✅ Generated ${relatedQuestions.length} follow-up questions');
-
-      // Create final message with all scraped documents for comprehensive source list
-      final citedMessageData = _citationManager.createCitedMessageData(
-        query: query,
-        answer: llmResponse,
-        contextChunks: contextChunks,
-        allScrapedDocuments: enrichedDocuments, // Pass all scraped docs for fallback sources
-        customRelatedQuestions: relatedQuestions,
-        attachments: attachmentMetadata,
-        images: imageUrls.isNotEmpty ? imageUrls : null,
-        videos: videoItems.isNotEmpty ? videoItems : null,
-      );
-      
-      final citationDuration = DateTime.now().difference(citationStart);
-
-      // Store metrics
-      stopwatch.stop();
-      _performanceMetrics['lastQuery'] = {
-        'query': query,
-        'totalDuration': stopwatch.elapsedMilliseconds,
-        'searchDuration': searchDuration.inMilliseconds,
-        'rankDuration': rankDuration.inMilliseconds,
-        'scrapeDuration': scrapeDuration.inMilliseconds,
-        'fusionDuration': fusionDuration.inMilliseconds,
-        'promptDuration': promptDuration.inMilliseconds,
-        'llmDuration': llmDuration.inMilliseconds,
-        'citationDuration': citationDuration.inMilliseconds,
-        'documentsUsed': enrichedDocuments.length,
-        'documentsScraped': successfulScrapes,
-        'searchTypes': searchTypes,
-        'hasAttachments': attachmentContext != null,
-        'queryComplexity': queryAnalysis.complexity['level'],
-        'timestamp': DateTime.now().toIso8601String(),
-      };
-
-      print('✨ Completed in ${stopwatch.elapsedMilliseconds}ms');
-      return citedMessageData;
-    } catch (e, stackTrace) {
-      print('❌ RAG Pipeline Failed: $e');
-      print('Stack trace: $stackTrace');
-      
-      stopwatch.stop();
-      return await _generateFallbackResponse(query);
     }
+    return lastData ?? await _generateFallbackResponse(query);
   }
 
   /// Process attachments and extract content
   Future<List<AttachmentProcessResult>> _processAttachments(
     List<dynamic> attachments,
   ) async {
-    final results = <AttachmentProcessResult>[];
-    
-    for (final attachment in attachments) {
+    // Process attachments in parallel to reduce wait time
+    final futures = attachments.map((attachment) async {
       try {
         final result = await _attachmentProcessor.processAttachment(
           attachment.path,
           attachment.name,
         );
-        results.add(result);
+        return result;
       } catch (e) {
         print('⚠️ Failed to process ${attachment.name}: $e');
-        results.add(AttachmentProcessResult(
+        return AttachmentProcessResult(
           success: false,
           errorMessage: e.toString(),
-        ));
+        );
       }
-    }
-    
-    return results;
+    });
+
+    return await Future.wait(futures);
   }
 
   /// Generate response with conversation history - FIXED VERSION
@@ -653,320 +549,68 @@ class RAGOrchestrator {
     List<MessageData> previousMessages, {
     int maxSearchResults = 20,
     int maxRelevantDocuments = 10,
-    int? maxContextLength, // Changed to nullable for auto-detection
+    int? maxContextLength,
     int maxHistoryMessages = 3,
     List<dynamic>? attachments,
     Function(MessageData)? onSearchComplete,
   }) async {
-    try {
-      print('🔄 Multi-turn RAG Started');
-      print('📜 History: ${previousMessages.length} messages');
-      print('🔍 Original query: "$query"');
+    MessageData? lastData;
 
-      // Step 0: Determine adaptive context length
-      final effectiveMaxContext = await _getAdaptiveContextLength(
-        overrideLength: maxContextLength,
-      );
-      print('📏 Using context length: $effectiveMaxContext chars');
-
-      // Step 0.1: Detect and scrape URLs in query
-      final urlsInQuery = _extractUrls(query);
-      List<Document> scrapedUrlDocuments = [];
-      
-      if (urlsInQuery.isNotEmpty) {
-        print('🔗 Detected ${urlsInQuery.length} URL(s) in follow-up query, scraping...');
-        
-        for (final url in urlsInQuery) {
-          try {
-            print('   🌐 Scraping: $url');
-            final scrapedDoc = await _scraperAdapter.scrape(url);
-            scrapedUrlDocuments.add(scrapedDoc);
-            print('   ✅ Scraped: ${scrapedDoc.title} (${scrapedDoc.content.length} chars)');
-          } catch (e) {
-            print('   ⚠️  Failed to scrape $url: $e');
-          }
-        }
-        
-        print('✅ Successfully scraped ${scrapedUrlDocuments.length}/${urlsInQuery.length} URLs');
+    await for (final update in generateRAGStream(
+      query,
+      maxSearchResults: maxSearchResults,
+      maxRelevantDocuments: maxRelevantDocuments,
+      maxContextLength: maxContextLength,
+      maxHistoryMessages: maxHistoryMessages,
+      attachments: attachments,
+      previousMessages: previousMessages,
+    )) {
+      if (update.finalResult != null) {
+        lastData = update.finalResult;
       }
 
-      // Step 1: Analyze query context dependency using QueryAnalyzer
-      final queryAnalysis = _queryAnalyzer.analyzeQuery(query);
-      print('📊 Context Analysis:');
-      print('   Level: ${queryAnalysis.contextLevel}');
-      print('   Confidence: ${queryAnalysis.contextConfidence.toStringAsFixed(2)}');
-      print('   Requires context: ${queryAnalysis.requiresContext}');
-
-      // Step 2: Intelligently resolve contextual references if needed
-      String searchQuery = query;
-      bool queryWasResolved = false;
-      
-      if (queryAnalysis.requiresContext && previousMessages.isNotEmpty) {
-        // Use intelligent query resolution (like Perplexity AI)
-        searchQuery = _promptEngineer.resolveContextualQuery(
-          query,
-          previousMessages,
-          maxHistoryMessages: maxHistoryMessages,
+      // Handle partial updates like images/videos if needed
+      if (update.status == RAGStatus.ranking &&
+          update.documents != null &&
+          onSearchComplete != null) {
+        onSearchComplete(
+          MessageData(
+            query: query,
+            answer: '',
+            images: update.images ?? const [],
+            videos: update.videos ?? const [],
+            steps: update.steps ?? const [],
+            sources:
+                update.documents
+                    ?.map(
+                      (d) => SourceItem(
+                        thumbnail: d.metadata['thumbnail'] ?? '',
+                        url: d.url,
+                        title: d.title,
+                        description: d.snippet,
+                        domain: d.source,
+                        source: d.source,
+                        publishedDate: d.publishedDate,
+                      ),
+                    )
+                    .toList() ??
+                const [],
+            generationState: MessageGenerationState.generating,
+          ),
         );
-        queryWasResolved = searchQuery != query;
-        
-        if (queryWasResolved) {
-          print('✨ Resolved contextual query for search: "$searchQuery"');
-        } else {
-          print('ℹ️  Query already self-contained, no resolution needed');
-        }
-      } else if (queryAnalysis.contextLevel == 'partial' && previousMessages.isNotEmpty) {
-        // For partial dependency, try light enhancement
-        final enhanced = _promptEngineer.resolveContextualQuery(
-          query,
-          previousMessages,
-          maxHistoryMessages: 1, // Only use most recent message
-        );
-        if (enhanced != query && enhanced.length < query.length * 1.5) {
-          searchQuery = enhanced;
-          queryWasResolved = true;
-          print('🔧 Lightly enhanced query for search: "$searchQuery"');
-        }
-      } else {
-        print('✅ Query is independent, no context resolution needed');
       }
-
-      // Step 3: Process attachments if provided
-      String? attachmentContext;
-      final List<AttachmentMetadata> attachmentMetadata = [];
-      
-      if (attachments != null && attachments.isNotEmpty) {
-        final attachmentResults = await _processAttachments(attachments);
-        attachmentContext = _attachmentProcessor.createAttachmentContext(
-          attachmentResults.where((r) => r.success).toList(),
-        );
-        
-        for (int i = 0; i < attachments.length; i++) {
-          final attachment = attachments[i];
-          final result = attachmentResults[i];
-          
-          attachmentMetadata.add(
-            AttachmentMetadata.fromAttachmentData(
-              attachment,
-              result.extractedText,
-            ),
-          );
-        }
-        
-        print('✅ Processed ${attachmentResults.where((r) => r.success).length} attachments');
-      }
-
-      // Step 4: Perform search with resolved query
-      final searchStart = DateTime.now();
-
-      if (!_searxngService.isConfigured) {
-        throw Exception('SearXNG is not configured');
-      }
-
-      // Perform general search
-      final response = await _searxngService.search(
-        searchQuery,
-        resultsPerPage: maxSearchResults,
-      );
-
-      final rawDocuments = response.results.map((result) {
-        return Document.fromSearchResult(result);
-      }).toList();
-      
-      // Add scraped URL documents first (they have highest priority)
-      if (scrapedUrlDocuments.isNotEmpty) {
-        rawDocuments.insertAll(0, scrapedUrlDocuments);
-        print('📌 Added ${scrapedUrlDocuments.length} scraped URL document(s) to follow-up context');
-      }
-      
-      // ALSO search for images and videos for follow-ups
-      final List<String> imageUrls = [];
-      final List<VideoItem> videoItems = [];
-      
-      // Search for images
-      try {
-        if (_searxngService.supportsSearchType(SearchType.images)) {
-          final imageResponse = await _searxngService.search(
-            searchQuery,
-            resultsPerPage: 12,
-            searchType: SearchType.images,
-          );
-          
-          for (final result in imageResponse.results) {
-            if (result.url.isNotEmpty && imageUrls.length < 12) {
-              imageUrls.add(result.url);
-            }
-          }
-          print('   ✓ Images: ${imageUrls.length} found');
-        }
-      } catch (e) {
-        print('   ✗ Image search failed: $e');
-      }
-      
-      // Search for videos
-      try {
-        if (_searxngService.supportsSearchType(SearchType.videos)) {
-          final videoResponse = await _searxngService.search(
-            searchQuery,
-            resultsPerPage: 12,
-            searchType: SearchType.videos,
-          );
-          
-          for (final result in videoResponse.results) {
-            if (videoItems.length < 12) {
-              final domain = _extractDomain(result.url);
-              videoItems.add(VideoItem(
-                thumbnail: result.thumbnail ?? '',
-                url: result.url,
-                title: result.title,
-                description: result.snippet,
-                domain: domain,
-                duration: null,
-                publishedDate: result.publishedDate,
-                views: null,
-              ));
-            }
-          }
-          print('   ✓ Videos: ${videoItems.length} found');
-        }
-      } catch (e) {
-        print('   ✗ Video search failed: $e');
-      }
-      
-      final searchDuration = DateTime.now().difference(searchStart);
-      print('🔎 Found ${rawDocuments.length} documents in ${searchDuration.inMilliseconds}ms');
-
-      // Call callback with search results if provided
-      if (onSearchComplete != null) {
-        final partialMessageData = MessageData(
-          query: query,
-          answer: '',
-          images: imageUrls,
-          videos: videoItems,
-          generationState: MessageGenerationState.generating,
-        );
-        onSearchComplete(partialMessageData);
-      }
-
-      // Check if we have any content
-      if (rawDocuments.isEmpty && attachmentMetadata.isEmpty) {
-        return await _generateFallbackResponse(query);
-      }
-
-      // Rank and filter documents
-      final rankedDocuments = _documentRanker.rankDocuments(
-        searchQuery,
-        rawDocuments,
-      );
-      
-      final filteredDocuments = _documentRanker.filterDocuments(
-        rankedDocuments,
-        maxDocuments: maxRelevantDocuments,
-      );
-
-      // Create context chunks
-      final contextChunks = _contextFusion.fuseContext(
-        filteredDocuments,
-        maxTotalLength: attachmentContext != null ? effectiveMaxContext ~/ 2 : effectiveMaxContext,
-        maxChunksPerDocument: 2, // Limit chunks per document for source diversity
-        optimizeForQuality: true,
-      );
-
-      // Build conversation context for LLM prompt if needed
-      final conversationContext = queryAnalysis.requiresContext || queryAnalysis.contextLevel == 'partial'
-          ? _buildConversationContext(previousMessages, maxMessages: maxHistoryMessages)
-          : null;
-
-      // Generate prompt with conversation history (internally)
-      final systemPrompt = _promptEngineer.createSystemPrompt();
-      final userPrompt = _promptEngineer.createUserPromptWithHistory(
-        query,  // Use ORIGINAL query for LLM, not resolved one
-        contextChunks,
-        conversationContext: conversationContext,
-        attachmentContext: attachmentContext,
-      );
-
-      final fullPrompt = '$systemPrompt\n\n$userPrompt';
-
-      // Generate response
-      final llmResponse = await _llmManager.generateResponse(fullPrompt);
-
-      // Generate context-aware related questions (FIX HERE)
-      print('💡 Generating follow-up questions with history from ${contextChunks.length} chunks');
-      final relatedQuestions = _promptEngineer.generateFollowUpQuestionsWithHistory(
-        query,
-        contextChunks,  // Pass the actual context chunks
-        previousMessages,
-        hasAttachments: attachmentContext != null,
-      );
-      print('✅ Generated ${relatedQuestions.length} follow-up questions');
-
-      // Create final message with ORIGINAL query (not enhanced) and filtered documents for sources
-      final citedMessageData = _citationManager.createCitedMessageData(
-        query: query,  // Use original query here
-        answer: llmResponse,
-        contextChunks: contextChunks,
-        allScrapedDocuments: filteredDocuments, // Pass filtered docs for comprehensive sources
-        customRelatedQuestions: relatedQuestions,
-        attachments: attachmentMetadata,
-        images: imageUrls.isNotEmpty ? imageUrls : null,
-        videos: videoItems.isNotEmpty ? videoItems : null,
-      );
-
-      return citedMessageData;
-    } catch (e) {
-      print('❌ Multi-turn RAG failed: $e');
-      return await generateRAGResponse(query, attachments: attachments);
     }
-  }
-
-  /// Build conversation context from history
-  String _buildConversationContext(
-    List<MessageData> messages,
-    {int maxMessages = 3}
-  ) {
-    if (messages.isEmpty) return '';
-
-    final buffer = StringBuffer();
-    final recentMessages = messages.length > maxMessages 
-        ? messages.skip(messages.length - maxMessages).toList()
-        : messages;
-
-    buffer.writeln('CONVERSATION HISTORY:\n');
-    
-    for (int i = 0; i < recentMessages.length; i++) {
-      final message = recentMessages[i];
-      buffer.writeln('Turn ${i + 1}:');
-      buffer.writeln('User: ${message.query}');
-      
-      final answerPreview = message.answer.length > 300
-          ? '${message.answer.substring(0, 300)}...'
-          : message.answer;
-      buffer.writeln('Assistant: $answerPreview');
-      
-      if (message.hasAttachments) {
-        buffer.writeln('(Had ${message.attachments.length} file attachments)');
-      }
-      if (message.sources.isNotEmpty) {
-        buffer.writeln('(Referenced ${message.sources.length} sources)');
-      }
-      
-      buffer.writeln();
-    }
-    
-    buffer.writeln('---\n');
-
-    return buffer.toString();
+    return lastData ?? await _generateFallbackResponse(query);
   }
 
   /// Generate fallback response
   Future<MessageData> _generateFallbackResponse(String query) async {
     try {
       print('📄 Generating fallback response');
-      
+
       final fallbackPrompt = _promptEngineer.createFallbackPrompt(query);
       final response = await _llmManager.generateResponse(fallbackPrompt);
-      
+
       final relatedQuestions = [
         'Can you provide more specific details?',
         'What aspect interests you most?',
@@ -983,7 +627,7 @@ class RAGOrchestrator {
       );
     } catch (e) {
       print('❌ Fallback generation failed: $e');
-      
+
       return MessageData(
         query: query,
         answer: 'I apologize, but I encountered an error. Please try again.',
@@ -1003,7 +647,8 @@ class RAGOrchestrator {
     return _promptEngineer.enhanceQuery(query);
   }
 
-  bool get isReady => _llmManager.hasConfiguredProvider && _searxngService.isConfigured;
+  bool get isReady =>
+      _llmManager.hasConfiguredProvider && _searxngService.isConfigured;
 
   Map<String, dynamic> getStatus() {
     return {
@@ -1042,11 +687,11 @@ class RAGOrchestrator {
   Map<String, dynamic> analyzeQueryComplexity(String query) {
     final validation = _promptEngineer.validateQuery(query);
     final wordCount = query.split(RegExp(r'\s+')).length;
-    
+
     String complexity;
     int recommendedDocs;
     int recommendedContext;
-    
+
     if (wordCount < 5 || validation['quality'] < 50) {
       complexity = 'simple';
       recommendedDocs = 5;
@@ -1060,7 +705,7 @@ class RAGOrchestrator {
       recommendedDocs = 10;
       recommendedContext = 8000;
     }
-    
+
     return {
       'complexity': complexity,
       'wordCount': wordCount,
@@ -1075,179 +720,9 @@ class RAGOrchestrator {
   Future<Map<String, dynamic>> performHealthCheck() async {
     return {
       'llm': _llmManager.hasConfiguredProvider ? 'healthy' : 'not_configured',
-      'search': _searxngService.isConfigured 
-          ? 'healthy' 
-          : 'not_configured',
+      'search': _searxngService.isConfigured ? 'healthy' : 'not_configured',
       'overall': isReady ? 'healthy' : 'degraded',
       'timestamp': DateTime.now().toIso8601String(),
     };
-  }
-
-  /// Extract domain from URL
-  String _extractDomain(String url) {
-    try {
-      final uri = Uri.parse(url);
-      String domain = uri.host;
-      
-      // Remove www. prefix
-      if (domain.startsWith('www.')) {
-        domain = domain.substring(4);
-      }
-      
-      return domain;
-    } catch (e) {
-      return 'unknown';
-    }
-  }
-
-  /// Clean URL by removing query parameters and fragments
-  String _cleanUrl(String url) {
-    try {
-      final uri = Uri.parse(url);
-      // Reconstruct URL without query params and fragments
-      return '${uri.scheme}://${uri.host}${uri.path}';
-    } catch (e) {
-      // If parsing fails, try simple string manipulation
-      final questionMarkIndex = url.indexOf('?');
-      final hashIndex = url.indexOf('#');
-      
-      int endIndex = url.length;
-      if (questionMarkIndex != -1 && hashIndex != -1) {
-        endIndex = questionMarkIndex < hashIndex ? questionMarkIndex : hashIndex;
-      } else if (questionMarkIndex != -1) {
-        endIndex = questionMarkIndex;
-      } else if (hashIndex != -1) {
-        endIndex = hashIndex;
-      }
-      
-      return url.substring(0, endIndex);
-    }
-  }
-
-  /// Validate if URL is a valid image URL
-  bool _isValidImageUrl(String url) {
-    if (url.isEmpty) return false;
-    
-    // Clean the URL first - remove query params and fragments
-    final cleanedUrl = _cleanUrl(url).toLowerCase();
-    
-    // Define all supported image format extensions
-    final imageExtensions = [
-      '.jpg', 
-      '.jpeg', 
-      '.png', 
-      '.gif', 
-      '.webp', 
-      '.bmp', 
-      '.svg', 
-      '.ico', 
-      '.tiff', 
-      '.tif', 
-      '.jfif', 
-      '.pjpeg', 
-      '.pjp', 
-      '.avif',
-      '.heic',
-      '.heif',
-    ];
-    
-    // Check if cleaned URL ends with any image extension
-    for (final ext in imageExtensions) {
-      if (cleanedUrl.endsWith(ext)) {
-        return true;
-      }
-    }
-    
-    // Additional check: Check for image hosting domains
-    // These are trusted to serve actual images even without explicit extensions
-    final imageHosts = [
-      'imgur.com',
-      'i.imgur.com',
-      'flickr.com',
-      'staticflickr.com',
-      'instagram.com',
-      'cdninstagram.com',
-      'pinterest.com',
-      'pinimg.com',
-      'unsplash.com',
-      'images.unsplash.com',
-      'pexels.com',
-      'images.pexels.com',
-      'pixabay.com',
-      'i.redd.it', // Reddit images
-      'media.giphy.com',
-      'tenor.com',
-    ];
-    
-    try {
-      final uri = Uri.parse(url);
-      final host = uri.host.toLowerCase();
-      
-      // Only accept from known image hosting domains
-      if (imageHosts.any((h) => host.contains(h))) {
-        return true;
-      }
-      
-      // For CDN domains, require image extension in cleaned path
-      if (host.contains('cdn') || host.contains('cloudfront') || host.contains('cloudinary')) {
-        final cleanedPath = uri.path.toLowerCase();
-        if (imageExtensions.any((ext) => cleanedPath.endsWith(ext))) {
-          return true;
-        }
-      }
-    } catch (e) {
-      return false;
-    }
-    
-    return false;
-  }
-
-  /// Validate if search result is a valid video result
-  bool _isValidVideoResult(dynamic result) {
-    if (result == null) return false;
-    
-    final url = result.url?.toLowerCase() ?? '';
-    
-    // Must have a URL
-    if (url.isEmpty) {
-      return false;
-    }
-    
-    // If SearxNG provided iframe_src, it's definitely a video
-    if (result.iframeSrc != null && result.iframeSrc!.isNotEmpty) {
-      return true;
-    }
-    
-    // Clean the URL first
-    final cleanedUrl = _cleanUrl(url).toLowerCase();
-    
-    // Check for video hosting platforms in URL - most reliable
-    final videoHosts = [
-      'youtube.com',
-      'youtu.be',
-      'vimeo.com',
-      'dailymotion.com',
-      'twitch.tv',
-      'tiktok.com',
-      'facebook.com/watch',
-      'twitter.com/i/broadcasts',
-      'video.', // Common subdomain for video content
-      'videos.', // Common subdomain for video content
-    ];
-    
-    if (videoHosts.any((host) => url.contains(host))) {
-      return true;
-    }
-    
-    // Check if cleaned URL ends with video file extension
-    final videoExtensions = ['.mp4', '.webm', '.mov', '.avi', '.mkv', '.flv', '.m4v', '.ogv', '.wmv', '.mpg', '.mpeg'];
-    
-    for (final ext in videoExtensions) {
-      if (cleanedUrl.endsWith(ext)) {
-        return true;
-      }
-    }
-    
-    return false; // Default to false for safety - only allow explicitly video URLs
   }
 }

@@ -9,7 +9,7 @@ class AutocompleteService {
   Timer? _debounceTimer;
   String? _lastQuery;
   List<AutocompleteSuggestion> _cachedSuggestions = [];
-  
+
   static const Duration _debounceDuration = Duration(milliseconds: 300);
   static const Duration _requestTimeout = Duration(seconds: 5);
   static const int _maxSuggestions = 6;
@@ -17,8 +17,8 @@ class AutocompleteService {
   AutocompleteService({
     String baseUrl = 'http://localhost:4000',
     http.Client? httpClient,
-  })  : _baseUrl = baseUrl,
-        _httpClient = httpClient ?? http.Client();
+  }) : _baseUrl = baseUrl,
+       _httpClient = httpClient ?? http.Client();
 
   /// Get autocomplete suggestions with NLP-based enhancements
   Future<List<AutocompleteSuggestion>> getSuggestions(String query) async {
@@ -35,21 +35,21 @@ class AutocompleteService {
     try {
       // Preprocess the query using NLP techniques
       final processedQuery = _preprocessQuery(query);
-      
+
       // Get raw suggestions from SearxNG
       final rawSuggestions = await _fetchSearxngSuggestions(processedQuery);
-      
+
       // Enhance and rank suggestions using NLP
       final enhancedSuggestions = _enhanceSuggestions(query, rawSuggestions);
-      
+
       // Cache the results
       _lastQuery = query;
       _cachedSuggestions = enhancedSuggestions;
-      
+
       return enhancedSuggestions;
     } catch (e) {
       print('❌ Autocomplete error: $e');
-      
+
       // Fallback to local suggestions based on query analysis
       return _generateFallbackSuggestions(query);
     }
@@ -71,7 +71,7 @@ class AutocompleteService {
 
     // Create new debounce timer
     final completer = Completer<List<AutocompleteSuggestion>>();
-    
+
     _debounceTimer = Timer(_debounceDuration, () async {
       try {
         final suggestions = await getSuggestions(query);
@@ -90,28 +90,26 @@ class AutocompleteService {
   Future<List<String>> _fetchSearxngSuggestions(String query) async {
     try {
       final uri = Uri.parse('${_baseUrl.trimEnd('/')}/autocompleter');
-      final suggestionUri = uri.replace(queryParameters: {
-        'q': query,
-        'format': 'json',
-      });
+      final suggestionUri = uri.replace(
+        queryParameters: {'q': query, 'format': 'json'},
+      );
 
-      final response = await _httpClient.get(
-        suggestionUri,
-        headers: {
-          'User-Agent': 'Searvo/1.0',
-          'Accept': 'application/json',
-        },
-      ).timeout(_requestTimeout);
+      final response = await _httpClient
+          .get(
+            suggestionUri,
+            headers: {'User-Agent': 'Searvo/1.0', 'Accept': 'application/json'},
+          )
+          .timeout(_requestTimeout);
 
       if (response.statusCode == 200) {
         final dynamic jsonData = json.decode(response.body);
-        
+
         // SearxNG autocomplete returns format: [query, [suggestions]]
         // Example: ["test", ["test match", "testbook", "testosterone", ...]]
         if (jsonData is List && jsonData.length >= 2) {
           // The second element is the array of suggestions
           final suggestionsArray = jsonData[1];
-          
+
           if (suggestionsArray is List) {
             return suggestionsArray
                 .whereType<String>()
@@ -119,13 +117,10 @@ class AutocompleteService {
                 .toList();
           }
         }
-        
+
         // Fallback: try to parse as flat array (in case format changes)
         if (jsonData is List) {
-          return jsonData
-              .whereType<String>()
-              .take(_maxSuggestions)
-              .toList();
+          return jsonData.whereType<String>().take(_maxSuggestions).toList();
         }
 
         return [];
@@ -141,16 +136,16 @@ class AutocompleteService {
   /// Preprocess query using NLP techniques
   String _preprocessQuery(String query) {
     String processed = query.trim();
-    
+
     // Remove extra whitespace
     processed = processed.replaceAll(RegExp(r'\s+'), ' ');
-    
+
     // Handle common typos and variations (basic spell correction)
     processed = _handleCommonTypos(processed);
-    
+
     // Expand abbreviations
     processed = _expandAbbreviations(processed);
-    
+
     return processed;
   }
 
@@ -172,7 +167,10 @@ class AutocompleteService {
 
     String result = query.toLowerCase();
     typoMap.forEach((typo, correction) {
-      result = result.replaceAll(RegExp('\\b$typo\\b', caseSensitive: false), correction);
+      result = result.replaceAll(
+        RegExp('\\b$typo\\b', caseSensitive: false),
+        correction,
+      );
     });
 
     // Restore original casing for first letter if it was uppercase
@@ -204,7 +202,7 @@ class AutocompleteService {
     };
 
     String result = query;
-    
+
     // Only expand if the query seems like it needs expansion
     // (e.g., very short queries with known abbreviations)
     if (query.split(' ').length <= 3) {
@@ -231,7 +229,7 @@ class AutocompleteService {
     List<String> rawSuggestions,
   ) {
     final List<AutocompleteSuggestion> enhanced = [];
-    
+
     // Extract query intent and keywords
     final intent = _detectQueryIntent(originalQuery);
     final keywords = _extractKeywords(originalQuery);
@@ -249,15 +247,20 @@ class AutocompleteService {
       final type = _determineSuggestionType(suggestion, intent);
 
       // Generate display title with highlighting
-      final highlightedTitle = _generateHighlightedTitle(originalQuery, suggestion);
+      final highlightedTitle = _generateHighlightedTitle(
+        originalQuery,
+        suggestion,
+      );
 
-      enhanced.add(AutocompleteSuggestion(
-        text: suggestion,
-        displayTitle: highlightedTitle,
-        type: type,
-        relevanceScore: score,
-        intent: intent,
-      ));
+      enhanced.add(
+        AutocompleteSuggestion(
+          text: suggestion,
+          displayTitle: highlightedTitle,
+          type: type,
+          relevanceScore: score,
+          intent: intent,
+        ),
+      );
     }
 
     // Sort by relevance score (highest first)
@@ -271,32 +274,44 @@ class AutocompleteService {
     final lowerQuery = query.toLowerCase();
 
     // Question patterns
-    if (RegExp(r'^(what|who|when|where|why|how|is|are|can|does|do|will)').hasMatch(lowerQuery)) {
+    if (RegExp(
+      r'^(what|who|when|where|why|how|is|are|can|does|do|will)',
+    ).hasMatch(lowerQuery)) {
       return QueryIntent.question;
     }
 
     // Definition patterns
-    if (RegExp(r'(what is|define|definition of|meaning of)').hasMatch(lowerQuery)) {
+    if (RegExp(
+      r'(what is|define|definition of|meaning of)',
+    ).hasMatch(lowerQuery)) {
       return QueryIntent.definition;
     }
 
     // How-to patterns
-    if (RegExp(r'^(how to|tutorial|guide|learn|steps to)').hasMatch(lowerQuery)) {
+    if (RegExp(
+      r'^(how to|tutorial|guide|learn|steps to)',
+    ).hasMatch(lowerQuery)) {
       return QueryIntent.howTo;
     }
 
     // Comparison patterns
-    if (RegExp(r'(vs|versus|compare|difference between|better than)').hasMatch(lowerQuery)) {
+    if (RegExp(
+      r'(vs|versus|compare|difference between|better than)',
+    ).hasMatch(lowerQuery)) {
       return QueryIntent.comparison;
     }
 
     // News/current events patterns
-    if (RegExp(r'(news|latest|recent|today|breaking|update)').hasMatch(lowerQuery)) {
+    if (RegExp(
+      r'(news|latest|recent|today|breaking|update)',
+    ).hasMatch(lowerQuery)) {
       return QueryIntent.news;
     }
 
     // Research patterns
-    if (RegExp(r'(research|study|analysis|review|paper|journal)').hasMatch(lowerQuery)) {
+    if (RegExp(
+      r'(research|study|analysis|review|paper|journal)',
+    ).hasMatch(lowerQuery)) {
       return QueryIntent.research;
     }
 
@@ -307,10 +322,44 @@ class AutocompleteService {
   Set<String> _extractKeywords(String query) {
     // Common stop words to ignore
     final stopWords = {
-      'the', 'is', 'at', 'which', 'on', 'a', 'an', 'and', 'or', 'but',
-      'in', 'with', 'to', 'for', 'of', 'as', 'by', 'from', 'that', 'this',
-      'be', 'are', 'was', 'were', 'been', 'have', 'has', 'had', 'do', 'does',
-      'did', 'will', 'would', 'could', 'should', 'may', 'might', 'can',
+      'the',
+      'is',
+      'at',
+      'which',
+      'on',
+      'a',
+      'an',
+      'and',
+      'or',
+      'but',
+      'in',
+      'with',
+      'to',
+      'for',
+      'of',
+      'as',
+      'by',
+      'from',
+      'that',
+      'this',
+      'be',
+      'are',
+      'was',
+      'were',
+      'been',
+      'have',
+      'has',
+      'had',
+      'do',
+      'does',
+      'did',
+      'will',
+      'would',
+      'could',
+      'should',
+      'may',
+      'might',
+      'can',
     };
 
     final words = query.toLowerCase().split(RegExp(r'\s+'));
@@ -319,7 +368,7 @@ class AutocompleteService {
     for (final word in words) {
       // Clean word
       final cleaned = word.replaceAll(RegExp(r'[^\w]'), '');
-      
+
       // Add if not a stop word and length > 2
       if (cleaned.length > 2 && !stopWords.contains(cleaned)) {
         keywords.add(cleaned);
@@ -355,7 +404,9 @@ class AutocompleteService {
     final suggestionWords = lowerSuggestion.split(RegExp(r'\s+'));
     int keywordMatches = 0;
     for (final keyword in keywords) {
-      if (suggestionWords.any((word) => word.contains(keyword) || keyword.contains(word))) {
+      if (suggestionWords.any(
+        (word) => word.contains(keyword) || keyword.contains(word),
+      )) {
         keywordMatches++;
       }
     }
@@ -405,7 +456,10 @@ class AutocompleteService {
   }
 
   /// Determine the type of suggestion
-  SuggestionType _determineSuggestionType(String suggestion, QueryIntent intent) {
+  SuggestionType _determineSuggestionType(
+    String suggestion,
+    QueryIntent intent,
+  ) {
     final lower = suggestion.toLowerCase();
 
     // Check for question
@@ -420,7 +474,9 @@ class AutocompleteService {
     }
 
     // Check for trending (would need additional data in real implementation)
-    if (RegExp(r'(latest|news|today|breaking|trending|2025|2024)').hasMatch(lower)) {
+    if (RegExp(
+      r'(latest|news|today|breaking|trending|2025|2024)',
+    ).hasMatch(lower)) {
       return SuggestionType.trending;
     }
 
@@ -503,13 +559,15 @@ class AutocompleteService {
       default:
         // General fallback
         if (lowerQuery.length > 3) {
-          suggestions.add(AutocompleteSuggestion(
-            text: query,
-            displayTitle: query,
-            type: SuggestionType.topic,
-            relevanceScore: 70.0,
-            intent: intent,
-          ));
+          suggestions.add(
+            AutocompleteSuggestion(
+              text: query,
+              displayTitle: query,
+              type: SuggestionType.topic,
+              relevanceScore: 70.0,
+              intent: intent,
+            ),
+          );
         }
     }
 
@@ -534,39 +592,42 @@ class AutocompleteService {
     final trendingQueries = [
       'news today',
       'latest technology',
+      'generate image of futuristic city',
       'ai',
       'breaking news',
       'trending',
     ];
-    
+
     final List<AutocompleteSuggestion> allSuggestions = [];
-    
+
     try {
       // Fetch suggestions for each trending query and combine
       for (final query in trendingQueries) {
         final suggestions = await _fetchSearxngSuggestions(query);
-        
+
         // Convert to AutocompleteSuggestion objects
         for (final suggestion in suggestions.take(2)) {
           if (!allSuggestions.any((s) => s.text == suggestion)) {
-            allSuggestions.add(AutocompleteSuggestion(
-              text: suggestion,
-              displayTitle: suggestion,
-              type: SuggestionType.trending,
-              relevanceScore: 80.0,
-              intent: QueryIntent.general,
-            ));
+            allSuggestions.add(
+              AutocompleteSuggestion(
+                text: suggestion,
+                displayTitle: suggestion,
+                type: SuggestionType.trending,
+                relevanceScore: 80.0,
+                intent: QueryIntent.general,
+              ),
+            );
           }
         }
-        
+
         // Stop if we have enough suggestions
         if (allSuggestions.length >= _maxSuggestions) break;
       }
-      
+
       return allSuggestions.take(_maxSuggestions).toList();
     } catch (e) {
       print('⚠️ Failed to fetch trending suggestions: $e');
-      
+
       // Fallback to popular topics
       return [
         AutocompleteSuggestion(
@@ -645,12 +706,7 @@ enum QueryIntent {
 }
 
 /// Suggestion type for UI differentiation
-enum SuggestionType {
-  question,
-  topic,
-  trending,
-  related,
-}
+enum SuggestionType { question, topic, trending, related }
 
 /// Autocomplete suggestion with metadata
 class AutocompleteSuggestion {

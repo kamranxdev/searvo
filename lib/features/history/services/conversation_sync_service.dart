@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../settings/services/settings_service.dart';
 import '../../auth/services/auth_service.dart';
@@ -9,7 +8,7 @@ import 'conversation_cloud_service.dart';
 
 /// Hybrid service that combines local Hive storage with optional cloud sync
 /// Provides unified interface for conversation management with privacy controls
-class ConversationSyncService extends ChangeNotifier {
+class ConversationSyncService {
   static final ConversationSyncService _instance = ConversationSyncService._internal();
   factory ConversationSyncService() => _instance;
   ConversationSyncService._internal();
@@ -60,7 +59,6 @@ class ConversationSyncService extends ChangeNotifier {
     if (timestampString != null) {
       _lastSyncTimestamp = DateTime.tryParse(timestampString);
     }
-    notifyListeners();
   }
 
   /// Handle authentication state changes
@@ -72,7 +70,6 @@ class ConversationSyncService extends ChangeNotifier {
       // User signed out
       print('🔄 User signed out, cloud sync disabled');
     }
-    notifyListeners();
   }
 
   /// Enable or disable cloud sync
@@ -88,8 +85,6 @@ class ConversationSyncService extends ChangeNotifier {
     } else if (!enabled) {
       print('🚫 Cloud sync disabled');
     }
-
-    notifyListeners();
   }
 
   /// Save a new conversation (local + optional cloud sync)
@@ -319,7 +314,6 @@ class ConversationSyncService extends ChangeNotifier {
   Future<void> _updateLastSyncTimestamp() async {
     _lastSyncTimestamp = DateTime.now();
     await _settings.setLastSyncTimestamp(_lastSyncTimestamp!.toIso8601String());
-    notifyListeners();
   }
 
   /// Get conversation count

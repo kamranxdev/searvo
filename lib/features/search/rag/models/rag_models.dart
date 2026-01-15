@@ -1,6 +1,6 @@
-
-
 import 'package:searvo/features/search/models/search_provider_config.dart';
+import '../../models/message_data.dart';
+import '../../models/search_step.dart';
 
 /// Enhanced document model for RAG system
 class Document {
@@ -14,7 +14,7 @@ class Document {
   final String source;
   final double relevanceScore;
   final Map<String, dynamic> metadata;
-  
+
   // Rich metadata fields
   final List<String> images;
   final List<String> relatedLinks;
@@ -41,7 +41,10 @@ class Document {
   });
 
   /// Create from SearchResult with enhanced content
-  factory Document.fromSearchResult(SearchResult result, {String? fullContent}) {
+  factory Document.fromSearchResult(
+    SearchResult result, {
+    String? fullContent,
+  }) {
     return Document(
       id: result.url.hashCode.toString(),
       title: result.title,
@@ -91,10 +94,10 @@ class Document {
       return 'unknown';
     }
   }
-  
+
   /// Check if document has rich content (images/links)
   bool get hasRichContent => images.isNotEmpty || relatedLinks.isNotEmpty;
-  
+
   /// Get content quality indicator
   String get contentQuality {
     if (readabilityScore == null) return 'unknown';
@@ -106,7 +109,7 @@ class Document {
   @override
   String toString() {
     return 'Document(id: $id, title: $title, source: $source, score: ${relevanceScore.toStringAsFixed(2)}, '
-           'images: ${images.length}, links: ${relatedLinks.length}${author != null ? ", author: $author" : ""})';
+        'images: ${images.length}, links: ${relatedLinks.length}${author != null ? ", author: $author" : ""})';
   }
 }
 
@@ -146,4 +149,39 @@ class ContextChunk {
   String toString() {
     return 'ContextChunk(length: ${content.length}, citations: ${citations.length}, score: $relevanceScore)';
   }
+}
+
+/// RAG process status types
+enum RAGStatus {
+  planning,
+  searching,
+  scraping,
+  ranking,
+  thinking,
+  streaming,
+  completed,
+  failed,
+}
+
+/// Stream update event from RAG pipeline
+class RAGUpdate {
+  final RAGStatus status;
+  final String? message;
+  final String? token; // For streaming tokens
+  final List<Document>? documents; // For intermediate result updates
+  final List<String>? images;
+  final List<VideoItem>? videos;
+  final MessageData? finalResult;
+  final List<SearchStep>? steps;
+
+  const RAGUpdate({
+    required this.status,
+    this.message,
+    this.token,
+    this.documents,
+    this.images,
+    this.videos,
+    this.finalResult,
+    this.steps,
+  });
 }

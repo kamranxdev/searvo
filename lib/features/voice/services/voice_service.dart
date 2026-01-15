@@ -15,7 +15,7 @@ class VoiceService extends ChangeNotifier {
 
   final SpeechToText _speech = SpeechToText();
   final FlutterTts _flutterTts = FlutterTts();
-  
+
   // Voice input state
   bool _isInitialized = false;
   bool _isListening = false;
@@ -23,18 +23,20 @@ class VoiceService extends ChangeNotifier {
   String _recognizedText = '';
   String _errorMessage = '';
   double _confidenceLevel = 0.0;
-  
+
   // Text-to-Speech state
   bool _isTtsInitialized = false;
   bool _isSpeaking = false;
   double _ttsVolume = 1.0;
   double _ttsPitch = 1.0;
-  double _ttsRate = 0.5;
-  
+  double _ttsRate = 1.75;
+
   // Stream controllers for real-time updates
-  final StreamController<String> _textStreamController = StreamController<String>.broadcast();
-  final StreamController<VoiceInputState> _stateStreamController = StreamController<VoiceInputState>.broadcast();
-  
+  final StreamController<String> _textStreamController =
+      StreamController<String>.broadcast();
+  final StreamController<VoiceInputState> _stateStreamController =
+      StreamController<VoiceInputState>.broadcast();
+
   // Getters
   bool get isInitialized => _isInitialized;
   bool get isListening => _isListening;
@@ -42,14 +44,14 @@ class VoiceService extends ChangeNotifier {
   String get recognizedText => _recognizedText;
   String get errorMessage => _errorMessage;
   double get confidenceLevel => _confidenceLevel;
-  
+
   // TTS Getters
   bool get isTtsInitialized => _isTtsInitialized;
   bool get isSpeaking => _isSpeaking;
   double get ttsVolume => _ttsVolume;
   double get ttsPitch => _ttsPitch;
   double get ttsRate => _ttsRate;
-  
+
   // Streams
   Stream<String> get textStream => _textStreamController.stream;
   Stream<VoiceInputState> get stateStream => _stateStreamController.stream;
@@ -82,7 +84,9 @@ class VoiceService extends ChangeNotifier {
       }
     } else {
       if (kDebugMode) {
-        print('VoiceService: Permission handler not available, assuming permission granted');
+        print(
+          'VoiceService: Permission handler not available, assuming permission granted',
+        );
       }
       return true; // Fallback when permission handler is not available
     }
@@ -103,7 +107,9 @@ class VoiceService extends ChangeNotifier {
       }
     } else {
       if (kDebugMode) {
-        print('VoiceService: Permission handler not available, assuming permission granted');
+        print(
+          'VoiceService: Permission handler not available, assuming permission granted',
+        );
       }
       return true; // Fallback when permission handler is not available
     }
@@ -112,26 +118,30 @@ class VoiceService extends ChangeNotifier {
   /// Initialize the voice service
   Future<bool> initialize() async {
     if (_isInitialized) return true;
-    
+
     try {
       if (kDebugMode) {
         print('VoiceService: Starting initialization...');
       }
-      
+
       // Try to check permissions, but handle missing plugin gracefully
       bool permissionGranted = false;
-      
+
       if (await _isPermissionHandlerAvailable()) {
         try {
           final currentStatus = await Permission.microphone.status;
           if (kDebugMode) {
-            print('VoiceService: Current microphone permission status: $currentStatus');
+            print(
+              'VoiceService: Current microphone permission status: $currentStatus',
+            );
           }
-          
+
           if (currentStatus == PermissionStatus.granted) {
             permissionGranted = true;
           } else if (currentStatus == PermissionStatus.permanentlyDenied) {
-            _setError('Microphone permission permanently denied. Please enable it in device settings.');
+            _setError(
+              'Microphone permission permanently denied. Please enable it in device settings.',
+            );
             return false;
           } else if (currentStatus == PermissionStatus.restricted) {
             _setError('Microphone access restricted on this device.');
@@ -140,7 +150,9 @@ class VoiceService extends ChangeNotifier {
             // Request permission
             final permissionStatus = await Permission.microphone.request();
             if (kDebugMode) {
-              print('VoiceService: Permission request result: $permissionStatus');
+              print(
+                'VoiceService: Permission request result: $permissionStatus',
+              );
             }
             permissionGranted = (permissionStatus == PermissionStatus.granted);
           }
@@ -153,53 +165,63 @@ class VoiceService extends ChangeNotifier {
         }
       } else {
         if (kDebugMode) {
-          print('VoiceService: Permission handler not available, relying on speech recognition for permissions');
+          print(
+            'VoiceService: Permission handler not available, relying on speech recognition for permissions',
+          );
         }
         // Permission handler plugin not available - let speech recognition handle it
         permissionGranted = true;
       }
-      
+
       if (!permissionGranted) {
-        _setError('Microphone permission not granted. Please grant microphone access in device settings.');
+        _setError(
+          'Microphone permission not granted. Please grant microphone access in device settings.',
+        );
         return false;
       }
-      
+
       if (kDebugMode) {
-        print('VoiceService: Permission checks passed, initializing speech recognition...');
+        print(
+          'VoiceService: Permission checks passed, initializing speech recognition...',
+        );
       }
-      
+
       // Initialize speech recognition
       _isAvailable = await _speech.initialize(
         onError: _onError,
         onStatus: _onStatus,
         debugLogging: kDebugMode,
       );
-      
+
       if (kDebugMode) {
         print('VoiceService: Speech recognition available: $_isAvailable');
       }
-      
+
       if (_isAvailable) {
         _isInitialized = true;
         _clearError();
-        
+
         // Get available locales for debugging
         if (kDebugMode) {
           try {
             final locales = await _speech.locales();
             print('VoiceService: Available locales: ${locales.length}');
             if (locales.isNotEmpty) {
-              print('VoiceService: System locale: ${await _speech.systemLocale()}');
+              print(
+                'VoiceService: System locale: ${await _speech.systemLocale()}',
+              );
             }
           } catch (e) {
             print('VoiceService: Error getting locales: $e');
           }
         }
-        
+
         notifyListeners();
         return true;
       } else {
-        _setError('Speech recognition not available on this device. Please check if your device supports speech-to-text.');
+        _setError(
+          'Speech recognition not available on this device. Please check if your device supports speech-to-text.',
+        );
         return false;
       }
     } catch (e) {
@@ -223,25 +245,28 @@ class VoiceService extends ChangeNotifier {
     if (kDebugMode) {
       print('VoiceService: startListening called');
     }
-    
+
     if (!_isInitialized || !_isAvailable) {
       if (kDebugMode) {
-        print('VoiceService: Not initialized or available, attempting to initialize...');
+        print(
+          'VoiceService: Not initialized or available, attempting to initialize...',
+        );
       }
       final success = await initialize();
       if (!success) {
-        final errorMsg = 'Cannot start listening: ${_errorMessage.isNotEmpty ? _errorMessage : 'Initialization failed'}';
+        final errorMsg =
+            'Cannot start listening: ${_errorMessage.isNotEmpty ? _errorMessage : 'Initialization failed'}';
         onError?.call(errorMsg);
         return;
       }
     }
-    
+
     if (!_isAvailable) {
       const errorMsg = 'Speech recognition is not available on this device';
       onError?.call(errorMsg);
       return;
     }
-    
+
     if (_isListening) {
       if (kDebugMode) {
         print('VoiceService: Already listening, ignoring request');
@@ -253,7 +278,7 @@ class VoiceService extends ChangeNotifier {
       if (kDebugMode) {
         print('VoiceService: Starting to listen with locale: $localeId');
       }
-      
+
       await _speech.listen(
         onResult: (result) => _onSpeechResult(result, onResult),
         localeId: localeId,
@@ -263,12 +288,12 @@ class VoiceService extends ChangeNotifier {
         cancelOnError: true,
         listenMode: ListenMode.confirmation,
       );
-      
+
       _isListening = true;
       _clearError();
       _emitState(VoiceInputState.listening);
       notifyListeners();
-      
+
       if (kDebugMode) {
         print('VoiceService: Successfully started listening');
       }
@@ -285,7 +310,7 @@ class VoiceService extends ChangeNotifier {
   /// Stop listening for voice input
   Future<void> stopListening() async {
     if (!_isListening) return;
-    
+
     try {
       await _speech.stop();
       _isListening = false;
@@ -299,7 +324,7 @@ class VoiceService extends ChangeNotifier {
   /// Cancel current listening session
   Future<void> cancelListening() async {
     if (!_isListening) return;
-    
+
     try {
       await _speech.cancel();
       _isListening = false;
@@ -316,7 +341,7 @@ class VoiceService extends ChangeNotifier {
     if (!_isInitialized || !_isAvailable) {
       await initialize();
     }
-    
+
     if (_isAvailable) {
       return await _speech.locales();
     }
@@ -340,7 +365,7 @@ class VoiceService extends ChangeNotifier {
     if (!_isInitialized || !_isAvailable) {
       await initialize();
     }
-    
+
     if (_isAvailable) {
       final locale = await _speech.systemLocale();
       return locale?.localeId;
@@ -362,13 +387,15 @@ class VoiceService extends ChangeNotifier {
       // Check permission status
       final permissionStatus = await Permission.microphone.status;
       diagnostics['permissionStatus'] = permissionStatus.toString();
-      diagnostics['permissionGranted'] = permissionStatus == PermissionStatus.granted;
-      
+      diagnostics['permissionGranted'] =
+          permissionStatus == PermissionStatus.granted;
+
       // Check if we can request permission
-      final canRequestPermission = permissionStatus == PermissionStatus.denied ||
-                                   permissionStatus.toString() == 'PermissionStatus.undetermined';
+      final canRequestPermission =
+          permissionStatus == PermissionStatus.denied ||
+          permissionStatus.toString() == 'PermissionStatus.undetermined';
       diagnostics['canRequestPermission'] = canRequestPermission;
-      
+
       // Try to initialize if not already done
       if (!_isInitialized) {
         diagnostics['initializationAttempted'] = true;
@@ -378,44 +405,47 @@ class VoiceService extends ChangeNotifier {
         diagnostics['initializationAttempted'] = false;
         diagnostics['initializationSuccess'] = true;
       }
-      
+
       // Get speech recognition status
       diagnostics['speechRecognitionAvailable'] = await _speech.hasPermission;
-      
+
       // Get available locales
       if (_isAvailable) {
         try {
           final locales = await getLocales();
           diagnostics['availableLocales'] = locales.length;
-          diagnostics['localesList'] = locales.map((l) => '${l.name} (${l.localeId})').toList();
-          
+          diagnostics['localesList'] = locales
+              .map((l) => '${l.name} (${l.localeId})')
+              .toList();
+
           final systemLocale = await getSystemLocale();
           diagnostics['systemLocale'] = systemLocale;
         } catch (e) {
           diagnostics['localeError'] = e.toString();
         }
       }
-      
+
       // Platform information
-      if (Platform.isAndroid) {
+      if (kIsWeb) {
+        diagnostics['platform'] = 'web';
+      } else if (Platform.isAndroid) {
         diagnostics['platform'] = 'android';
       } else if (Platform.isIOS) {
         diagnostics['platform'] = 'ios';
       } else {
         diagnostics['platform'] = 'other';
       }
-      
     } catch (e) {
       diagnostics['diagnosticsError'] = e.toString();
     }
-    
+
     return diagnostics;
   }
 
   /// Print detailed diagnostics to console (debug mode only)
   Future<void> printDiagnostics() async {
     if (!kDebugMode) return;
-    
+
     final diagnostics = await runDiagnostics();
     print('\n=== VoiceService Diagnostics ===');
     diagnostics.forEach((key, value) {
@@ -425,22 +455,25 @@ class VoiceService extends ChangeNotifier {
   }
 
   // Private methods
-  void _onSpeechResult(SpeechRecognitionResult result, Function(String)? onResult) {
+  void _onSpeechResult(
+    SpeechRecognitionResult result,
+    Function(String)? onResult,
+  ) {
     _recognizedText = result.recognizedWords;
     _confidenceLevel = result.confidence;
-    
+
     // Emit to stream
     _textStreamController.add(_recognizedText);
-    
+
     // Call callback if provided
     onResult?.call(_recognizedText);
-    
+
     if (result.finalResult) {
       _emitState(VoiceInputState.completed);
     } else {
       _emitState(VoiceInputState.processing);
     }
-    
+
     notifyListeners();
   }
 
@@ -502,7 +535,10 @@ class VoiceService extends ChangeNotifier {
       await _flutterTts.setPitch(_ttsPitch);
 
       // Set language to English (US) for natural voice
-      if (Platform.isIOS) {
+      // Set language to English (US) for natural voice
+      if (kIsWeb) {
+        await _flutterTts.setLanguage("en-US");
+      } else if (Platform.isIOS) {
         await _flutterTts.setLanguage("en-US");
         await _flutterTts.setVoice({"name": "Alex", "locale": "en-US"});
       } else if (Platform.isAndroid) {
@@ -544,7 +580,7 @@ class VoiceService extends ChangeNotifier {
       });
 
       _isTtsInitialized = true;
-      
+
       if (kDebugMode) {
         print('VoiceService: TTS initialized successfully');
         // List available voices
@@ -720,6 +756,7 @@ extension VoiceInputStateExtension on VoiceInputState {
   }
 
   bool get isActive {
-    return this == VoiceInputState.listening || this == VoiceInputState.processing;
+    return this == VoiceInputState.listening ||
+        this == VoiceInputState.processing;
   }
 }

@@ -13,19 +13,22 @@ class RAGScraperAdapter {
   RAGScraperAdapter({
     ScraperManager? scraperManager,
     Duration cacheDuration = const Duration(hours: 1),
-  })  : _scraperManager = scraperManager ?? ScraperManager(),
-        _cacheDuration = cacheDuration;
+  }) : _scraperManager = scraperManager ?? ScraperManager(),
+       _cacheDuration = cacheDuration;
 
   /// Scrape a single URL and convert to RAG Document
   Future<Document> scrape(
     String url, {
     double relevanceScore = 1.0,
     bool useCache = true,
+    String? query,
   }) async {
     // Check cache
     if (useCache && _cache.containsKey(url)) {
       final cached = _cache[url]!;
-      final age = DateTime.now().difference(cached.publishedDate ?? DateTime.now());
+      final age = DateTime.now().difference(
+        cached.publishedDate ?? DateTime.now(),
+      );
       if (age < _cacheDuration) {
         print('📦 Using cached RAG document for $url');
         return cached;
@@ -33,7 +36,7 @@ class RAGScraperAdapter {
     }
 
     final result = await _scraperManager.scrape(url);
-    final document = _convertToDocument(result, relevanceScore);
+    final document = _convertToDocument(result, relevanceScore, query: query);
 
     if (useCache) _cache[url] = document;
 
@@ -45,6 +48,7 @@ class RAGScraperAdapter {
     List<String> urls, {
     double relevanceScore = 1.0,
     void Function(int completed, int total)? onProgress,
+    String? query,
   }) async {
     print('🌐 RAG Scraping ${urls.length} URLs...');
 
@@ -54,7 +58,7 @@ class RAGScraperAdapter {
     );
 
     final documents = results.map((result) {
-      return _convertToDocument(result, relevanceScore);
+      return _convertToDocument(result, relevanceScore, query: query);
     }).toList();
 
     // Cache successful results
@@ -64,14 +68,22 @@ class RAGScraperAdapter {
       }
     }
 
-    final successful = documents.where((d) => d.metadata['scraped'] == true).length;
-    print('✅ Successfully converted $successful/${urls.length} URLs to RAG documents');
+    final successful = documents
+        .where((d) => d.metadata['scraped'] == true)
+        .length;
+    print(
+      '✅ Successfully converted $successful/${urls.length} URLs to RAG documents',
+    );
 
     return documents;
   }
 
   /// Convert ScraperResult to RAG Document
-  Document _convertToDocument(ScraperResult result, double relevanceScore) {
+  Document _convertToDocument(
+    ScraperResult result,
+    double relevanceScore, {
+    String? query,
+  }) {
     if (!result.success) {
       // Return empty document for failed scrapes
       return Document(
@@ -82,16 +94,13 @@ class RAGScraperAdapter {
         snippet: result.errorMessage ?? 'Unknown error',
         source: Uri.parse(result.url).host,
         relevanceScore: 0.0,
-        metadata: {
-          'scraped': false,
-          'error': result.errorMessage,
-        },
+        metadata: {'scraped': false, 'error': result.errorMessage},
       );
     }
 
     // Handle different scraper result types
     if (result is GenericScraperResult) {
-      return _convertGenericResult(result, relevanceScore);
+      return _convertGenericResult(result, relevanceScore, query: query);
     } else if (result is YouTubeScraperResult) {
       return _convertYouTubeResult(result, relevanceScore);
     } else if (result is TikTokScraperResult) {
@@ -119,14 +128,19 @@ class RAGScraperAdapter {
   }
 
   /// Convert GenericScraperResult to Document
-  Document _convertGenericResult(GenericScraperResult result, double relevanceScore) {
+  Document _convertGenericResult(
+    GenericScraperResult result,
+    double relevanceScore, {
+    String? query,
+  }) {
     return Document(
       id: result.url.hashCode.toString(),
       title: result.title,
       url: result.url,
       content: result.text,
-      snippet: result.description ??
-          (result.text.length > 300 ? '${result.text.substring(0, 300)}...' : result.text),
+      snippet:
+          result.description ??
+          _extractRelevantSnippet(result.text, query: query),
       publishedDate: result.publishedDate,
       source: Uri.parse(result.url).host,
       relevanceScore: relevanceScore,
@@ -151,13 +165,83 @@ class RAGScraperAdapter {
     );
   }
 
+  /// Extract the most relevant snippet from text based on query keywords
+  /// If no query is provided (or empty), falls back to first 300 chars
+  String _extractRelevantSnippet(String text, {String? query}) {
+    if (text.isEmpty) return '';
+
+    // Fallback if no query or text too short
+    if (query == null || query.isEmpty || text.length <= 300) {
+      return text.length > 300 ? '${text.substring(0, 300)}...' : text;
+    }
+
+    final lowerText = text.toLowerCase();
+    final lowerQuery = query.toLowerCase();
+
+    // Extract keywords (simple split for now)
+    final keywords = lowerQuery
+        .split(RegExp(r'\s+'))
+        .where((w) => w.length > 3) // Filter short words
+        .toList();
+
+    if (keywords.isEmpty) {
+      return text.length > 300 ? '${text.substring(0, 300)}...' : text;
+    }
+
+    // Find best window
+    int bestStart = 0;
+    int maxScore = 0;
+    final windowSize = 300;
+
+    // Slide window
+    for (int i = 0; i < lowerText.length - windowSize; i += 50) {
+      final window = lowerText.substring(i, i + windowSize);
+      int score = 0;
+      for (final keyword in keywords) {
+        // Count keyword occurrences in window
+        score += window.split(keyword).length - 1;
+      }
+
+      if (score > maxScore) {
+        maxScore = score;
+        bestStart = i;
+      }
+    }
+
+    // If no keywords found, return start
+    if (maxScore == 0) {
+      return '${text.substring(0, 300)}...';
+    }
+
+    // Expand to nearest sentence boundary if possible
+    int start = bestStart;
+    int end = bestStart + windowSize;
+
+    // Try to find sentence start before window
+    final beforeContext = text.substring(0, start);
+    final lastPeriod = beforeContext.lastIndexOf('. ');
+    if (lastPeriod != -1 && start - lastPeriod < 50) {
+      start = lastPeriod + 2;
+    }
+
+    // Ensure we don't go out of bounds
+    if (end > text.length) end = text.length;
+
+    return '...${text.substring(start, end).trim()}...';
+  }
+
   /// Convert YouTubeScraperResult to Document
-  Document _convertYouTubeResult(YouTubeScraperResult result, double relevanceScore) {
+  Document _convertYouTubeResult(
+    YouTubeScraperResult result,
+    double relevanceScore,
+  ) {
     final content = StringBuffer();
     content.writeln('Title: ${result.title}');
     content.writeln('Channel: ${result.channelName}');
-    if (result.description != null) content.writeln('\nDescription:\n${result.description}');
-    if (result.transcript != null) content.writeln('\nTranscript:\n${result.transcript}');
+    if (result.description != null)
+      content.writeln('\nDescription:\n${result.description}');
+    if (result.transcript != null)
+      content.writeln('\nTranscript:\n${result.transcript}');
 
     return Document(
       id: result.url.hashCode.toString(),
@@ -187,11 +271,16 @@ class RAGScraperAdapter {
   }
 
   /// Convert TikTokScraperResult to Document
-  Document _convertTikTokResult(TikTokScraperResult result, double relevanceScore) {
+  Document _convertTikTokResult(
+    TikTokScraperResult result,
+    double relevanceScore,
+  ) {
     final content = StringBuffer();
     content.writeln('Creator: ${result.userDisplayName ?? result.username}');
-    if (result.description != null) content.writeln('\nDescription:\n${result.description}');
-    if (result.musicName != null) content.writeln('\nMusic: ${result.musicName} - ${result.musicAuthor}');
+    if (result.description != null)
+      content.writeln('\nDescription:\n${result.description}');
+    if (result.musicName != null)
+      content.writeln('\nMusic: ${result.musicName} - ${result.musicAuthor}');
     if (result.hashtags != null && result.hashtags!.isNotEmpty) {
       content.writeln('\nHashtags: ${result.hashtags!.join(", ")}');
     }
@@ -222,13 +311,21 @@ class RAGScraperAdapter {
   }
 
   /// Convert PlayStoreScraperResult to Document
-  Document _convertPlayStoreResult(PlayStoreScraperResult result, double relevanceScore) {
+  Document _convertPlayStoreResult(
+    PlayStoreScraperResult result,
+    double relevanceScore,
+  ) {
     final content = StringBuffer();
     content.writeln('App: ${result.appName}');
     content.writeln('Developer: ${result.developer}');
-    if (result.rating != null) content.writeln('Rating: ${result.rating}⭐ (${result.ratingsCount} ratings)');
-    if (result.category != null) content.writeln('Category: ${result.category}');
-    if (result.description != null) content.writeln('\nDescription:\n${result.description}');
+    if (result.rating != null)
+      content.writeln(
+        'Rating: ${result.rating}⭐ (${result.ratingsCount} ratings)',
+      );
+    if (result.category != null)
+      content.writeln('Category: ${result.category}');
+    if (result.description != null)
+      content.writeln('\nDescription:\n${result.description}');
 
     return Document(
       id: result.url.hashCode.toString(),
@@ -262,7 +359,10 @@ class RAGScraperAdapter {
   }
 
   /// Convert ScholarScraperResult to Document
-  Document _convertScholarResult(ScholarScraperResult result, double relevanceScore) {
+  Document _convertScholarResult(
+    ScholarScraperResult result,
+    double relevanceScore,
+  ) {
     final content = StringBuffer();
     content.writeln('Title: ${result.title}');
     if (result.authors != null && result.authors!.isNotEmpty) {
@@ -271,8 +371,10 @@ class RAGScraperAdapter {
     if (result.journal != null) content.writeln('Journal: ${result.journal}');
     if (result.year != null) content.writeln('Year: ${result.year}');
     if (result.doi != null) content.writeln('DOI: ${result.doi}');
-    if (result.citationCount != null) content.writeln('Citations: ${result.citationCount}');
-    if (result.abstract != null) content.writeln('\nAbstract:\n${result.abstract}');
+    if (result.citationCount != null)
+      content.writeln('Citations: ${result.citationCount}');
+    if (result.abstract != null)
+      content.writeln('\nAbstract:\n${result.abstract}');
     if (result.keywords != null && result.keywords!.isNotEmpty) {
       content.writeln('\nKeywords: ${result.keywords!.join(", ")}');
     }

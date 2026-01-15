@@ -1,28 +1,35 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:home_widget/home_widget.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:searvo/core/config/app_config.dart';
+import 'package:searvo/core/di/injection_container.dart';
 import 'package:searvo/core/routing/app_router.dart';
+import 'package:searvo/core/utils/bloc_observer.dart';
 import 'package:searvo/features/auth/services/auth_service.dart';
-import 'package:searvo/features/llm/providers/llm_provider.dart';
-import 'package:searvo/features/settings/providers/settings_provider.dart';
+import 'package:searvo/features/onboarding/onboarding.dart';
 import 'package:searvo/features/settings/services/llm_settings_service.dart';
 import 'package:searvo/features/settings/services/settings_service.dart';
-import 'package:searvo/features/history/providers/conversation_history_provider.dart';
 import 'package:searvo/features/history/services/conversation_sync_service.dart';
-import 'package:searvo/features/search/providers/search_provider.dart';
-import 'package:searvo/features/search/rag/providers/rag_provider.dart';
+import 'package:searvo/features/search/bloc/search_bloc.dart';
+import 'package:searvo/features/search/bloc/search_event.dart';
+import 'package:searvo/features/search/rag/bloc/rag_cubit.dart';
 import 'package:searvo/firebase_options.dart';
+import 'package:searvo/features/history/presentation/cubit/history_cubit.dart';
 import 'core/theme/theme.dart';
+
+// sl is imported from injection_container.dart
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialize Bloc observer for debugging
+  Bloc.observer = AppBlocObserver();
+
   // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Initialize authentication service
   await AuthService().initialize();
@@ -30,7 +37,18 @@ void main() async {
   // Initialize core services
   await SettingsService().initialize();
   await ThemeManager().initialize();
-  
+
+  // Initialize setup service for onboarding flow
+  await SetupService().initialize();
+
+  // Initialize dependency injection container
+  try {
+    await initDependencies();
+    print('✅ Dependency injection initialized');
+  } catch (e) {
+    print('❌ Failed to initialize dependency injection: $e');
+  }
+
   // Initialize conversation sync service
   try {
     await ConversationSyncService().initialize();
@@ -38,7 +56,7 @@ void main() async {
   } catch (e) {
     print('❌ Failed to initialize conversation sync service: $e');
   }
-  
+
   // Initialize LLM settings service
   try {
     await LLMSettingsService().initializeLLMManager();
@@ -46,8 +64,29 @@ void main() async {
     print('Failed to initialize LLM manager: $e');
     // Continue without LLM - user will need to configure in settings
   }
-  
+
   runApp(const SearvoApp());
+
+  // Check if launched from widget
+  try {
+    HomeWidget.initiallyLaunchedFromHomeWidget().then((uri) {
+      if (uri != null && uri.scheme == 'searvo') {
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (uri.queryParameters['action'] == 'search') {
+            AppRouter.router.go(AppRouter.home);
+          } else if (uri.queryParameters['action'] == 'voice') {
+            AppRouter.router.go(AppRouter.home);
+          } else if (uri.queryParameters['action'] == 'camera') {
+            AppRouter.router.go(AppRouter.home);
+          } else if (uri.queryParameters['action'] == 'discover') {
+            AppRouter.router.go(AppRouter.discover);
+          }
+        });
+      }
+    });
+  } catch (e) {
+    print('HomeWidget not supported: $e');
+  }
 }
 
 class SearvoApp extends StatelessWidget {
@@ -62,12 +101,24 @@ class SearvoApp extends StatelessWidget {
       builder: (context, child) {
         return MultiProvider(
           providers: [
-            ChangeNotifierProvider(create: (_) => SettingsProvider()),
-            ChangeNotifierProvider(create: (_) => LLMProvider()),
-            ChangeNotifierProvider(create: (_) => SearchProvider()),
-            ChangeNotifierProvider(create: (_) => RAGProvider()),
-            ChangeNotifierProvider(
-              create: (_) => ConversationHistoryProvider()..initialize(),
+            // Migrated to Bloc/Cubit:
+            // - auth (AuthBloc)
+            // - history (HistoryCubit)
+            // - discover (DiscoverCubit)
+            // - settings (SettingsCubit - services accessed directly for LLM/embedding config)
+            // - search (SearchBloc) ✅ MIGRATED
+            // - rag (RAGCubit) ✅ MIGRATED
+            //
+            // Note: LLM and RAG features use services directly from UI
+            // This is acceptable as services act as data sources in Clean Architecture
+            BlocProvider(
+              create: (_) =>
+                  sl<SearchBloc>()..add(const SearchEvent.initialize()),
+            ),
+            BlocProvider(create: (_) => sl<RAGCubit>()..initialize()),
+            // Provide HistoryCubit using GetIt
+            BlocProvider(
+              create: (_) => sl<HistoryCubit>()..loadConversations(),
             ),
           ],
           child: ListenableBuilder(

@@ -89,9 +89,9 @@ flutter run -d chrome   # For web browsers
 Or use the convenient shell scripts:
 
 ```bash
-./linux.sh    # Run on Linux
-./android.sh  # Run on Android
-./web.sh      # Run on Web
+./scripts/linux.sh    # Run on Linux
+./scripts/android.sh  # Run on Android
+./scripts/web.sh      # Run on Web
 ```
 
 ## Docker Setup (Optional)
@@ -105,7 +105,7 @@ Searvo includes Docker support for running SearXNG (search engine):
 ### Running with Docker
 
 ```bash
-docker-compose up -d
+docker-compose -f docker/docker-compose.yaml up -d
 ```
 
 This will start:

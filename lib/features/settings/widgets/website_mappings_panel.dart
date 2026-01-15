@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:searvo/features/settings/services/settings_service.dart';
+import 'package:searvo/features/settings/theme/settings_theme.dart';
 import '../../../core/theme/theme.dart';
 import 'settings_card.dart';
 
 class WebsiteMappingsPanel extends StatefulWidget {
-  const WebsiteMappingsPanel({Key? key}) : super(key: key);
+  final bool isDesktop;
+  final bool isTablet;
+
+  const WebsiteMappingsPanel({
+    super.key,
+    this.isDesktop = false,
+    this.isTablet = false,
+  });
 
   @override
   State<WebsiteMappingsPanel> createState() => _WebsiteMappingsPanelState();
@@ -14,7 +22,7 @@ class _WebsiteMappingsPanelState extends State<WebsiteMappingsPanel> {
   final SettingsService _settingsService = SettingsService();
   late Map<String, Map<String, String>> _websiteMappings;
   final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
+  final String _searchQuery = '';
   bool _isSelectionMode = false;
   final Set<String> _selectedMappings = {};
 
@@ -95,7 +103,7 @@ class _WebsiteMappingsPanelState extends State<WebsiteMappingsPanel> {
     if (_searchQuery.isEmpty) {
       return _websiteMappings.entries.toList();
     }
-    
+
     final query = _searchQuery.toLowerCase();
     return _websiteMappings.entries.where((entry) {
       final key = entry.key.toLowerCase();
@@ -143,7 +151,9 @@ class _WebsiteMappingsPanelState extends State<WebsiteMappingsPanel> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Remove Website Mapping'),
-        content: Text('Are you sure you want to remove the mapping for "@$key"?'),
+        content: Text(
+          'Are you sure you want to remove the mapping for "@$key"?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -167,14 +177,15 @@ class _WebsiteMappingsPanelState extends State<WebsiteMappingsPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = context.colorScheme;
+    final settingsColors = SettingsTheme.colors(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SectionHeader(
           title: 'Website Mappings',
-          subtitle: 'Configure @mention shortcuts for websites. Type "@youtube search term" to search YouTube directly.',
+          subtitle:
+              'Configure @mention shortcuts for websites. Type "@youtube search term" to search YouTube directly.',
         ),
         const SizedBox(height: 24),
 
@@ -184,16 +195,20 @@ class _WebsiteMappingsPanelState extends State<WebsiteMappingsPanel> {
           margin: const EdgeInsets.only(bottom: 24),
           child: ElevatedButton.icon(
             onPressed: _addWebsiteMapping,
-            icon: const Icon(Icons.add),
-            label: const Text('Add Website Mapping'),
+            icon: Icon(Icons.add, color: settingsColors.text),
+            label: Text(
+              'Add Website Mapping',
+              style: TextStyle(color: settingsColors.text),
+            ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: colorScheme.surfaceContainerHighest,
-              foregroundColor: colorScheme.onSurface,
+              backgroundColor: settingsColors.cardBackground,
+              foregroundColor: settingsColors.text,
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: colorScheme.outline),
+                side: BorderSide(color: settingsColors.border),
               ),
+              elevation: 0,
             ),
           ),
         ),
@@ -209,9 +224,9 @@ class _WebsiteMappingsPanelState extends State<WebsiteMappingsPanel> {
             margin: const EdgeInsets.only(bottom: 16),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest,
+              color: settingsColors.cardBackground,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: colorScheme.outline),
+              border: Border.all(color: settingsColors.border),
             ),
             child: Row(
               children: [
@@ -227,21 +242,24 @@ class _WebsiteMappingsPanelState extends State<WebsiteMappingsPanel> {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: colorScheme.onSurface,
+                              color: settingsColors.text,
                             ),
                           ),
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
-                              color: colorScheme.primary.withValues(alpha: 0.1),
+                              color: settingsColors.accent.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
                               name,
                               style: TextStyle(
                                 fontSize: 12,
-                                color: colorScheme.primary,
+                                color: settingsColors.accent,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -253,7 +271,7 @@ class _WebsiteMappingsPanelState extends State<WebsiteMappingsPanel> {
                         url,
                         style: TextStyle(
                           fontSize: 14,
-                          color: colorScheme.onSurfaceVariant,
+                          color: settingsColors.subtitle,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -267,7 +285,7 @@ class _WebsiteMappingsPanelState extends State<WebsiteMappingsPanel> {
                   children: [
                     IconButton(
                       onPressed: () => _editWebsiteMapping(key, mapping),
-                      icon: Icon(Icons.edit, color: colorScheme.onSurfaceVariant),
+                      icon: Icon(Icons.edit, color: settingsColors.icon),
                       tooltip: 'Edit',
                     ),
                     IconButton(
@@ -288,9 +306,9 @@ class _WebsiteMappingsPanelState extends State<WebsiteMappingsPanel> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+            color: settingsColors.inputBackground.withOpacity(0.5),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: colorScheme.outline),
+            border: Border.all(color: settingsColors.border),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -300,7 +318,7 @@ class _WebsiteMappingsPanelState extends State<WebsiteMappingsPanel> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurface,
+                  color: settingsColors.text,
                 ),
               ),
               const SizedBox(height: 8),
@@ -308,7 +326,7 @@ class _WebsiteMappingsPanelState extends State<WebsiteMappingsPanel> {
                 '• Type "@youtube" to open YouTube homepage\n• Type "@youtube flutter tutorial" to search YouTube for "flutter tutorial"\n• Add custom mappings above to create your own shortcuts',
                 style: TextStyle(
                   fontSize: 14,
-                  color: colorScheme.onSurfaceVariant,
+                  color: settingsColors.subtitle,
                   height: 1.5,
                 ),
               ),
@@ -345,9 +363,15 @@ class _AddWebsiteDialogState extends State<_AddWebsiteDialog> {
   void initState() {
     super.initState();
     _keyController = TextEditingController(text: widget.initialKey ?? '');
-    _nameController = TextEditingController(text: widget.initialMapping?['name'] ?? '');
-    _urlController = TextEditingController(text: widget.initialMapping?['url'] ?? '');
-    _searchUrlController = TextEditingController(text: widget.initialMapping?['searchUrl'] ?? '');
+    _nameController = TextEditingController(
+      text: widget.initialMapping?['name'] ?? '',
+    );
+    _urlController = TextEditingController(
+      text: widget.initialMapping?['url'] ?? '',
+    );
+    _searchUrlController = TextEditingController(
+      text: widget.initialMapping?['searchUrl'] ?? '',
+    );
   }
 
   @override
@@ -374,7 +398,9 @@ class _AddWebsiteDialogState extends State<_AddWebsiteDialog> {
 
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('URL must start with http:// or https://')),
+        const SnackBar(
+          content: Text('URL must start with http:// or https://'),
+        ),
       );
       return;
     }
@@ -391,10 +417,10 @@ class _AddWebsiteDialogState extends State<_AddWebsiteDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = context.colorScheme;
+    final settingsColors = SettingsTheme.colors(context);
 
     return Dialog(
-      backgroundColor: colorScheme.surfaceContainerHighest,
+      backgroundColor: settingsColors.cardBackground,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         width: 500,
@@ -404,11 +430,13 @@ class _AddWebsiteDialogState extends State<_AddWebsiteDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.initialKey != null ? 'Edit Website Mapping' : 'Add Website Mapping',
+              widget.initialKey != null
+                  ? 'Edit Website Mapping'
+                  : 'Add Website Mapping',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
+                color: settingsColors.header,
               ),
             ),
             const SizedBox(height: 24),
@@ -419,13 +447,29 @@ class _AddWebsiteDialogState extends State<_AddWebsiteDialog> {
               decoration: InputDecoration(
                 labelText: '@mention key (e.g., "youtube")',
                 hintText: 'Enter the @mention key',
+                labelStyle: TextStyle(color: settingsColors.subtitle),
+                hintStyle: TextStyle(
+                  color: settingsColors.subtitle.withOpacity(0.5),
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: settingsColors.border),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: settingsColors.border),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: settingsColors.accent),
                 ),
                 filled: true,
-                fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                fillColor: settingsColors.inputBackground,
               ),
-              enabled: widget.initialKey == null, // Can't edit key if editing existing
+              style: TextStyle(color: settingsColors.text),
+              enabled:
+                  widget.initialKey ==
+                  null, // Can't edit key if editing existing
             ),
             const SizedBox(height: 16),
 
@@ -435,12 +479,26 @@ class _AddWebsiteDialogState extends State<_AddWebsiteDialog> {
               decoration: InputDecoration(
                 labelText: 'Display Name',
                 hintText: 'Enter the website name',
+                labelStyle: TextStyle(color: settingsColors.subtitle),
+                hintStyle: TextStyle(
+                  color: settingsColors.subtitle.withOpacity(0.5),
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: settingsColors.border),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: settingsColors.border),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: settingsColors.accent),
                 ),
                 filled: true,
-                fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                fillColor: settingsColors.inputBackground,
               ),
+              style: TextStyle(color: settingsColors.text),
             ),
             const SizedBox(height: 16),
 
@@ -450,12 +508,26 @@ class _AddWebsiteDialogState extends State<_AddWebsiteDialog> {
               decoration: InputDecoration(
                 labelText: 'Website URL',
                 hintText: 'https://example.com',
+                labelStyle: TextStyle(color: settingsColors.subtitle),
+                hintStyle: TextStyle(
+                  color: settingsColors.subtitle.withOpacity(0.5),
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: settingsColors.border),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: settingsColors.border),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: settingsColors.accent),
                 ),
                 filled: true,
-                fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                fillColor: settingsColors.inputBackground,
               ),
+              style: TextStyle(color: settingsColors.text),
             ),
             const SizedBox(height: 16),
 
@@ -466,12 +538,27 @@ class _AddWebsiteDialogState extends State<_AddWebsiteDialog> {
                 labelText: 'Search URL (optional)',
                 hintText: 'https://example.com/search?q={query}',
                 helperText: 'Use {query} as placeholder for search terms',
+                helperStyle: TextStyle(color: settingsColors.subtitle),
+                labelStyle: TextStyle(color: settingsColors.subtitle),
+                hintStyle: TextStyle(
+                  color: settingsColors.subtitle.withOpacity(0.5),
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: settingsColors.border),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: settingsColors.border),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: settingsColors.accent),
                 ),
                 filled: true,
-                fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                fillColor: settingsColors.inputBackground,
               ),
+              style: TextStyle(color: settingsColors.text),
             ),
 
             const SizedBox(height: 24),
@@ -482,13 +569,16 @@ class _AddWebsiteDialogState extends State<_AddWebsiteDialog> {
               children: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(color: settingsColors.text),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 ElevatedButton(
                   onPressed: _save,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: colorScheme.primary,
+                    backgroundColor: settingsColors.accent,
                     foregroundColor: Colors.white,
                   ),
                   child: Text(widget.initialKey != null ? 'Save' : 'Add'),

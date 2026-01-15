@@ -1,9 +1,8 @@
-
 import 'package:searvo/features/settings/services/llm_settings_service.dart';
 import 'package:searvo/features/search/models/message_data.dart';
 import 'package:searvo/features/search/models/search_provider_config.dart';
 import 'package:searvo/features/search/rag/services/orchestration/rag_orchestrator.dart';
-import 'package:searvo/features/search/widgets/search_box.dart' show SearchMode;
+import 'package:searvo/features/search/models/search_mode.dart';
 
 import '../../settings/services/search_provider_settings_service.dart';
 import 'searxng_service.dart';
@@ -11,26 +10,61 @@ import '../rag/services/data_ingestion/rag_scraper_adapter.dart';
 import '../rag/services/data_ingestion/pdf_extractor_service.dart';
 import '../rag/services/query_processing/query_analyzer.dart';
 import '../rag/models/rag_models.dart';
+import '../agent/services/intent_orchestrator.dart';
+import '../agent/services/agent_executor.dart';
+import '../agent/services/tool_registry.dart';
+import '../tools/web_search/web_search_tool.dart';
+import '../tools/image_generator/image_generation_tool.dart';
+import '../tools/pdf_reader/pdf_reader_tool.dart';
+import '../tools/video_analyzer/video_analyzer_tool.dart';
+import '../tools/web_scraper/web_scraper_tool.dart';
+import '../tools/calculator/calculator_tool.dart';
+import '../tools/weather/weather_tool.dart';
+import '../tools/time/time_tool.dart';
+import '../tools/currency/currency_converter_tool.dart';
+import '../tools/dictionary/dictionary_tool.dart';
+import '../tools/wikipedia/wikipedia_tool.dart';
+import '../tools/unit_converter/unit_converter_tool.dart';
+import '../tools/country/country_info_tool.dart';
+import '../tools/numbers/numbers_tool.dart';
+import '../tools/holiday/holiday_tool.dart';
+import '../tools/crypto/crypto_price_tool.dart';
+import '../tools/stock/stock_price_tool.dart';
 
 // Export for external use
 export 'searxng_service.dart' show SearchType, SearchRecency;
-export '../rag/services/data_ingestion/pdf_extractor_service.dart' show PDFContent;
-export '../rag/services/query_processing/query_analyzer.dart' show QueryAnalysis;
+export '../rag/services/data_ingestion/pdf_extractor_service.dart'
+    show PDFContent;
+export '../rag/services/query_processing/query_analyzer.dart'
+    show QueryAnalysis;
 export '../rag/models/rag_models.dart' show Document;
 
 /// Complete search service with RAG, attachment support, and advanced search capabilities
 class SearchService {
-  static final SearchService _instance = SearchService._internal();
-  factory SearchService() => _instance;
-  SearchService._internal();
+  SearchService({
+    required RAGOrchestrator ragOrchestrator,
+    required LLMSettingsService llmSettings,
+    required SearchProviderSettingsService searchSettings,
+    required RAGScraperAdapter scraperAdapter,
+    required QueryAnalyzer queryAnalyzer,
+  }) : _ragOrchestrator = ragOrchestrator,
+       _llmSettings = llmSettings,
+       _searchSettings = searchSettings,
+       _scraperAdapter = scraperAdapter,
+       _queryAnalyzer = queryAnalyzer;
 
-  final RAGOrchestrator _ragOrchestrator = RAGOrchestrator();
-  final LLMSettingsService _llmSettings = LLMSettingsService();
-  final SearchProviderSettingsService _searchSettings = SearchProviderSettingsService();
-  final RAGScraperAdapter _scraperAdapter = RAGScraperAdapter();
-  final PDFExtractorService _pdfExtractor = PDFExtractorService();
-  final QueryAnalyzer _queryAnalyzer = QueryAnalyzer();
-  
+  final RAGOrchestrator _ragOrchestrator;
+  final LLMSettingsService _llmSettings;
+  final SearchProviderSettingsService _searchSettings;
+  final RAGScraperAdapter _scraperAdapter;
+  final PDFExtractorService _pdfExtractor =
+      PDFExtractorService(); // Kept as internal helper for now, can be injected later
+  final QueryAnalyzer _queryAnalyzer;
+
+  late final IntentOrchestrator _intentOrchestrator;
+  late final AgentExecutor _agentExecutor;
+  late final ToolRegistry _toolRegistry;
+
   bool _isInitialized = false;
   final List<String> _initializationErrors = [];
 
@@ -51,7 +85,7 @@ class SearchService {
     try {
       print('🤖 Initializing LLM providers...');
       await _llmSettings.initializeLLMManager();
-      
+
       if (_llmSettings.hasAnyConfiguredProvider()) {
         print('✅ LLM providers initialized');
       } else {
@@ -62,6 +96,9 @@ class SearchService {
 
       print('🔍 Initializing search providers...');
       await _initializeSearchProviders();
+
+      print('🤖 Initializing Agent components...');
+      _initializeAgent();
 
       final status = await performHealthCheck();
       if (status['overall'] == 'healthy') {
@@ -106,13 +143,36 @@ class SearchService {
     }
   }
 
+  void _initializeAgent() {
+    _toolRegistry = ToolRegistry();
+    _toolRegistry.registerTools([
+      WebSearchTool(ragOrchestrator: _ragOrchestrator),
+      ImageGenerationTool(),
+      PdfReaderTool(),
+      VideoAnalyzerTool(),
+      WebScraperTool(),
+      CalculatorTool(),
+      WeatherTool(),
+      TimeTool(),
+      CurrencyConverterTool(),
+      DictionaryTool(),
+      WikipediaTool(),
+      UnitConverterTool(),
+      CountryInfoTool(),
+      NumbersTool(),
+      HolidayTool(),
+      CryptoPriceTool(),
+      StockPriceTool(),
+    ]);
+
+    _intentOrchestrator = IntentOrchestrator(toolRegistry: _toolRegistry);
+    _agentExecutor = AgentExecutor(toolRegistry: _toolRegistry);
+  }
+
   /// Extract URLs from query text
   List<String> _extractUrls(String query) {
-    final urlPattern = RegExp(
-      r'https?://[^\s]+',
-      caseSensitive: false,
-    );
-    
+    final urlPattern = RegExp(r'https?://[^\s]+', caseSensitive: false);
+
     return urlPattern
         .allMatches(query)
         .map((match) => match.group(0)!)
@@ -120,7 +180,143 @@ class SearchService {
   }
 
   /// Generate search response with optional attachments
+  /// Generate streaming search response
+  Stream<RAGUpdate> performDirectSearchStream(
+    String query, {
+    int maxSearchResults = 20,
+    int maxRelevantDocuments = 10,
+    int? maxContextLength,
+    bool enableQueryEnhancement = true,
+    bool enableAdaptivePrompting = true,
+    List<dynamic>? attachments,
+    SearchMode searchMode = SearchMode.search,
+  }) {
+    return _ragOrchestrator.generateRAGStream(
+      query,
+      maxSearchResults: maxSearchResults,
+      maxRelevantDocuments: maxRelevantDocuments,
+      maxContextLength: maxContextLength,
+      enableQueryEnhancement: enableQueryEnhancement,
+      enableAdaptivePrompting: enableAdaptivePrompting,
+      attachments: attachments,
+      searchMode: searchMode,
+    );
+  }
+
+  /// Generate intelligent search response (Orchestrator)
+  Stream<RAGUpdate> generateSearchStream(
+    String query, {
+    int maxSearchResults = 20,
+    int maxRelevantDocuments = 10,
+    int? maxContextLength,
+    bool enableQueryEnhancement = true,
+    bool enableAdaptivePrompting = true,
+    List<dynamic>? attachments,
+    SearchMode searchMode = SearchMode.search,
+  }) async* {
+    if (!_isInitialized) {
+      yield RAGUpdate(
+        status: RAGStatus.failed,
+        message: 'Service not initialized',
+      );
+      return;
+    }
+
+    try {
+      yield RAGUpdate(
+        status: RAGStatus.planning,
+        message: 'Analyzing request...',
+      );
+
+      // 1. Plan
+      final plan = await _intentOrchestrator.plan(query);
+
+      yield RAGUpdate(
+        status: RAGStatus.planning,
+        message: 'Plan created: ${plan.reasoning}',
+      );
+
+      // 2. Execute
+      final stream = _agentExecutor.executePlan(query, plan);
+
+      await for (final messageData in stream) {
+        yield RAGUpdate(
+          status: messageData.isGenerating
+              ? RAGStatus.thinking
+              : RAGStatus.streaming,
+          finalResult: messageData,
+          steps: messageData.steps,
+          // If it's a web search result, we might populate documents?
+          // For now, let's rely on MessageData to carry the UI state.
+        );
+
+        if (messageData.generationState == MessageGenerationState.completed) {
+          yield RAGUpdate(
+            status: RAGStatus.completed,
+            finalResult: messageData,
+            steps: messageData.steps,
+          );
+        }
+      }
+    } catch (e) {
+      print('Orchestrator failed: $e. Falling back to direct search.');
+      yield RAGUpdate(
+        status: RAGStatus.failed,
+        message: 'Agent failed, falling back...',
+      );
+
+      // Fallback to direct search
+      yield* performDirectSearchStream(
+        query,
+        maxSearchResults: maxSearchResults,
+        maxRelevantDocuments: maxRelevantDocuments,
+        maxContextLength: maxContextLength,
+        enableQueryEnhancement: enableQueryEnhancement,
+        enableAdaptivePrompting: enableAdaptivePrompting,
+        attachments: attachments,
+        searchMode: searchMode,
+      );
+    }
+  }
+
+  /// Generate intelligent search response (Orchestrator)
   Future<MessageData> generateSearchResponse(
+    String query, {
+    int maxSearchResults = 20,
+    int maxRelevantDocuments = 10,
+    int? maxContextLength,
+    bool enableQueryEnhancement = true,
+    bool enableAdaptivePrompting = true,
+    List<dynamic>? attachments,
+    SearchMode searchMode = SearchMode.search,
+    Function(MessageData)? onSearchComplete,
+  }) async {
+    // Collect stream
+    MessageData? finalData;
+    await for (final update in generateSearchStream(
+      query,
+      maxSearchResults: maxSearchResults,
+      maxRelevantDocuments: maxRelevantDocuments,
+      maxContextLength: maxContextLength,
+      enableQueryEnhancement: enableQueryEnhancement,
+      enableAdaptivePrompting: enableAdaptivePrompting,
+      attachments: attachments,
+      searchMode: searchMode,
+    )) {
+      if (update.finalResult != null) {
+        finalData = update.finalResult;
+        if (onSearchComplete != null) {
+          onSearchComplete(finalData!);
+        }
+      }
+    }
+
+    return finalData ??
+        MessageData(query: query, answer: "Failed to generate response");
+  }
+
+  /// Generate search response (Legacy)
+  Future<MessageData> performDirectSearchResponse(
     String query, {
     int maxSearchResults = 20,
     int maxRelevantDocuments = 10,
@@ -134,7 +330,7 @@ class SearchService {
     if (!isReady) {
       throw Exception(
         'Search service not ready. Please configure an API key.\n'
-        'Errors: ${_initializationErrors.join(", ")}'
+        'Errors: ${_initializationErrors.join(", ")}',
       );
     }
 
@@ -147,7 +343,7 @@ class SearchService {
     if (attachments != null && attachments.isNotEmpty) {
       print('📎 With ${attachments.length} attachments');
     }
-    
+
     // Detect URLs in query
     final urlsInQuery = _extractUrls(query);
     if (urlsInQuery.isNotEmpty) {
@@ -156,7 +352,7 @@ class SearchService {
         print('   - $url');
       }
     }
-    
+
     print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     _totalSearches++;
@@ -174,22 +370,28 @@ class SearchService {
       print('📊 Complexity: ${complexity['complexity']}');
 
       // Adjust parameters based on search mode
-      int effectiveMaxDocs = complexity['recommendations']['maxRelevantDocuments'] as int;
+      int effectiveMaxDocs =
+          complexity['recommendations']['maxRelevantDocuments'] as int;
       // Don't override context length - let adaptive system handle it
-      int? effectiveMaxContext = maxContextLength; // Use provided or let RAG orchestrator auto-detect
-      
+      int? effectiveMaxContext =
+          maxContextLength; // Use provided or let RAG orchestrator auto-detect
+
       switch (searchMode) {
         case SearchMode.research:
           // Deep research mode - more documents and context
           effectiveMaxDocs = (effectiveMaxDocs * 1.5).round();
           // Let adaptive system handle context length
-          print('🔬 Research mode: Enhanced to $effectiveMaxDocs docs, adaptive context');
+          print(
+            '🔬 Research mode: Enhanced to $effectiveMaxDocs docs, adaptive context',
+          );
           break;
         case SearchMode.study:
           // Study mode - balanced for learning
           effectiveMaxDocs = (effectiveMaxDocs * 1.2).round();
           // Let adaptive system handle context length
-          print('📚 Study mode: Enhanced to $effectiveMaxDocs docs, adaptive context');
+          print(
+            '📚 Study mode: Enhanced to $effectiveMaxDocs docs, adaptive context',
+          );
           break;
         case SearchMode.search:
           // Fast search mode - keep defaults
@@ -211,7 +413,7 @@ class SearchService {
 
       _successfulSearches++;
       _lastSearchTime = DateTime.now();
-      
+
       final duration = _lastSearchTime!.difference(searchStart);
       print('\n✅ Search completed in ${duration.inSeconds}s');
       print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
@@ -222,9 +424,31 @@ class SearchService {
       print('\n❌ Search failed: $e');
       print('Stack trace: $stackTrace');
       print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-      
+
       throw Exception('Failed to generate search response: $e');
     }
+  }
+
+  /// Generate follow-up streaming response
+  Stream<RAGUpdate> generateFollowUpStream(
+    String query,
+    List<MessageData> previousMessages, {
+    int maxSearchResults = 20,
+    int maxRelevantDocuments = 10,
+    int? maxContextLength,
+    int maxHistoryMessages = 3,
+    List<dynamic>? attachments,
+  }) {
+    return _ragOrchestrator.generateRAGStream(
+      query,
+      maxSearchResults: maxSearchResults,
+      maxRelevantDocuments: maxRelevantDocuments,
+      maxContextLength: maxContextLength,
+      maxHistoryMessages: maxHistoryMessages,
+      attachments: attachments,
+      searchMode: SearchMode.search, // Usually follow-ups are standard search
+      previousMessages: previousMessages,
+    );
   }
 
   /// Generate follow-up response with history
@@ -271,7 +495,7 @@ class SearchService {
 
       _successfulSearches++;
       _lastSearchTime = DateTime.now();
-      
+
       final duration = _lastSearchTime!.difference(searchStart);
       print('\n✅ Follow-up completed in ${duration.inSeconds}s');
       print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
@@ -281,7 +505,7 @@ class SearchService {
       _failedSearches++;
       print('\n❌ Follow-up failed: $e');
       print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-      
+
       throw Exception('Failed to generate follow-up response: $e');
     }
   }
@@ -299,7 +523,7 @@ class SearchService {
   }
 
   /// Analyze query to understand intent, complexity, and generate sub-queries
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final analysis = searchService.analyzeQuery("Compare Python vs JavaScript");
@@ -311,7 +535,7 @@ class SearchService {
   }
 
   /// Scrape full content from a URL
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final content = await searchService.scrapeUrl(
@@ -329,7 +553,7 @@ class SearchService {
   }
 
   /// Scrape multiple URLs in parallel
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final urls = ["https://example1.com", "https://example2.com"];
@@ -344,7 +568,7 @@ class SearchService {
   }
 
   /// Extract text content from a PDF URL
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final pdf = await searchService.extractPdfContent(
@@ -357,7 +581,7 @@ class SearchService {
   }
 
   /// Perform a typed search (news, scholar, shopping, images, videos)
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// // News search with recency filter
@@ -366,7 +590,7 @@ class SearchService {
   ///   searchType: SearchType.news,
   ///   recency: SearchRecency.day,
   /// );
-  /// 
+  ///
   /// // Scholar search
   /// final papers = await searchService.searchByType(
   ///   query: "machine learning",
@@ -395,15 +619,16 @@ class SearchService {
   }
 
   bool get isReady {
-    return _isInitialized && 
-           _ragOrchestrator.isReady && 
-           SearXNGService().isConfigured;
+    return _isInitialized &&
+        _ragOrchestrator.isReady &&
+        SearXNGService().isConfigured;
   }
 
   bool get isConfigured => _llmSettings.hasAnyConfiguredProvider();
 
   String get activeProviderName {
-    return _ragOrchestrator.getStatus()['activeLLMProvider'] as String? ?? 'None';
+    return _ragOrchestrator.getStatus()['activeLLMProvider'] as String? ??
+        'None';
   }
 
   String get activeSearchProviderName {
@@ -412,7 +637,7 @@ class SearchService {
 
   Map<String, dynamic> getStatus() {
     final ragStatus = _ragOrchestrator.getStatus();
-    
+
     return {
       'isReady': isReady,
       'isInitialized': _isInitialized,
@@ -423,8 +648,9 @@ class SearchService {
         'totalSearches': _totalSearches,
         'successfulSearches': _successfulSearches,
         'failedSearches': _failedSearches,
-        'successRate': _totalSearches > 0 
-            ? (_successfulSearches / _totalSearches * 100).toStringAsFixed(1) + '%'
+        'successRate': _totalSearches > 0
+            ? (_successfulSearches / _totalSearches * 100).toStringAsFixed(1) +
+                  '%'
             : 'N/A',
         'lastSearchTime': _lastSearchTime?.toIso8601String(),
       },
@@ -436,11 +662,8 @@ class SearchService {
   Map<String, dynamic> getDetailedStatus() {
     final basicStatus = getStatus();
     final perfStats = _ragOrchestrator.getPerformanceStats();
-    
-    return {
-      ...basicStatus,
-      'performance': perfStats,
-    };
+
+    return {...basicStatus, 'performance': perfStats};
   }
 
   Future<Map<String, dynamic>> testProvider() async {
@@ -463,7 +686,7 @@ class SearchService {
       );
 
       final duration = DateTime.now().difference(testStart);
-      
+
       final result = {
         'success': true,
         'duration': duration.inMilliseconds,
@@ -482,7 +705,7 @@ class SearchService {
       print('❌ Test failed: $e');
       print('Stack trace: $stackTrace');
       print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-      
+
       return {
         'success': false,
         'error': e.toString(),
@@ -493,11 +716,11 @@ class SearchService {
 
   Future<Map<String, dynamic>> performHealthCheck() async {
     print('🏥 Performing health check...');
-    
+
     final health = await _ragOrchestrator.performHealthCheck();
     health['searchService'] = _isInitialized ? 'healthy' : 'not_initialized';
     health['statistics'] = getStatus()['statistics'];
-    
+
     print('   Overall: ${health['overall']}');
     return health;
   }
@@ -508,7 +731,7 @@ class SearchService {
     _failedSearches = 0;
     _lastSearchTime = null;
     _ragOrchestrator.clearMetrics();
-    
+
     print('📊 Statistics reset');
   }
 
@@ -519,7 +742,8 @@ class SearchService {
         'successfulSearches': _successfulSearches,
         'failedSearches': _failedSearches,
         'successRate': _totalSearches > 0
-            ? (_successfulSearches / _totalSearches * 100).toStringAsFixed(1) + '%'
+            ? (_successfulSearches / _totalSearches * 100).toStringAsFixed(1) +
+                  '%'
             : 'N/A',
         'lastSearchTime': _lastSearchTime?.toIso8601String(),
       },
@@ -529,13 +753,14 @@ class SearchService {
 
   Future<void> reinitialize() async {
     print('🔄 Reinitializing Search Service...');
-    
+
     _isInitialized = false;
     _initializationErrors.clear();
-    
+
     await initialize();
   }
 
-  List<String> get initializationErrors => List.unmodifiable(_initializationErrors);
+  List<String> get initializationErrors =>
+      List.unmodifiable(_initializationErrors);
   bool get hasInitializationErrors => _initializationErrors.isNotEmpty;
 }

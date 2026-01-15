@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'theme_manager.dart';
 
 /// Extension on BuildContext for convenient theme access
-/// 
+///
 /// Provides easy access to:
 /// - Theme data and color schemes
 /// - Text themes with adaptive sizing
@@ -43,7 +43,7 @@ extension ThemeExtensions on BuildContext {
   // ============================================================================
 
   /// Get a color that adapts to the current theme
-  /// 
+  ///
   /// Usage:
   /// ```dart
   /// final color = context.adaptiveColor(
@@ -51,15 +51,12 @@ extension ThemeExtensions on BuildContext {
   ///   dark: Colors.white,
   /// );
   /// ```
-  Color adaptiveColor({
-    required Color light,
-    required Color dark,
-  }) {
+  Color adaptiveColor({required Color light, required Color dark}) {
     return isDark ? dark : light;
   }
 
   /// Get the appropriate text color based on background
-  /// 
+  ///
   /// Returns onPrimary, onSecondary, onSurface, etc. based on the background
   Color textColorOnBackground(Color background) {
     final luminance = background.computeLuminance();
@@ -154,7 +151,7 @@ extension ColorSchemeExtensions on ColorScheme {
 
   /// Get a color with adjusted opacity
   Color withOpacity(Color color, double opacity) {
-    return color.withOpacity(opacity);
+    return color.withValues(alpha: opacity);
   }
 }
 

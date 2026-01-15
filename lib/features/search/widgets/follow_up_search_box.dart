@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:searvo/core/theme/theme.dart';
+import 'package:searvo/features/search/theme/search_theme.dart';
 import 'package:searvo/features/voice/widgets/voice_input_widget.dart';
-import 'package:searvo/shared/widgets/attachment_input_widget.dart';
+import 'package:searvo/common/widgets/attachment_input_widget.dart';
 
 class FollowUpSearchBox extends StatefulWidget {
   final TextEditingController controller;
@@ -58,16 +58,16 @@ class _FollowUpSearchBoxState extends State<FollowUpSearchBox> {
   }
 
   Widget _buildAttachmentPill(AttachmentData attachment) {
-    final colorScheme = context.colorScheme;
+    final searchColors = SearchTheme.colors(context);
     
     return Container(
       margin: const EdgeInsets.only(right: 8, bottom: 4),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
+        color: searchColors.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline,
+          color: searchColors.outline,
           width: 1,
         ),
       ),
@@ -77,14 +77,14 @@ class _FollowUpSearchBoxState extends State<FollowUpSearchBox> {
           Icon(
             attachment.icon,
             size: 14,
-            color: colorScheme.primary,
+            color: searchColors.primary,
           ),
           const SizedBox(width: 6),
           Flexible(
             child: Text(
               attachment.name,
               style: TextStyle(
-                color: colorScheme.onSurface,
+                color: searchColors.onSurface,
                 fontSize: 12,
                 fontWeight: FontWeight.w400,
               ),
@@ -95,7 +95,7 @@ class _FollowUpSearchBoxState extends State<FollowUpSearchBox> {
           Text(
             attachment.formattedSize,
             style: TextStyle(
-              color: colorScheme.onSurfaceVariant,
+              color: searchColors.onSurfaceVariant,
               fontSize: 10,
             ),
           ),
@@ -106,13 +106,13 @@ class _FollowUpSearchBoxState extends State<FollowUpSearchBox> {
               width: 16,
               height: 16,
               decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHighest.withOpacity(0.8),
+                color: searchColors.surfaceContainerHighest.withOpacity(0.8),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 Icons.close,
                 size: 10,
-                color: colorScheme.onSurfaceVariant,
+                color: searchColors.onSurfaceVariant,
               ),
             ),
           ),
@@ -123,16 +123,16 @@ class _FollowUpSearchBoxState extends State<FollowUpSearchBox> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = context.colorScheme;
+    final searchColors = SearchTheme.colors(context);
     
     return Opacity(
       opacity: widget.enabled ? 1.0 : 0.6,
       child: Container(
         decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHighest,
+          color: searchColors.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: colorScheme.outline,
+            color: searchColors.outline,
             width: 1,
           ),
         ),
@@ -175,7 +175,7 @@ class _FollowUpSearchBoxState extends State<FollowUpSearchBox> {
                   decoration: InputDecoration(
                     hintText: 'Ask a follow-up...',
                     hintStyle: TextStyle(
-                      color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+                      color: searchColors.onSurfaceVariant.withOpacity(0.6),
                       fontSize: 16,
                       fontWeight: FontWeight.w400,
                     ),
@@ -187,7 +187,7 @@ class _FollowUpSearchBoxState extends State<FollowUpSearchBox> {
                     contentPadding: EdgeInsets.zero,
                   ),
                   style: TextStyle(
-                    color: colorScheme.onSurface,
+                    color: searchColors.onSurface,
                     fontSize: 16,
                   ),
                   onSubmitted: (_) => _handleSend(),
@@ -208,8 +208,8 @@ class _FollowUpSearchBoxState extends State<FollowUpSearchBox> {
                       AttachmentInputWidget(
                         key: _attachmentWidgetKey,
                         onAttachmentsChanged: _handleAttachmentsChanged,
-                        activeColor: colorScheme.primary,
-                        inactiveColor: widget.enabled ? colorScheme.onSurfaceVariant.withOpacity(0.6) : colorScheme.onSurfaceVariant.withOpacity(0.3),
+                        activeColor: searchColors.primary,
+                        inactiveColor: widget.enabled ? searchColors.onSurfaceVariant.withOpacity(0.6) : searchColors.onSurfaceVariant.withOpacity(0.3),
                         iconSize: 20,
                         maxFileSize: 50 * 1024 * 1024,
                         maxFiles: 5,
@@ -226,8 +226,8 @@ class _FollowUpSearchBoxState extends State<FollowUpSearchBox> {
                           widget.onVoiceTextReceived?.call(text);
                         },
                         onError: widget.onVoiceError,
-                        activeColor: colorScheme.primary,
-                        inactiveColor: widget.enabled ? colorScheme.onSurfaceVariant.withOpacity(0.6) : colorScheme.onSurfaceVariant.withOpacity(0.3),
+                        activeColor: searchColors.primary,
+                        inactiveColor: widget.enabled ? searchColors.onSurfaceVariant.withOpacity(0.6) : searchColors.onSurfaceVariant.withOpacity(0.3),
                         iconSize: 20,
                       ),
                       const SizedBox(width: 16),
@@ -239,8 +239,8 @@ class _FollowUpSearchBoxState extends State<FollowUpSearchBox> {
                           height: 32,
                           decoration: BoxDecoration(
                             color: widget.enabled 
-                                ? colorScheme.primary 
-                                : colorScheme.primary.withOpacity(0.5),
+                                ? searchColors.primary 
+                                : searchColors.primary.withOpacity(0.5),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(

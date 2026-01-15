@@ -1,39 +1,53 @@
-import 'package:searvo/features/settings/services/llm_settings_service.dart';
-import 'package:searvo/features/llm/services/providers/llm_provider_manager.dart';
 import 'package:searvo/features/search/rag/models/rag_models.dart';
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 
 /// Advanced document ranking service using multiple relevance signals
 /// Implements sophisticated scoring algorithms for Perplexity AI-quality results
-/// Now includes semantic similarity using embeddings
 class DocumentRanker {
-  final LLMSettingsService _llmSettings = LLMSettingsService();
-  final LLMProviderManager _llmManager = LLMProviderManager();
-  
   // Configurable ranking weights
   static const double _titleWeight = 3.5;
   static const double _contentWeight = 1.0;
+  // ignore: unused_field
   static const double _urlWeight = 0.8;
   static const double _snippetWeight = 2.0;
   static const double _domainAuthorityWeight = 1.5;
   static const double _freshnessWeight = 1.3;
   static const double _exactMatchBonus = 2.0;
   static const double _phraseMatchBonus = 1.5;
-  static const double _semanticSimilarityWeight = 4.0; // NEW: Semantic ranking weight
 
-  /// Rank documents using advanced multi-signal relevance scoring
-  List<Document> rankDocuments(String query, List<Document> documents) {
+  /// Rank documents using advanced multi-signal relevance scoring (Async / Isolate)
+  Future<List<Document>> rankDocuments(
+    String query,
+    List<Document> documents,
+  ) async {
+    return await compute(_rankDocumentsTask, {
+      'query': query,
+      'documents': documents,
+    });
+  }
+
+  /// Internal task for isolate
+  static List<Document> _rankDocumentsTask(Map<String, dynamic> args) {
+    final ranker = DocumentRanker();
+    return ranker.rankDocumentsSync(args['query'], args['documents']);
+  }
+
+  /// Rank documents using advanced multi-signal relevance scoring (Sync)
+  List<Document> rankDocumentsSync(String query, List<Document> documents) {
     if (documents.isEmpty) {
       print('⚠️  No documents to rank');
       return [];
     }
 
     print('📊 Ranking ${documents.length} documents for query: "$query"');
-    
+
     // CRITICAL: Filter out noise documents BEFORE ranking
     final cleanedDocuments = _filterNoiseDocuments(documents);
     if (cleanedDocuments.length < documents.length) {
-      print('🧹 Removed ${documents.length - cleanedDocuments.length} noise documents');
+      print(
+        '🧹 Removed ${documents.length - cleanedDocuments.length} noise documents',
+      );
       print('   Remaining: ${cleanedDocuments.length} clean documents');
     }
 
@@ -47,7 +61,9 @@ class DocumentRanker {
     final queryPhrases = _extractPhrases(query);
     final queryLength = query.split(RegExp(r'\s+')).length;
 
-    print('🔑 Extracted ${keywords.length} keywords and ${queryPhrases.length} phrases');
+    print(
+      '🔑 Extracted ${keywords.length} keywords and ${queryPhrases.length} phrases',
+    );
 
     // Calculate scores for each CLEANED document
     final rankedDocuments = cleanedDocuments.map((doc) {
@@ -62,13 +78,17 @@ class DocumentRanker {
     }).toList();
 
     // Sort by relevance score (descending)
-    rankedDocuments.sort((a, b) => b.relevanceScore.compareTo(a.relevanceScore));
+    rankedDocuments.sort(
+      (a, b) => b.relevanceScore.compareTo(a.relevanceScore),
+    );
 
     // Log top results
     print('✅ Ranking complete. Top 3 results:');
     for (int i = 0; i < rankedDocuments.take(3).length; i++) {
       final doc = rankedDocuments[i];
-      print('   ${i + 1}. ${doc.title} (score: ${doc.relevanceScore.toStringAsFixed(2)})');
+      print(
+        '   ${i + 1}. ${doc.title} (score: ${doc.relevanceScore.toStringAsFixed(2)})',
+      );
     }
 
     return rankedDocuments;
@@ -102,7 +122,7 @@ class DocumentRanker {
 
     // Take top N documents
     final result = filtered.take(maxDocuments).toList();
-    
+
     print('✅ Final selection: ${result.length} documents');
     return result;
   }
@@ -110,17 +130,86 @@ class DocumentRanker {
   /// Extract meaningful keywords from query
   List<String> _extractKeywords(String query) {
     final words = query.toLowerCase().split(RegExp(r'\s+'));
-    
+
     final stopWords = {
-      'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-      'of', 'with', 'by', 'from', 'as', 'is', 'are', 'was', 'were', 'be',
-      'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will',
-      'would', 'could', 'should', 'may', 'might', 'must', 'can', 'shall',
-      'what', 'how', 'why', 'when', 'where', 'who', 'which', 'whom', 'whose',
-      'that', 'this', 'these', 'those', 'there', 'their', 'them', 'then',
-      'than', 'such', 'some', 'any', 'many', 'much', 'more', 'most', 'very',
-      'about', 'into', 'through', 'during', 'before', 'after', 'above',
-      'below', 'between', 'under', 'again', 'further', 'once', 'here',
+      'the',
+      'a',
+      'an',
+      'and',
+      'or',
+      'but',
+      'in',
+      'on',
+      'at',
+      'to',
+      'for',
+      'of',
+      'with',
+      'by',
+      'from',
+      'as',
+      'is',
+      'are',
+      'was',
+      'were',
+      'be',
+      'been',
+      'being',
+      'have',
+      'has',
+      'had',
+      'do',
+      'does',
+      'did',
+      'will',
+      'would',
+      'could',
+      'should',
+      'may',
+      'might',
+      'must',
+      'can',
+      'shall',
+      'what',
+      'how',
+      'why',
+      'when',
+      'where',
+      'who',
+      'which',
+      'whom',
+      'whose',
+      'that',
+      'this',
+      'these',
+      'those',
+      'there',
+      'their',
+      'them',
+      'then',
+      'than',
+      'such',
+      'some',
+      'any',
+      'many',
+      'much',
+      'more',
+      'most',
+      'very',
+      'about',
+      'into',
+      'through',
+      'during',
+      'before',
+      'after',
+      'above',
+      'below',
+      'between',
+      'under',
+      'again',
+      'further',
+      'once',
+      'here',
     };
 
     return words
@@ -203,7 +292,6 @@ class DocumentRanker {
     int titleMatches = 0;
     int snippetMatches = 0;
     int contentMatches = 0;
-    int urlMatches = 0;
 
     for (final keyword in keywords) {
       // Title matches
@@ -220,18 +308,19 @@ class DocumentRanker {
         snippetMatches++;
       }
 
-      // Content matches (with diminishing returns)
+      // Content matches (with logarithmic diminishing returns)
       final contentCount = _countOccurrences(content, keyword);
       if (contentCount > 0) {
-        final adjustedCount = contentCount > 10 ? 10 : contentCount;
-        score += adjustedCount * _contentWeight;
+        // Logarithmic scaling: 1 match = 1.0, 10 matches ~= 3.3, 100 matches ~= 6.6
+        // This prevents keyword stuffing from dominating score
+        final adjustedScore = (math.log(contentCount + 1) * 1.5);
+        score += adjustedScore * _contentWeight;
         contentMatches++;
       }
 
       // URL matches
       if (url.contains(keyword)) {
         score += _urlWeight;
-        urlMatches++;
       }
     }
 
@@ -260,31 +349,54 @@ class DocumentRanker {
     // 10. Title quality (clear, descriptive titles rank higher)
     score *= _calculateTitleQuality(doc.title, queryLength);
 
-    // 11. Rich metadata scoring (NEW)
+    // 11. Rich metadata scoring
     score += _calculateMetadataScore(doc);
 
+    // 12. Information Density (Penalize SEO spam / fluff)
+    score *= _calculateInformationDensity(doc.content);
+
     return score;
+  }
+
+  /// Calculate information density (unique words / total words)
+  /// Penalizes repetitive content common in SEO spam
+  double _calculateInformationDensity(String content) {
+    if (content.isEmpty) return 0.5;
+
+    final words = content.toLowerCase().split(RegExp(r'\s+'));
+    if (words.length < 50) return 0.8; // Too short to judge properly
+
+    final uniqueWords = words.toSet().length;
+    final ratio = uniqueWords / words.length;
+
+    // Ideal ratio for informative text is usually 0.4 - 0.6
+    // Very low ratio (< 0.3) implies high repetition (spam/keyword stuffing)
+    if (ratio < 0.2) return 0.05; // Severe penalty for extreme spam (nuke it)
+    if (ratio < 0.3) return 0.4; // Heavy penalty
+    if (ratio < 0.45) return 0.8; // Mild penalty
+
+    return 1.1; // Slight boost for good density
   }
 
   /// Count occurrences of a keyword in text
   int _countOccurrences(String text, String keyword) {
     if (text.isEmpty || keyword.isEmpty) return 0;
-    
+
     int count = 0;
     int index = 0;
-    
+
     while ((index = text.indexOf(keyword, index)) != -1) {
       count++;
       index += keyword.length;
     }
-    
+
     return count;
   }
 
   /// Calculate position bonus for keywords appearing early
   double _calculatePositionBonus(String text, List<String> keywords) {
     double bonus = 0.0;
-    
+
     for (final keyword in keywords) {
       final index = text.indexOf(keyword);
       if (index != -1) {
@@ -293,7 +405,7 @@ class DocumentRanker {
         bonus += (1.0 - position) * 2.0;
       }
     }
-    
+
     return bonus;
   }
 
@@ -301,15 +413,31 @@ class DocumentRanker {
   double _calculateDomainAuthority(String domain) {
     // High-authority domains (educational, government, major news)
     final highAuthority = [
-      'edu', 'gov', 'wikipedia.org', 'nature.com', 'science.org',
-      'ieee.org', 'acm.org', 'arxiv.org', 'nih.gov', 'who.int',
+      'edu',
+      'gov',
+      'wikipedia.org',
+      'nature.com',
+      'science.org',
+      'ieee.org',
+      'acm.org',
+      'arxiv.org',
+      'nih.gov',
+      'who.int',
     ];
 
     // Medium-authority domains (reputable news and tech sites)
     final mediumAuthority = [
-      'nytimes.com', 'bbc.com', 'reuters.com', 'theguardian.com',
-      'techcrunch.com', 'arstechnica.com', 'wired.com', 'mit.edu',
-      'stanford.edu', 'github.com', 'stackoverflow.com',
+      'nytimes.com',
+      'bbc.com',
+      'reuters.com',
+      'theguardian.com',
+      'techcrunch.com',
+      'arstechnica.com',
+      'wired.com',
+      'mit.edu',
+      'stanford.edu',
+      'github.com',
+      'stackoverflow.com',
     ];
 
     final domainLower = domain.toLowerCase();
@@ -376,13 +504,13 @@ class DocumentRanker {
     if (daysSincePublished < 0) return 0.5; // Future date, treat as undated
 
     // Recency scoring with decay
-    if (daysSincePublished <= 1) return 5.0;      // Last day
-    if (daysSincePublished <= 7) return 4.0;      // Last week
-    if (daysSincePublished <= 30) return 3.0;     // Last month
-    if (daysSincePublished <= 90) return 2.0;     // Last quarter
-    if (daysSincePublished <= 180) return 1.5;    // Last 6 months
-    if (daysSincePublished <= 365) return 1.0;    // Last year
-    if (daysSincePublished <= 730) return 0.5;    // Last 2 years
+    if (daysSincePublished <= 1) return 5.0; // Last day
+    if (daysSincePublished <= 7) return 4.0; // Last week
+    if (daysSincePublished <= 30) return 3.0; // Last month
+    if (daysSincePublished <= 90) return 2.0; // Last quarter
+    if (daysSincePublished <= 180) return 1.5; // Last 6 months
+    if (daysSincePublished <= 365) return 1.0; // Last year
+    if (daysSincePublished <= 730) return 0.5; // Last 2 years
 
     return 0.2; // Older content
   }
@@ -407,7 +535,6 @@ class DocumentRanker {
   double _calculateTitleQuality(String title, int queryLength) {
     if (title.isEmpty) return 0.7;
 
-    final titleLength = title.length;
     final wordCount = title.split(RegExp(r'\s+')).length;
 
     double multiplier = 1.0;
@@ -447,7 +574,7 @@ class DocumentRanker {
       // Check domain diversity
       final domainCount = selectedDomains[doc.domain] ?? 0;
       final totalSelected = selected.length;
-      
+
       // Allow maximum 30% from same domain
       if (totalSelected > 0 && domainCount / totalSelected >= 0.3) {
         continue; // Skip this document for diversity
@@ -488,12 +615,12 @@ class DocumentRanker {
       // Same domain, check title similarity
       final title1Words = doc1.title.toLowerCase().split(RegExp(r'\s+'));
       final title2Words = doc2.title.toLowerCase().split(RegExp(r'\s+'));
-      
+
       final commonWords = title1Words.toSet().intersection(title2Words.toSet());
       final totalWords = title1Words.toSet().union(title2Words.toSet()).length;
-      
+
       if (totalWords == 0) return 0.5;
-      
+
       return commonWords.length / totalWords;
     }
 
@@ -504,15 +631,17 @@ class DocumentRanker {
   /// Scores based on recency, readability, author presence, content quality
   double _calculateMetadataScore(Document doc) {
     double score = 0.0;
-    
+
     // 1. Recency boost from metadata or publishedDate
-    if (doc.metadata.containsKey('publishedDate') || doc.publishedDate != null) {
+    if (doc.metadata.containsKey('publishedDate') ||
+        doc.publishedDate != null) {
       try {
-        final publishedDate = doc.publishedDate ?? 
-          (doc.metadata['publishedDate'] != null 
-            ? DateTime.parse(doc.metadata['publishedDate']) 
-            : null);
-        
+        final publishedDate =
+            doc.publishedDate ??
+            (doc.metadata['publishedDate'] != null
+                ? DateTime.parse(doc.metadata['publishedDate'])
+                : null);
+
         if (publishedDate != null) {
           final age = DateTime.now().difference(publishedDate).inDays;
           if (age < 7) {
@@ -529,13 +658,14 @@ class DocumentRanker {
         // Invalid date, skip
       }
     }
-    
+
     // 2. Readability boost - prefer easier to read content
-    final readability = doc.readabilityScore ?? 
-      (doc.metadata['readabilityScore'] != null 
-        ? double.tryParse(doc.metadata['readabilityScore'].toString()) 
-        : null);
-    
+    final readability =
+        doc.readabilityScore ??
+        (doc.metadata['readabilityScore'] != null
+            ? double.tryParse(doc.metadata['readabilityScore'].toString())
+            : null);
+
     if (readability != null) {
       if (readability >= 70) {
         score += 1.5; // Easy to read
@@ -545,7 +675,7 @@ class DocumentRanker {
         score += 0.5; // Somewhat difficult
       }
     }
-    
+
     // 3. Content quality indicators from metadata
     final wordCount = doc.metadata['wordCount'] as int?;
     if (wordCount != null) {
@@ -555,21 +685,22 @@ class DocumentRanker {
         score += 0.5; // Acceptable length
       }
     }
-    
+
     // 4. Author presence (indicates credibility)
     if (doc.author != null && doc.author!.isNotEmpty) {
       score += 0.8;
-    } else if (doc.metadata['author'] != null && 
-               doc.metadata['author'].toString().isNotEmpty) {
+    } else if (doc.metadata['author'] != null &&
+        doc.metadata['author'].toString().isNotEmpty) {
       score += 0.8;
     }
-    
+
     // 5. Language match (prefer specified language)
     final language = doc.language ?? doc.metadata['language'];
-    if (language != null && language.toString().toLowerCase().startsWith('en')) {
+    if (language != null &&
+        language.toString().toLowerCase().startsWith('en')) {
       score += 0.5; // English content boost
     }
-    
+
     // 6. Rich content indicators (images and links suggest quality)
     if (doc.images.isNotEmpty) {
       score += math.min(doc.images.length * 0.2, 1.0); // Cap at 1.0
@@ -577,12 +708,12 @@ class DocumentRanker {
     if (doc.relatedLinks.isNotEmpty) {
       score += math.min(doc.relatedLinks.length * 0.1, 0.8); // Cap at 0.8
     }
-    
+
     // 7. Scraped content indicator (full content is better)
     if (doc.metadata['scraped'] == true) {
       score += 0.5;
     }
-    
+
     return score;
   }
 
@@ -596,43 +727,53 @@ class DocumentRanker {
   bool _isNoiseDocument(Document doc) {
     final title = doc.title;
     final content = doc.content;
-    
+
     // 1. Check for file-like names (e.g., "2011 1129 National Museum Malaysia (66)-V2.0-SM-TXT")
     if (_hasFileLikeName(title)) {
-      print('   🗑️  Noise: File-like title: "${title.length > 60 ? title.substring(0, 60) + "..." : title}"');
+      print(
+        '   🗑️  Noise: File-like title: "${title.length > 60 ? title.substring(0, 60) + "..." : title}"',
+      );
       return true;
     }
-    
+
     // 2. Check for excessive numbers/dates in title
     if (_hasExcessiveNumbers(title)) {
-      print('   🗑️  Noise: Excessive numbers in title: "${title.length > 60 ? title.substring(0, 60) + "..." : title}"');
+      print(
+        '   🗑️  Noise: Excessive numbers in title: "${title.length > 60 ? title.substring(0, 60) + "..." : title}"',
+      );
       return true;
     }
-    
+
     // 3. Check for version control artifacts
     if (_hasVersionControlArtifacts(title)) {
-      print('   🗑️  Noise: Version control artifact: "${title.length > 60 ? title.substring(0, 60) + "..." : title}"');
+      print(
+        '   🗑️  Noise: Version control artifact: "${title.length > 60 ? title.substring(0, 60) + "..." : title}"',
+      );
       return true;
     }
-    
+
     // 4. Check for random character sequences
     if (_hasRandomCharacters(title)) {
-      print('   🗑️  Noise: Random characters: "${title.length > 60 ? title.substring(0, 60) + "..." : title}"');
+      print(
+        '   🗑️  Noise: Random characters: "${title.length > 60 ? title.substring(0, 60) + "..." : title}"',
+      );
       return true;
     }
-    
+
     // 5. Check for extremely short or low-quality content
     if (content.length < 50 && title.length < 15) {
       print('   🗑️  Noise: Too short: "${title}" (${content.length} chars)');
       return true;
     }
-    
+
     // 6. Check for metadata-only documents (no readable content)
     if (_isMetadataOnly(content)) {
-      print('   🗑️  Noise: Metadata-only document: "${title.length > 60 ? title.substring(0, 60) + "..." : title}"');
+      print(
+        '   🗑️  Noise: Metadata-only document: "${title.length > 60 ? title.substring(0, 60) + "..." : title}"',
+      );
       return true;
     }
-    
+
     return false;
   }
 
@@ -640,8 +781,11 @@ class DocumentRanker {
   bool _hasFileLikeName(String title) {
     // Patterns like: "2011 1129 National Museum (66)-V2.0-SM-TXT"
     // Contains: version numbers (V2.0), file extensions (TXT), parenthetical numbers
-    return RegExp(r'V\d+\.\d+|SM-[A-Z]+|\(\d+\)-|\.txt|\.pdf|\.doc|\.jpg', caseSensitive: false).hasMatch(title) ||
-           RegExp(r'^\d{4}\s+\d+\s+').hasMatch(title); // Starts with "2011 1129"
+    return RegExp(
+          r'V\d+\.\d+|SM-[A-Z]+|\(\d+\)-|\.txt|\.pdf|\.doc|\.jpg',
+          caseSensitive: false,
+        ).hasMatch(title) ||
+        RegExp(r'^\d{4}\s+\d+\s+').hasMatch(title); // Starts with "2011 1129"
   }
 
   /// Check if title has excessive numbers/dates
@@ -649,8 +793,11 @@ class DocumentRanker {
     // Count numeric sequences
     final numbers = RegExp(r'\d+').allMatches(title);
     final numberCount = numbers.length;
-    final totalDigits = numbers.fold(0, (sum, match) => sum + match.group(0)!.length);
-    
+    final totalDigits = numbers.fold(
+      0,
+      (sum, match) => sum + match.group(0)!.length,
+    );
+
     // Title is mostly numbers if >40% digits or >4 numeric sequences in short title
     final digitRatio = totalDigits / title.length;
     return digitRatio > 0.4 || (numberCount > 4 && title.length < 50);
@@ -659,15 +806,20 @@ class DocumentRanker {
   /// Check for version control artifacts
   bool _hasVersionControlArtifacts(String title) {
     // Git hashes, commit IDs, build numbers
-    return RegExp(r'\b[a-f0-9]{7,40}\b|\bbuild[-_]?\d+\b|commit[-_]?[a-f0-9]+', caseSensitive: false).hasMatch(title);
+    return RegExp(
+      r'\b[a-f0-9]{7,40}\b|\bbuild[-_]?\d+\b|commit[-_]?[a-f0-9]+',
+      caseSensitive: false,
+    ).hasMatch(title);
   }
 
   /// Check for random character sequences
   bool _hasRandomCharacters(String title) {
     // Check for sequences like "xJk9dL2mP" or excessive special chars
     final specialCharCount = RegExp(r'[^\w\s-]').allMatches(title).length;
-    final hasRandomSequence = RegExp(r'[A-Z][a-z][A-Z]\d|[a-z]\d[A-Z][a-z]').hasMatch(title);
-    
+    final hasRandomSequence = RegExp(
+      r'[A-Z][a-z][A-Z]\d|[a-z]\d[A-Z][a-z]',
+    ).hasMatch(title);
+
     return (specialCharCount > title.length * 0.2) || hasRandomSequence;
   }
 
@@ -675,8 +827,10 @@ class DocumentRanker {
   bool _isMetadataOnly(String content) {
     // Look for patterns like: "key: value\nkey: value" with minimal prose
     final lines = content.split('\n');
-    final metadataLines = lines.where((line) => RegExp(r'^[\w\s]+:\s*[\w\s]+$').hasMatch(line.trim())).length;
-    
+    final metadataLines = lines
+        .where((line) => RegExp(r'^[\w\s]+:\s*[\w\s]+$').hasMatch(line.trim()))
+        .length;
+
     // If >70% of lines are metadata format, it's likely not real content
     return lines.isNotEmpty && (metadataLines / lines.length > 0.7);
   }

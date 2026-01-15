@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:searvo/core/theme/theme.dart';
+import 'package:searvo/features/search/theme/search_theme.dart';
 
 class TooltipData {
   final String title;
@@ -98,7 +98,7 @@ class _SearchBoxModeTooltipState extends State<SearchBoxModeTooltip>
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = context.colorScheme;
+    final searchColors = SearchTheme.colors(context);
     
     if (widget.data == null) return const SizedBox.shrink();
     
@@ -118,10 +118,10 @@ class _SearchBoxModeTooltipState extends State<SearchBoxModeTooltip>
                     width: 240,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHighest,
+                      color: searchColors.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: colorScheme.outline,
+                        color: searchColors.outline,
                         width: 1,
                       ),
                       boxShadow: [
@@ -143,7 +143,7 @@ class _SearchBoxModeTooltipState extends State<SearchBoxModeTooltip>
                               child: Text(
                                 widget.data!.title,
                                 style: TextStyle(
-                                  color: colorScheme.onSurface,
+                                  color: searchColors.onSurface,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -157,7 +157,7 @@ class _SearchBoxModeTooltipState extends State<SearchBoxModeTooltip>
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: colorScheme.primary,
+                                  color: searchColors.primary,
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Row(
@@ -189,7 +189,7 @@ class _SearchBoxModeTooltipState extends State<SearchBoxModeTooltip>
                         Text(
                           widget.data!.subtitle,
                           style: TextStyle(
-                            color: colorScheme.onSurfaceVariant,
+                            color: searchColors.onSurfaceVariant,
                             fontSize: 14,
                             height: 1.4,
                           ),
@@ -201,7 +201,7 @@ class _SearchBoxModeTooltipState extends State<SearchBoxModeTooltip>
                           Container(
                             height: 1,
                             width: double.infinity,
-                            color: colorScheme.outline,
+                            color: searchColors.outline,
                           ),
                           const SizedBox(height: 12),
                           
@@ -209,7 +209,7 @@ class _SearchBoxModeTooltipState extends State<SearchBoxModeTooltip>
                           Text(
                             widget.data!.description!,
                             style: TextStyle(
-                              color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+                              color: searchColors.onSurfaceVariant.withOpacity(0.6),
                               fontSize: 13,
                               height: 1.4,
                             ),

@@ -7,13 +7,7 @@ import 'openrouter.dart';
 import 'anthropic.dart';
 
 /// Available LLM providers
-enum LLMProviderType {
-  openai,
-  google,
-  ollama,
-  openrouter,
-  anthropic,
-}
+enum LLMProviderType { openai, google, ollama, openrouter, anthropic }
 
 /// Provider manager to handle multiple LLM providers and their configurations
 class LLMProviderManager {
@@ -82,7 +76,8 @@ class LLMProviderManager {
   static String _normalizeBaseUrl(String url) {
     final trimmed = url.trim();
     if (trimmed.isEmpty) return Ollama.defaultBaseUrl;
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://'))
+      return trimmed;
     return 'http://$trimmed';
   }
 
@@ -228,10 +223,12 @@ class LLMProviderManager {
   static List<String> getAvailableOllamaModels() => Ollama.getAvailableModels();
 
   /// Get available OpenRouter models
-  static List<String> getAvailableOpenRouterModels() => OpenRouterProvider.getAvailableModels();
+  static List<String> getAvailableOpenRouterModels() =>
+      OpenRouterProvider.getAvailableModels();
 
   /// Get available Anthropic models
-  static List<String> getAvailableAnthropicModels() => Anthropic.getAvailableModels();
+  static List<String> getAvailableAnthropicModels() =>
+      Anthropic.getAvailableModels();
 
   /// Get all saved configurations
   static Future<Map<String, String?>> getAllConfigurations() async {
@@ -271,24 +268,15 @@ class LLMProviderManager {
     String? anthropicModel,
   }) async {
     // Register OpenAI provider
-    final openaiProvider = OpenAI(
-      apiKey: openaiApiKey,
-      model: openaiModel,
-    );
+    final openaiProvider = OpenAI(apiKey: openaiApiKey, model: openaiModel);
     registerProvider(LLMProviderType.openai, openaiProvider);
 
     // Register Google provider
-    final googleProvider = Google(
-      apiKey: googleApiKey,
-      model: googleModel,
-    );
+    final googleProvider = Google(apiKey: googleApiKey, model: googleModel);
     registerProvider(LLMProviderType.google, googleProvider);
 
     // Register Ollama provider
-    final ollamaProvider = Ollama(
-      baseUrl: ollamaBaseUrl,
-      model: ollamaModel,
-    );
+    final ollamaProvider = Ollama(baseUrl: ollamaBaseUrl, model: ollamaModel);
     registerProvider(LLMProviderType.ollama, ollamaProvider);
 
     // Register OpenRouter provider
@@ -341,7 +329,9 @@ class LLMProviderManager {
 
   /// Get all configured providers
   List<BaseLLMProvider> get configuredProviders {
-    return _providers.values.where((provider) => provider.isConfigured).toList();
+    return _providers.values
+        .where((provider) => provider.isConfigured)
+        .toList();
   }
 
   /// Check if any provider is configured
@@ -356,6 +346,15 @@ class LLMProviderManager {
       throw Exception('No active provider set');
     }
     return await provider.generateResponse(message);
+  }
+
+  /// Generate streaming response using the active provider
+  Stream<String> generateResponseStream(String message) async* {
+    final provider = activeProvider;
+    if (provider == null) {
+      throw Exception('No active provider set');
+    }
+    yield* provider.generateResponseStream(message);
   }
 
   /// Generate response with history using the active provider
@@ -379,7 +378,7 @@ class LLMProviderManager {
   Map<LLMProviderType, String> get providerNames {
     return {
       for (final entry in _providers.entries)
-        entry.key: entry.value.providerName
+        entry.key: entry.value.providerName,
     };
   }
 

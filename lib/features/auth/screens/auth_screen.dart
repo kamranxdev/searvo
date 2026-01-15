@@ -3,7 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../services/auth_service.dart';
-import '../../../shared/widgets/app_logo.dart';
+import '../../../common/widgets/app_logo.dart';
 import '../../../core/theme/theme.dart';
 
 /// Authentication screen with Google Sign-In

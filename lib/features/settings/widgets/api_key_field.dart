@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:searvo/core/theme/theme.dart';
+import 'package:searvo/features/settings/theme/settings_theme.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ApiKeyField extends StatefulWidget {
@@ -15,7 +16,7 @@ class ApiKeyField extends StatefulWidget {
   final bool showClearButton;
 
   const ApiKeyField({
-    Key? key,
+    super.key,
     required this.label,
     required this.placeholder,
     required this.description,
@@ -24,7 +25,7 @@ class ApiKeyField extends StatefulWidget {
     required this.onChanged,
     this.onClear,
     this.showClearButton = true,
-  }) : super(key: key);
+  });
 
   @override
   State<ApiKeyField> createState() => _ApiKeyFieldState();
@@ -45,14 +46,17 @@ class _ApiKeyFieldState extends State<ApiKeyField> {
   @override
   void didUpdateWidget(ApiKeyField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.value != widget.value || oldWidget.obscuredValue != widget.obscuredValue) {
+    if (oldWidget.value != widget.value ||
+        oldWidget.obscuredValue != widget.obscuredValue) {
       _updateControllerValue();
     }
   }
 
   void _updateControllerValue() {
     if (!_isEditing) {
-      if (widget.value.isNotEmpty && widget.obscuredValue.isNotEmpty && _isObscured) {
+      if (widget.value.isNotEmpty &&
+          widget.obscuredValue.isNotEmpty &&
+          _isObscured) {
         _controller.text = widget.obscuredValue;
       } else {
         _controller.text = widget.value;
@@ -67,7 +71,7 @@ class _ApiKeyFieldState extends State<ApiKeyField> {
   }
 
   Widget _buildDescription() {
-    final colorScheme = context.colorScheme;
+    final settingsColors = SettingsTheme.colors(context);
     final text = widget.description;
     final urlRegex = RegExp(r'https?://[^\s]+');
     final match = urlRegex.firstMatch(text);
@@ -81,14 +85,14 @@ class _ApiKeyFieldState extends State<ApiKeyField> {
         text: TextSpan(
           style: TextStyle(
             fontSize: 12,
-            color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+            color: settingsColors.subtitle.withOpacity(0.6),
           ),
           children: [
             if (before.isNotEmpty) TextSpan(text: before),
             TextSpan(
               text: url,
               style: TextStyle(
-                color: colorScheme.primary,
+                color: settingsColors.accent,
                 decoration: TextDecoration.underline,
               ),
               recognizer: TapGestureRecognizer()
@@ -96,7 +100,10 @@ class _ApiKeyFieldState extends State<ApiKeyField> {
                   try {
                     final uri = Uri.parse(url);
                     if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      await launchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      );
                     } else {
                       // Fallback for desktop platforms
                       await launchUrl(uri, mode: LaunchMode.platformDefault);
@@ -106,7 +113,9 @@ class _ApiKeyFieldState extends State<ApiKeyField> {
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Unable to open URL. Please visit: $url'),
+                          content: Text(
+                            'Unable to open URL. Please visit: $url',
+                          ),
                           action: SnackBarAction(
                             label: 'Copy',
                             onPressed: () {
@@ -128,7 +137,7 @@ class _ApiKeyFieldState extends State<ApiKeyField> {
         text,
         style: TextStyle(
           fontSize: 12,
-          color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+          color: settingsColors.subtitle.withOpacity(0.6),
         ),
       );
     }
@@ -160,22 +169,15 @@ class _ApiKeyFieldState extends State<ApiKeyField> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = context.colorScheme;
+    final settingsColors = SettingsTheme.colors(context);
     final hasStoredValue = widget.value.isNotEmpty;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Text(
-              widget.label,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: colorScheme.onSurface,
-              ),
-            ),
+            Text(widget.label, style: SettingsTheme.inputLabel(context)),
             if (hasStoredValue) ...[
               const SizedBox(width: 8),
               Container(
@@ -212,29 +214,39 @@ class _ApiKeyFieldState extends State<ApiKeyField> {
           },
           onSubmitted: (_) => _onEditingComplete(),
           decoration: InputDecoration(
-            hintText: hasStoredValue ? 'API key is configured' : widget.placeholder,
+            hintText: hasStoredValue
+                ? 'API key is configured'
+                : widget.placeholder,
             hintStyle: TextStyle(
-              color: hasStoredValue ? Colors.green.shade600 : colorScheme.onSurfaceVariant,
+              color: hasStoredValue
+                  ? Colors.green.shade600
+                  : settingsColors.subtitle,
               fontSize: 14,
             ),
             filled: true,
-            fillColor: colorScheme.surfaceContainerHighest,
+            fillColor: settingsColors.inputBackground,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
-                color: hasStoredValue ? Colors.green.withOpacity(0.3) : colorScheme.outline,
+                color: hasStoredValue
+                    ? Colors.green.withOpacity(0.3)
+                    : settingsColors.border,
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
-                color: hasStoredValue ? Colors.green.withOpacity(0.3) : colorScheme.outline,
+                color: hasStoredValue
+                    ? Colors.green.withOpacity(0.3)
+                    : settingsColors.border,
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
-                color: hasStoredValue ? Colors.green.withOpacity(0.6) : colorScheme.primary,
+                color: hasStoredValue
+                    ? Colors.green.withOpacity(0.6)
+                    : settingsColors.accent,
                 width: 2,
               ),
             ),
@@ -246,18 +258,20 @@ class _ApiKeyFieldState extends State<ApiKeyField> {
                     icon: Icon(
                       _isObscured ? Icons.visibility : Icons.visibility_off,
                       size: 18,
-                      color: colorScheme.onSurfaceVariant,
+                      color: settingsColors.icon,
                     ),
                     onPressed: _toggleObscured,
                     tooltip: _isObscured ? 'Show API key' : 'Hide API key',
                   ),
                 ],
-                if (hasStoredValue && widget.showClearButton && widget.onClear != null) ...[
+                if (hasStoredValue &&
+                    widget.showClearButton &&
+                    widget.onClear != null) ...[
                   IconButton(
                     icon: Icon(
                       Icons.clear,
                       size: 18,
-                      color: colorScheme.error,
+                      color: settingsColors.error,
                     ),
                     onPressed: () {
                       widget.onClear!();
@@ -269,10 +283,7 @@ class _ApiKeyFieldState extends State<ApiKeyField> {
               ],
             ),
           ),
-          style: TextStyle(
-            color: colorScheme.onSurface,
-            fontSize: 14,
-          ),
+          style: SettingsTheme.inputText(context),
         ),
         const SizedBox(height: 4),
         _buildDescription(),
