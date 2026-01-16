@@ -6,16 +6,22 @@ import 'base_llm_provider.dart';
 class Anthropic extends BaseLLMProvider {
   /// Default chat model for Anthropic
   static const String defaultModel = 'claude-sonnet-3.7';
-  
+
   late ChatAnthropic _chatModel;
   String? _apiKey;
   String _model;
 
-  Anthropic({
-    String? apiKey,
-    String? model,
-  }) : _apiKey = apiKey,
-       _model = model ?? defaultModel;
+  @override
+  bool get supportsEmbeddings => false;
+
+  @override
+  Future<List<double>> generateEmbeddings(String text) {
+    throw UnsupportedError('Anthropic does not support embeddings');
+  }
+
+  Anthropic({String? apiKey, String? model})
+    : _apiKey = apiKey,
+      _model = model ?? defaultModel;
 
   @override
   String get providerName => 'Anthropic';
@@ -39,9 +45,7 @@ class Anthropic extends BaseLLMProvider {
   @override
   Future<String> generateResponse(String message) async {
     try {
-      final response = await _chatModel.invoke(
-        PromptValue.string(message),
-      );
+      final response = await _chatModel.invoke(PromptValue.string(message));
       return response.output.content;
     } catch (e) {
       throw Exception('Failed to generate response from Anthropic: $e');
@@ -71,13 +75,13 @@ class Anthropic extends BaseLLMProvider {
       // Add current message
       messages.add(ChatMessage.humanText(message));
 
-      final response = await _chatModel.invoke(
-        PromptValue.chat(messages),
-      );
+      final response = await _chatModel.invoke(PromptValue.chat(messages));
 
       return response.output.content;
     } catch (e) {
-      throw Exception('Failed to generate response with history from Anthropic: $e');
+      throw Exception(
+        'Failed to generate response with history from Anthropic: $e',
+      );
     }
   }
 
@@ -105,10 +109,10 @@ class Anthropic extends BaseLLMProvider {
 
   /// Latest Anthropic Claude models optimized for text and reasoning (2025)
   static const List<String> availableModels = [
-    'claude-sonnet-4.5-latest',   // Top model for coding, complex agents, and reasoning
-    'claude-opus-4-latest',       // Powerful reasoning and scientific tasks model
-    'claude-sonnet-3.7',          // Previous gen, good balance of speed and accuracy
-    'claude-opus-3-latest',       // Previous gen complex reasoning model
+    'claude-sonnet-4.5-latest', // Top model for coding, complex agents, and reasoning
+    'claude-opus-4-latest', // Powerful reasoning and scientific tasks model
+    'claude-sonnet-3.7', // Previous gen, good balance of speed and accuracy
+    'claude-opus-3-latest', // Previous gen complex reasoning model
   ];
 
   @override

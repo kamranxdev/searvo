@@ -30,16 +30,12 @@ void main() {
         expect(controller.validMentions, equals(validMentions));
       });
 
-      test('should have default mention color', () {
-        expect(controller.mentionColor, const Color(0xFF00B4A6));
+      test('should have null default mention color', () {
+        expect(controller.mentionColor, null);
       });
 
-      test('should have default url color', () {
-        expect(controller.urlColor, const Color(0xFF00B4A6));
-      });
-
-      test('should have default background color', () {
-        expect(controller.backgroundColor, const Color(0xFF1A1A1A));
+      test('should have null default url color', () {
+        expect(controller.urlColor, null);
       });
 
       test('should accept custom colors', () {
@@ -47,12 +43,10 @@ void main() {
           validMentions: {'test'},
           mentionColor: Colors.red,
           urlColor: Colors.blue,
-          backgroundColor: Colors.green,
         );
 
         expect(customController.mentionColor, Colors.red);
         expect(customController.urlColor, Colors.blue);
-        expect(customController.backgroundColor, Colors.green);
 
         customController.dispose();
       });
@@ -74,8 +68,7 @@ void main() {
       });
 
       test('should extract multiple URLs', () {
-        controller.text = 
-            'Check https://first.com and http://second.com';
+        controller.text = 'Check https://first.com and http://second.com';
         final urls = controller.extractUrls();
         expect(urls.length, 2);
         expect(urls, contains('https://first.com'));
@@ -154,7 +147,7 @@ void main() {
       });
 
       test('should handle mixed content', () {
-        controller.text = 
+        controller.text =
             '@github check https://github.com for more info @youtube';
         expect(controller.text, contains('@github'));
         expect(controller.text, contains('https://github.com'));
@@ -179,16 +172,12 @@ void main() {
 
   group('RichTextEditingController buildTextSpan', () {
     testWidgets('should build text span for plain text', (tester) async {
-      final controller = RichTextEditingController(
-        validMentions: {'github'},
-      );
+      final controller = RichTextEditingController(validMentions: {'github'});
       controller.text = 'Plain text';
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: TextField(controller: controller),
-          ),
+          home: Scaffold(body: TextField(controller: controller)),
         ),
       );
 
@@ -197,16 +186,12 @@ void main() {
     });
 
     testWidgets('should build text span with mentions', (tester) async {
-      final controller = RichTextEditingController(
-        validMentions: {'github'},
-      );
+      final controller = RichTextEditingController(validMentions: {'github'});
       controller.text = 'Hello @github world';
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: TextField(controller: controller),
-          ),
+          home: Scaffold(body: TextField(controller: controller)),
         ),
       );
 
@@ -215,16 +200,12 @@ void main() {
     });
 
     testWidgets('should build text span with URLs', (tester) async {
-      final controller = RichTextEditingController(
-        validMentions: {'github'},
-      );
+      final controller = RichTextEditingController(validMentions: {'github'});
       controller.text = 'Visit https://example.com today';
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: TextField(controller: controller),
-          ),
+          home: Scaffold(body: TextField(controller: controller)),
         ),
       );
 
@@ -233,16 +214,12 @@ void main() {
     });
 
     testWidgets('should handle empty text', (tester) async {
-      final controller = RichTextEditingController(
-        validMentions: {'github'},
-      );
+      final controller = RichTextEditingController(validMentions: {'github'});
       controller.text = '';
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: TextField(controller: controller),
-          ),
+          home: Scaffold(body: TextField(controller: controller)),
         ),
       );
 
@@ -259,9 +236,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: TextField(controller: controller),
-          ),
+          home: Scaffold(body: TextField(controller: controller)),
         ),
       );
 
@@ -270,16 +245,12 @@ void main() {
     });
 
     testWidgets('should handle text with only URLs', (tester) async {
-      final controller = RichTextEditingController(
-        validMentions: {},
-      );
+      final controller = RichTextEditingController(validMentions: {});
       controller.text = 'https://a.com https://b.com';
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: TextField(controller: controller),
-          ),
+          home: Scaffold(body: TextField(controller: controller)),
         ),
       );
 
@@ -288,16 +259,12 @@ void main() {
     });
 
     testWidgets('should handle mixed mentions and URLs', (tester) async {
-      final controller = RichTextEditingController(
-        validMentions: {'github'},
-      );
+      final controller = RichTextEditingController(validMentions: {'github'});
       controller.text = '@github https://github.com @twitter http://x.com';
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: TextField(controller: controller),
-          ),
+          home: Scaffold(body: TextField(controller: controller)),
         ),
       );
 
@@ -311,15 +278,11 @@ void main() {
 
   group('Text Input Integration', () {
     testWidgets('should allow typing text', (tester) async {
-      final controller = RichTextEditingController(
-        validMentions: {'github'},
-      );
+      final controller = RichTextEditingController(validMentions: {'github'});
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: TextField(controller: controller),
-          ),
+          home: Scaffold(body: TextField(controller: controller)),
         ),
       );
 
@@ -330,15 +293,11 @@ void main() {
     });
 
     testWidgets('should allow typing mentions', (tester) async {
-      final controller = RichTextEditingController(
-        validMentions: {'github'},
-      );
+      final controller = RichTextEditingController(validMentions: {'github'});
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: TextField(controller: controller),
-          ),
+          home: Scaffold(body: TextField(controller: controller)),
         ),
       );
 
@@ -349,15 +308,11 @@ void main() {
     });
 
     testWidgets('should allow typing URLs', (tester) async {
-      final controller = RichTextEditingController(
-        validMentions: {},
-      );
+      final controller = RichTextEditingController(validMentions: {});
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: TextField(controller: controller),
-          ),
+          home: Scaffold(body: TextField(controller: controller)),
         ),
       );
 
@@ -369,15 +324,11 @@ void main() {
     });
 
     testWidgets('should handle clear and retype', (tester) async {
-      final controller = RichTextEditingController(
-        validMentions: {'github'},
-      );
+      final controller = RichTextEditingController(validMentions: {'github'});
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: TextField(controller: controller),
-          ),
+          home: Scaffold(body: TextField(controller: controller)),
         ),
       );
 

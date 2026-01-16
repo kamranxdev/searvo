@@ -6,19 +6,19 @@ import 'base_llm_provider.dart';
 class Ollama extends BaseLLMProvider {
   /// Default base URL for Ollama
   static const String defaultBaseUrl = 'http://localhost:11434';
-  
+
   /// Default chat model for Ollama
   static const String defaultModel = 'llama3.2';
-  
+
   /// Default embedding model for Ollama
   static const String defaultEmbeddingModel = 'all-minilm';
-  
+
   late ChatOllama _chatModel;
   late OllamaEmbeddings _embeddings;
   String? _baseUrl;
   String _model;
   bool _isExplicitlyConfigured = false;
-  
+
   /// Normalizes the base URL to ensure it has a proper HTTP/HTTPS scheme
   static String _normalizeBaseUrl(String url) {
     final trimmed = url.trim();
@@ -29,12 +29,12 @@ class Ollama extends BaseLLMProvider {
     return 'http://$trimmed';
   }
 
-  Ollama({
-    String? baseUrl,
-    String? model,
-  }) : _baseUrl = baseUrl != null && baseUrl.isNotEmpty ? _normalizeBaseUrl(baseUrl) : null,
-       _model = model ?? defaultModel,
-       _isExplicitlyConfigured = baseUrl != null && baseUrl.isNotEmpty;
+  Ollama({String? baseUrl, String? model})
+    : _baseUrl = baseUrl != null && baseUrl.isNotEmpty
+          ? _normalizeBaseUrl(baseUrl)
+          : null,
+      _model = model ?? defaultModel,
+      _isExplicitlyConfigured = baseUrl != null && baseUrl.isNotEmpty;
 
   @override
   String get providerName => 'Ollama';
@@ -42,29 +42,23 @@ class Ollama extends BaseLLMProvider {
   @override
   Future<void> initialize() async {
     if (!_isExplicitlyConfigured) {
-      throw Exception('Ollama base URL must be configured before initialization');
+      throw Exception(
+        'Ollama base URL must be configured before initialization',
+      );
     }
-    
+
     _chatModel = ChatOllama(
-      defaultOptions: ChatOllamaOptions(
-        model: _model,
-        temperature: 0.7,
-      ),
+      defaultOptions: ChatOllamaOptions(model: _model, temperature: 0.7),
       baseUrl: _baseUrl!,
     );
 
-    _embeddings = OllamaEmbeddings(
-      model: _model,
-      baseUrl: _baseUrl!,
-    );
+    _embeddings = OllamaEmbeddings(model: _model, baseUrl: _baseUrl!);
   }
 
   @override
   Future<String> generateResponse(String message) async {
     try {
-      final response = await _chatModel.invoke(
-        PromptValue.string(message),
-      );
+      final response = await _chatModel.invoke(PromptValue.string(message));
       return response.output.content;
     } catch (e) {
       throw Exception('Failed to generate response from Ollama: $e');
@@ -78,33 +72,36 @@ class Ollama extends BaseLLMProvider {
   ) async {
     try {
       final messages = <ChatMessage>[];
-      
+
       // Add history messages
       for (final historyItem in history) {
         final role = historyItem['role'] as String;
         final content = historyItem['content'] as String;
-        
+
         if (role == 'user') {
           messages.add(ChatMessage.humanText(content));
         } else if (role == 'assistant') {
           messages.add(ChatMessage.ai(content));
         }
       }
-      
+
       // Add current message
       messages.add(ChatMessage.humanText(message));
 
-      final response = await _chatModel.invoke(
-        PromptValue.chat(messages),
-      );
-      
+      final response = await _chatModel.invoke(PromptValue.chat(messages));
+
       return response.output.content;
     } catch (e) {
-      throw Exception('Failed to generate response with history from Ollama: $e');
+      throw Exception(
+        'Failed to generate response with history from Ollama: $e',
+      );
     }
   }
 
-  /// Generate embeddings for text
+  @override
+  bool get supportsEmbeddings => true;
+
+  @override
   Future<List<double>> generateEmbeddings(String text) async {
     try {
       final embeddings = await _embeddings.embedQuery(text);
@@ -179,7 +176,8 @@ class Ollama extends BaseLLMProvider {
   ];
 
   @override
-  bool get isConfigured => _isExplicitlyConfigured && _baseUrl != null && _baseUrl!.isNotEmpty;
+  bool get isConfigured =>
+      _isExplicitlyConfigured && _baseUrl != null && _baseUrl!.isNotEmpty;
 
   @override
   void dispose() {

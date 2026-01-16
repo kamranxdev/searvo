@@ -369,6 +369,20 @@ class LLMProviderManager {
     return await provider.generateResponseWithHistory(message, history);
   }
 
+  /// Generate embeddings using the active provider
+  Future<List<double>> generateEmbeddings(String text) async {
+    final provider = activeProvider;
+    if (provider == null) {
+      throw Exception('No active provider set');
+    }
+    if (!provider.supportsEmbeddings) {
+      throw UnsupportedError(
+        'Active provider ${provider.providerName} does not support embeddings',
+      );
+    }
+    return await provider.generateEmbeddings(text);
+  }
+
   /// Get available provider types
   List<LLMProviderType> get availableProviders {
     return LLMProviderType.values;

@@ -1,4 +1,3 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,15 +7,12 @@ import 'package:searvo/core/config/app_config.dart';
 import 'package:searvo/core/di/injection_container.dart';
 import 'package:searvo/core/routing/app_router.dart';
 import 'package:searvo/core/utils/bloc_observer.dart';
-import 'package:searvo/features/auth/services/auth_service.dart';
 import 'package:searvo/features/onboarding/onboarding.dart';
 import 'package:searvo/features/settings/services/llm_settings_service.dart';
 import 'package:searvo/features/settings/services/settings_service.dart';
-import 'package:searvo/features/history/services/conversation_sync_service.dart';
 import 'package:searvo/features/search/bloc/search_bloc.dart';
 import 'package:searvo/features/search/bloc/search_event.dart';
 import 'package:searvo/features/search/rag/bloc/rag_cubit.dart';
-import 'package:searvo/firebase_options.dart';
 import 'package:searvo/features/history/presentation/cubit/history_cubit.dart';
 import 'core/theme/theme.dart';
 
@@ -27,12 +23,6 @@ void main() async {
 
   // Initialize Bloc observer for debugging
   Bloc.observer = AppBlocObserver();
-
-  // Initialize Firebase
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  // Initialize authentication service
-  await AuthService().initialize();
 
   // Initialize core services
   await SettingsService().initialize();
@@ -47,14 +37,6 @@ void main() async {
     print('✅ Dependency injection initialized');
   } catch (e) {
     print('❌ Failed to initialize dependency injection: $e');
-  }
-
-  // Initialize conversation sync service
-  try {
-    await ConversationSyncService().initialize();
-    print('✅ Conversation sync service initialized');
-  } catch (e) {
-    print('❌ Failed to initialize conversation sync service: $e');
   }
 
   // Initialize LLM settings service
@@ -102,7 +84,6 @@ class SearvoApp extends StatelessWidget {
         return MultiProvider(
           providers: [
             // Migrated to Bloc/Cubit:
-            // - auth (AuthBloc)
             // - history (HistoryCubit)
             // - discover (DiscoverCubit)
             // - settings (SettingsCubit - services accessed directly for LLM/embedding config)

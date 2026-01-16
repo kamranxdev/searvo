@@ -10,7 +10,7 @@ import 'package:searvo/features/search/bloc/search_bloc.dart';
 import 'package:searvo/features/search/bloc/search_event.dart';
 import 'package:searvo/features/search/screens/search_results_screen.dart';
 
-import 'package:searvo/features/search/models/search_mode.dart';
+import 'package:searvo/features/search/domain/entities/search_mode.dart';
 import 'package:searvo/features/settings/screens/settings_screen.dart';
 import 'package:searvo/common/navigation/sidebar.dart';
 import 'package:searvo/common/navigation/navigation_theme.dart';

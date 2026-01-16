@@ -5,11 +5,12 @@ import 'package:searvo/features/settings/services/settings_service.dart';
 import 'package:searvo/features/voice/widgets/voice_input_widget.dart';
 import 'package:searvo/common/widgets/rich_text_editing_controller.dart';
 import 'package:searvo/common/widgets/attachment_input_widget.dart';
-import 'package:searvo/features/search/services/autocomplete_service.dart';
+import 'package:searvo/core/di/injection_container.dart';
+import 'package:searvo/features/search/domain/usecases/get_autocomplete_suggestions_usecase.dart';
+import 'package:searvo/features/search/domain/entities/autocomplete_entities.dart';
+import 'package:searvo/features/search/domain/entities/search_mode.dart';
 import 'dart:ui';
 import 'search_box_mode_tooltip.dart';
-
-import '../models/search_mode.dart';
 
 class SearchBox extends StatefulWidget {
   final TextEditingController controller;
@@ -55,8 +56,8 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
   Map<String, Map<String, String>> _websiteMappings = {};
   late RichTextEditingController _mentionController;
 
-  // Autocomplete service
-  late AutocompleteService _autocompleteService;
+  // Autocomplete use case
+  late GetAutocompleteSuggestionsUseCase _autocompleteUseCase;
   List<AutocompleteSuggestion> _dynamicSuggestions = [];
   bool _isLoadingSuggestions = false;
 
@@ -130,10 +131,8 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
     // Initialize website mappings
     _websiteMappings = _settingsService.getWebsiteMappings();
 
-    // Initialize autocomplete service
-    _autocompleteService = AutocompleteService(
-      baseUrl: 'http://localhost:4000', // You can make this configurable
-    );
+    // Initialize autocomplete use case
+    _autocompleteUseCase = sl<GetAutocompleteSuggestionsUseCase>();
 
     // Fetch trending suggestions for empty state
     _fetchTrendingSuggestions();
@@ -141,8 +140,6 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
     // Initialize mention controller with valid mentions
     _mentionController = RichTextEditingController(
       validMentions: _websiteMappings.keys.toSet(),
-      mentionColor: const Color(0xFF00B4A6), // AppTheme.primaryColor equivalent
-      urlColor: const Color(0xFF00B4A6), // Same teal color for URLs
     );
 
     // Sync with the provided controller
@@ -259,21 +256,12 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
       _isLoadingSuggestions = true;
     });
 
-    try {
-      final suggestions = await _autocompleteService.getTrendingSuggestions();
-      if (mounted) {
-        setState(() {
-          _dynamicSuggestions = suggestions;
-          _isLoadingSuggestions = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _dynamicSuggestions = [];
-          _isLoadingSuggestions = false;
-        });
-      }
+    // TODO: Implement trending suggestions in use case
+    if (mounted) {
+      setState(() {
+        _dynamicSuggestions = [];
+        _isLoadingSuggestions = false;
+      });
     }
   }
 
@@ -292,7 +280,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
     });
 
     // Use debounced method to avoid excessive API calls
-    _autocompleteService.getSuggestionsDebounced(query, (suggestions) {
+    _autocompleteUseCase.callDebounced(query, (suggestions) {
       if (mounted) {
         setState(() {
           _dynamicSuggestions = suggestions;
@@ -307,7 +295,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
     _suggestionsAnimationController.dispose();
     _textFieldFocusNode.dispose();
     _mentionController.dispose();
-    _autocompleteService.dispose();
+    _autocompleteUseCase.cancelPendingRequests();
     super.dispose();
   }
 
@@ -400,7 +388,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
               width: 16,
               height: 16,
               decoration: BoxDecoration(
-                color: searchColors.surface.withOpacity(0.8),
+                color: searchColors.surface.withValues(alpha: 0.8),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(Icons.close, size: 10, color: searchColors.caption),
@@ -507,14 +495,14 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
         icon = Icons.link;
         iconColor = isSelected
             ? searchColors.accent
-            : searchColors.accent.withOpacity(0.7);
+            : searchColors.accent.withValues(alpha: 0.7);
       }
     } else {
       // For regular suggestions, use trending_up icon
       icon = Icons.trending_up;
       iconColor = isSelected
           ? searchColors.caption
-          : searchColors.caption.withOpacity(0.7);
+          : searchColors.caption.withValues(alpha: 0.7);
     }
 
     return AnimatedContainer(
@@ -548,12 +536,12 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
               color: isSelected
-                  ? searchColors.surface.withOpacity(0.8)
+                  ? searchColors.surface.withValues(alpha: 0.8)
                   : Colors.transparent,
               border: isSelected
                   ? Border.all(
                       color: isMention
-                          ? searchColors.accent.withOpacity(0.3)
+                          ? searchColors.accent.withValues(alpha: 0.3)
                           : searchColors.border,
                       width: 1,
                     )
@@ -594,7 +582,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
                         Text(
                           subtitle,
                           style: TextStyle(
-                            color: searchColors.caption.withOpacity(0.6),
+                            color: searchColors.caption.withValues(alpha: 0.6),
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
                           ),
@@ -608,7 +596,9 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
                   curve: Curves.easeOutCubic,
                   child: Icon(
                     isMention ? Icons.open_in_new : Icons.trending_up,
-                    color: isSelected ? iconColor : iconColor.withOpacity(0.5),
+                    color: isSelected
+                        ? iconColor
+                        : iconColor.withValues(alpha: 0.5),
                     size: 16,
                   ),
                 ),
@@ -635,7 +625,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: searchColors.inputBackground.withOpacity(0.95),
+                  color: searchColors.inputBackground.withValues(alpha: 0.95),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: searchColors.border, width: 1),
                   boxShadow: [

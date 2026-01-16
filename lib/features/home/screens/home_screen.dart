@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:searvo/core/routing/app_router.dart';
 import 'package:searvo/core/theme/theme.dart';
 import 'package:searvo/features/search/widgets/search_box.dart' show SearchBox;
-import 'package:searvo/features/search/models/search_mode.dart';
-import 'package:searvo/features/search/services/search_service.dart';
+import 'package:searvo/features/search/domain/entities/search_mode.dart';
+import 'package:searvo/features/search/domain/services/search_service.dart';
 import 'package:searvo/features/settings/services/settings_service.dart';
 import 'package:searvo/common/widgets/attachment_input_widget.dart';
 import 'package:searvo/core/di/injection_container.dart';
@@ -290,7 +290,7 @@ class _SearvoHomeContentState extends State<SearvoHomeContent> {
                           onAttachmentError: _onAttachmentError,
                           onSearchModeChanged: (mode) {
                             setState(() {
-                              _currentSearchMode = mode;
+                              _currentSearchMode = mode as SearchMode;
                             });
                           },
                         ),
@@ -352,7 +352,7 @@ class _SearvoHomeContentState extends State<SearvoHomeContent> {
                             onAttachmentError: _onAttachmentError,
                             onSearchModeChanged: (mode) {
                               setState(() {
-                                _currentSearchMode = mode;
+                                _currentSearchMode = mode as SearchMode;
                               });
                             },
                           ),

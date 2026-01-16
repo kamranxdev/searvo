@@ -5,15 +5,15 @@ import 'package:searvo/features/search/theme/search_theme.dart';
 import 'package:searvo/features/search/widgets/follow_up_search_box.dart';
 import 'package:searvo/features/search/widgets/message_box.dart';
 
-import 'package:searvo/features/search/models/search_mode.dart';
-import 'package:searvo/features/history/services/conversation_sync_service.dart';
+import 'package:searvo/features/search/domain/entities/search_mode.dart';
+import 'package:searvo/features/history/services/conversation_database_service.dart';
 import 'package:searvo/common/widgets/attachment_input_widget.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
-import '../models/message_branch_model.dart';
+import 'package:searvo/features/search/domain/entities/message_branch_manager.dart';
 import '../bloc/search_bloc.dart';
 import '../bloc/search_event.dart';
 import '../bloc/search_state.dart';
@@ -83,19 +83,18 @@ class _SearchResultsContentState extends State<SearchResultsContent> {
 
   Future<void> _loadConversationFromDatabase() async {
     final searchBloc = context.read<SearchBloc>();
-    final syncService = ConversationSyncService();
+    final databaseService = ConversationDatabaseService();
 
     try {
       print('📥 Loading conversation from database: ${widget.conversationId}');
 
       // Get the conversation from database by exact UUID match
-      final conversation = await syncService.getConversationById(
-        widget.conversationId!,
-      );
+      final conversation = await databaseService
+          .getConversationByConversationId(widget.conversationId!);
 
       if (conversation != null) {
         // Convert stored messages back to branches
-        final branches = syncService.convertMessagesToBranches(
+        final branches = databaseService.convertMessagesToBranches(
           conversation.messages,
         );
 

@@ -7,8 +7,9 @@ import 'dart:async' as _i4;
 
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i7;
-import 'package:searvo/features/search/models/message_data.dart' as _i2;
-import 'package:searvo/features/search/models/search_mode.dart' as _i6;
+import 'package:searvo/features/search/domain/entities/message_data.dart'
+    as _i2;
+import 'package:searvo/features/search/domain/entities/search_mode.dart' as _i6;
 import 'package:searvo/features/search/rag/models/rag_models.dart' as _i5;
 import 'package:searvo/features/search/rag/services/orchestration/rag_orchestrator.dart'
     as _i3;
@@ -57,6 +58,7 @@ class MockRAGOrchestrator extends _i1.Mock implements _i3.RAGOrchestrator {
     _i6.SearchMode? searchMode = _i6.SearchMode.search,
     List<_i2.MessageData>? previousMessages,
     int? maxHistoryMessages = 3,
+    bool? isNewConversation = false,
   }) =>
       (super.noSuchMethod(
             Invocation.method(
@@ -72,6 +74,7 @@ class MockRAGOrchestrator extends _i1.Mock implements _i3.RAGOrchestrator {
                 #searchMode: searchMode,
                 #previousMessages: previousMessages,
                 #maxHistoryMessages: maxHistoryMessages,
+                #isNewConversation: isNewConversation,
               },
             ),
             returnValue: _i4.Stream<_i5.RAGUpdate>.empty(),
@@ -89,6 +92,7 @@ class MockRAGOrchestrator extends _i1.Mock implements _i3.RAGOrchestrator {
     List<dynamic>? attachments,
     _i6.SearchMode? searchMode = _i6.SearchMode.search,
     dynamic Function(_i2.MessageData)? onSearchComplete,
+    bool? isNewConversation = false,
   }) =>
       (super.noSuchMethod(
             Invocation.method(
@@ -103,6 +107,7 @@ class MockRAGOrchestrator extends _i1.Mock implements _i3.RAGOrchestrator {
                 #attachments: attachments,
                 #searchMode: searchMode,
                 #onSearchComplete: onSearchComplete,
+                #isNewConversation: isNewConversation,
               },
             ),
             returnValue: _i4.Future<_i2.MessageData>.value(
@@ -120,6 +125,7 @@ class MockRAGOrchestrator extends _i1.Mock implements _i3.RAGOrchestrator {
                     #attachments: attachments,
                     #searchMode: searchMode,
                     #onSearchComplete: onSearchComplete,
+                    #isNewConversation: isNewConversation,
                   },
                 ),
               ),

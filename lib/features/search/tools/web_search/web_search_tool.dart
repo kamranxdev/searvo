@@ -1,6 +1,6 @@
 import '../../agent/models/agent_tool.dart';
 import '../../rag/services/orchestration/rag_orchestrator.dart';
-import '../../../search/models/search_mode.dart';
+import '../../domain/entities/search_mode.dart';
 
 class WebSearchTool extends AgentTool {
   final RAGOrchestrator _ragOrchestrator;

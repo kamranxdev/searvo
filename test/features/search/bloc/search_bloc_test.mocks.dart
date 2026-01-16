@@ -3,27 +3,34 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i12;
+import 'dart:async' as _i13;
 
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i11;
-import 'package:searvo/features/history/models/conversation_model.dart' as _i9;
-import 'package:searvo/features/history/services/conversation_sync_service.dart'
-    as _i15;
-import 'package:searvo/features/search/models/message_branch_model.dart' as _i8;
-import 'package:searvo/features/search/models/message_data.dart' as _i2;
-import 'package:searvo/features/search/models/search_mode.dart' as _i13;
-import 'package:searvo/features/search/models/search_provider_config.dart'
+import 'package:mockito/src/dummies.dart' as _i12;
+import 'package:searvo/features/history/database/conversation_database.dart'
+    as _i9;
+import 'package:searvo/features/history/models/conversation_model.dart' as _i10;
+import 'package:searvo/features/history/services/conversation_database_service.dart'
+    as _i16;
+import 'package:searvo/features/search/data/models/search_response_model.dart'
     as _i6;
+import 'package:searvo/features/search/domain/entities/message_branch_manager.dart'
+    as _i8;
+import 'package:searvo/features/search/domain/entities/message_data.dart'
+    as _i2;
+import 'package:searvo/features/search/domain/entities/search_enums.dart'
+    as _i15;
+import 'package:searvo/features/search/domain/entities/search_mode.dart'
+    as _i14;
+import 'package:searvo/features/search/domain/services/search_service.dart'
+    as _i11;
+import 'package:searvo/features/search/presentation/bloc/conversation_manager.dart'
+    as _i7;
 import 'package:searvo/features/search/rag/models/rag_models.dart' as _i4;
 import 'package:searvo/features/search/rag/services/data_ingestion/pdf_extractor_service.dart'
     as _i5;
 import 'package:searvo/features/search/rag/services/query_processing/query_analyzer.dart'
     as _i3;
-import 'package:searvo/features/search/services/conversation_manager.dart'
-    as _i7;
-import 'package:searvo/features/search/services/search_service.dart' as _i10;
-import 'package:searvo/features/search/services/searxng_service.dart' as _i14;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -49,8 +56,8 @@ class _FakeQueryAnalysis_1 extends _i1.SmartFake implements _i3.QueryAnalysis {
     : super(parent, parentInvocation);
 }
 
-class _FakeDocument_2 extends _i1.SmartFake implements _i4.Document {
-  _FakeDocument_2(Object parent, Invocation parentInvocation)
+class _FakeRagDocument_2 extends _i1.SmartFake implements _i4.RagDocument {
+  _FakeRagDocument_2(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
@@ -59,9 +66,9 @@ class _FakePDFContent_3 extends _i1.SmartFake implements _i5.PDFContent {
     : super(parent, parentInvocation);
 }
 
-class _FakeSearchResponse_4 extends _i1.SmartFake
-    implements _i6.SearchResponse {
-  _FakeSearchResponse_4(Object parent, Invocation parentInvocation)
+class _FakeSearchResponseModel_4 extends _i1.SmartFake
+    implements _i6.SearchResponseModel {
+  _FakeSearchResponseModel_4(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
@@ -77,16 +84,33 @@ class _FakeMessageBranchManager_6 extends _i1.SmartFake
     : super(parent, parentInvocation);
 }
 
-class _FakeConversationModel_7 extends _i1.SmartFake
-    implements _i9.ConversationModel {
-  _FakeConversationModel_7(Object parent, Invocation parentInvocation)
+class _FakeConversationDatabase_7 extends _i1.SmartFake
+    implements _i9.ConversationDatabase {
+  _FakeConversationDatabase_7(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeConversationModel_8 extends _i1.SmartFake
+    implements _i10.ConversationModel {
+  _FakeConversationModel_8(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeDateTime_9 extends _i1.SmartFake implements DateTime {
+  _FakeDateTime_9(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeConversationsCompanion_10 extends _i1.SmartFake
+    implements _i9.ConversationsCompanion {
+  _FakeConversationsCompanion_10(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
 /// A class which mocks [SearchService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockSearchService extends _i1.Mock implements _i10.SearchService {
+class MockSearchService extends _i1.Mock implements _i11.SearchService {
   MockSearchService() {
     _i1.throwOnMissingStub(this);
   }
@@ -105,7 +129,7 @@ class MockSearchService extends _i1.Mock implements _i10.SearchService {
   String get activeProviderName =>
       (super.noSuchMethod(
             Invocation.getter(#activeProviderName),
-            returnValue: _i11.dummyValue<String>(
+            returnValue: _i12.dummyValue<String>(
               this,
               Invocation.getter(#activeProviderName),
             ),
@@ -116,7 +140,7 @@ class MockSearchService extends _i1.Mock implements _i10.SearchService {
   String get activeSearchProviderName =>
       (super.noSuchMethod(
             Invocation.getter(#activeSearchProviderName),
-            returnValue: _i11.dummyValue<String>(
+            returnValue: _i12.dummyValue<String>(
               this,
               Invocation.getter(#activeSearchProviderName),
             ),
@@ -140,16 +164,16 @@ class MockSearchService extends _i1.Mock implements _i10.SearchService {
           as bool);
 
   @override
-  _i12.Future<void> initialize() =>
+  _i13.Future<void> initialize() =>
       (super.noSuchMethod(
             Invocation.method(#initialize, []),
-            returnValue: _i12.Future<void>.value(),
-            returnValueForMissingStub: _i12.Future<void>.value(),
+            returnValue: _i13.Future<void>.value(),
+            returnValueForMissingStub: _i13.Future<void>.value(),
           )
-          as _i12.Future<void>);
+          as _i13.Future<void>);
 
   @override
-  _i12.Stream<_i4.RAGUpdate> performDirectSearchStream(
+  _i13.Stream<_i4.RAGUpdate> performDirectSearchStream(
     String? query, {
     int? maxSearchResults = 20,
     int? maxRelevantDocuments = 10,
@@ -157,7 +181,8 @@ class MockSearchService extends _i1.Mock implements _i10.SearchService {
     bool? enableQueryEnhancement = true,
     bool? enableAdaptivePrompting = true,
     List<dynamic>? attachments,
-    _i13.SearchMode? searchMode = _i13.SearchMode.search,
+    _i14.SearchMode? searchMode = _i14.SearchMode.search,
+    bool? isNewConversation = false,
   }) =>
       (super.noSuchMethod(
             Invocation.method(
@@ -171,14 +196,15 @@ class MockSearchService extends _i1.Mock implements _i10.SearchService {
                 #enableAdaptivePrompting: enableAdaptivePrompting,
                 #attachments: attachments,
                 #searchMode: searchMode,
+                #isNewConversation: isNewConversation,
               },
             ),
-            returnValue: _i12.Stream<_i4.RAGUpdate>.empty(),
+            returnValue: _i13.Stream<_i4.RAGUpdate>.empty(),
           )
-          as _i12.Stream<_i4.RAGUpdate>);
+          as _i13.Stream<_i4.RAGUpdate>);
 
   @override
-  _i12.Stream<_i4.RAGUpdate> generateSearchStream(
+  _i13.Stream<_i4.RAGUpdate> generateSearchStream(
     String? query, {
     int? maxSearchResults = 20,
     int? maxRelevantDocuments = 10,
@@ -186,7 +212,8 @@ class MockSearchService extends _i1.Mock implements _i10.SearchService {
     bool? enableQueryEnhancement = true,
     bool? enableAdaptivePrompting = true,
     List<dynamic>? attachments,
-    _i13.SearchMode? searchMode = _i13.SearchMode.search,
+    _i14.SearchMode? searchMode = _i14.SearchMode.search,
+    bool? isNewConversation = false,
   }) =>
       (super.noSuchMethod(
             Invocation.method(
@@ -200,14 +227,15 @@ class MockSearchService extends _i1.Mock implements _i10.SearchService {
                 #enableAdaptivePrompting: enableAdaptivePrompting,
                 #attachments: attachments,
                 #searchMode: searchMode,
+                #isNewConversation: isNewConversation,
               },
             ),
-            returnValue: _i12.Stream<_i4.RAGUpdate>.empty(),
+            returnValue: _i13.Stream<_i4.RAGUpdate>.empty(),
           )
-          as _i12.Stream<_i4.RAGUpdate>);
+          as _i13.Stream<_i4.RAGUpdate>);
 
   @override
-  _i12.Future<_i2.MessageData> generateSearchResponse(
+  _i13.Future<_i2.MessageData> generateSearchResponse(
     String? query, {
     int? maxSearchResults = 20,
     int? maxRelevantDocuments = 10,
@@ -215,8 +243,9 @@ class MockSearchService extends _i1.Mock implements _i10.SearchService {
     bool? enableQueryEnhancement = true,
     bool? enableAdaptivePrompting = true,
     List<dynamic>? attachments,
-    _i13.SearchMode? searchMode = _i13.SearchMode.search,
+    _i14.SearchMode? searchMode = _i14.SearchMode.search,
     dynamic Function(_i2.MessageData)? onSearchComplete,
+    bool? isNewConversation = false,
   }) =>
       (super.noSuchMethod(
             Invocation.method(
@@ -231,9 +260,10 @@ class MockSearchService extends _i1.Mock implements _i10.SearchService {
                 #attachments: attachments,
                 #searchMode: searchMode,
                 #onSearchComplete: onSearchComplete,
+                #isNewConversation: isNewConversation,
               },
             ),
-            returnValue: _i12.Future<_i2.MessageData>.value(
+            returnValue: _i13.Future<_i2.MessageData>.value(
               _FakeMessageData_0(
                 this,
                 Invocation.method(
@@ -248,15 +278,16 @@ class MockSearchService extends _i1.Mock implements _i10.SearchService {
                     #attachments: attachments,
                     #searchMode: searchMode,
                     #onSearchComplete: onSearchComplete,
+                    #isNewConversation: isNewConversation,
                   },
                 ),
               ),
             ),
           )
-          as _i12.Future<_i2.MessageData>);
+          as _i13.Future<_i2.MessageData>);
 
   @override
-  _i12.Future<_i2.MessageData> performDirectSearchResponse(
+  _i13.Future<_i2.MessageData> performDirectSearchResponse(
     String? query, {
     int? maxSearchResults = 20,
     int? maxRelevantDocuments = 10,
@@ -264,7 +295,7 @@ class MockSearchService extends _i1.Mock implements _i10.SearchService {
     bool? enableQueryEnhancement = true,
     bool? enableAdaptivePrompting = true,
     List<dynamic>? attachments,
-    _i13.SearchMode? searchMode = _i13.SearchMode.search,
+    _i14.SearchMode? searchMode = _i14.SearchMode.search,
     dynamic Function(_i2.MessageData)? onSearchComplete,
   }) =>
       (super.noSuchMethod(
@@ -282,7 +313,7 @@ class MockSearchService extends _i1.Mock implements _i10.SearchService {
                 #onSearchComplete: onSearchComplete,
               },
             ),
-            returnValue: _i12.Future<_i2.MessageData>.value(
+            returnValue: _i13.Future<_i2.MessageData>.value(
               _FakeMessageData_0(
                 this,
                 Invocation.method(
@@ -302,10 +333,10 @@ class MockSearchService extends _i1.Mock implements _i10.SearchService {
               ),
             ),
           )
-          as _i12.Future<_i2.MessageData>);
+          as _i13.Future<_i2.MessageData>);
 
   @override
-  _i12.Stream<_i4.RAGUpdate> generateFollowUpStream(
+  _i13.Stream<_i4.RAGUpdate> generateFollowUpStream(
     String? query,
     List<_i2.MessageData>? previousMessages, {
     int? maxSearchResults = 20,
@@ -326,12 +357,12 @@ class MockSearchService extends _i1.Mock implements _i10.SearchService {
                 #attachments: attachments,
               },
             ),
-            returnValue: _i12.Stream<_i4.RAGUpdate>.empty(),
+            returnValue: _i13.Stream<_i4.RAGUpdate>.empty(),
           )
-          as _i12.Stream<_i4.RAGUpdate>);
+          as _i13.Stream<_i4.RAGUpdate>);
 
   @override
-  _i12.Future<_i2.MessageData> generateFollowUpResponse(
+  _i13.Future<_i2.MessageData> generateFollowUpResponse(
     String? query,
     List<_i2.MessageData>? previousMessages, {
     int? maxSearchResults = 20,
@@ -354,7 +385,7 @@ class MockSearchService extends _i1.Mock implements _i10.SearchService {
                 #onSearchComplete: onSearchComplete,
               },
             ),
-            returnValue: _i12.Future<_i2.MessageData>.value(
+            returnValue: _i13.Future<_i2.MessageData>.value(
               _FakeMessageData_0(
                 this,
                 Invocation.method(
@@ -372,7 +403,7 @@ class MockSearchService extends _i1.Mock implements _i10.SearchService {
               ),
             ),
           )
-          as _i12.Future<_i2.MessageData>);
+          as _i13.Future<_i2.MessageData>);
 
   @override
   Map<String, dynamic> validateQuery(String? query) =>
@@ -386,7 +417,7 @@ class MockSearchService extends _i1.Mock implements _i10.SearchService {
   String enhanceQuery(String? query) =>
       (super.noSuchMethod(
             Invocation.method(#enhanceQuery, [query]),
-            returnValue: _i11.dummyValue<String>(
+            returnValue: _i12.dummyValue<String>(
               this,
               Invocation.method(#enhanceQuery, [query]),
             ),
@@ -413,7 +444,7 @@ class MockSearchService extends _i1.Mock implements _i10.SearchService {
           as _i3.QueryAnalysis);
 
   @override
-  _i12.Future<_i4.Document> scrapeUrl({
+  _i13.Future<_i4.RagDocument> scrapeUrl({
     required String? url,
     bool? includeImages = false,
     bool? includeLinks = false,
@@ -424,8 +455,8 @@ class MockSearchService extends _i1.Mock implements _i10.SearchService {
               #includeImages: includeImages,
               #includeLinks: includeLinks,
             }),
-            returnValue: _i12.Future<_i4.Document>.value(
-              _FakeDocument_2(
+            returnValue: _i13.Future<_i4.RagDocument>.value(
+              _FakeRagDocument_2(
                 this,
                 Invocation.method(#scrapeUrl, [], {
                   #url: url,
@@ -435,10 +466,10 @@ class MockSearchService extends _i1.Mock implements _i10.SearchService {
               ),
             ),
           )
-          as _i12.Future<_i4.Document>);
+          as _i13.Future<_i4.RagDocument>);
 
   @override
-  _i12.Future<List<_i4.Document>> scrapeMultipleUrls(
+  _i13.Future<List<_i4.RagDocument>> scrapeMultipleUrls(
     List<String>? urls, {
     bool? includeImages = false,
     int? maxConcurrent = 3,
@@ -449,30 +480,30 @@ class MockSearchService extends _i1.Mock implements _i10.SearchService {
               [urls],
               {#includeImages: includeImages, #maxConcurrent: maxConcurrent},
             ),
-            returnValue: _i12.Future<List<_i4.Document>>.value(
-              <_i4.Document>[],
+            returnValue: _i13.Future<List<_i4.RagDocument>>.value(
+              <_i4.RagDocument>[],
             ),
           )
-          as _i12.Future<List<_i4.Document>>);
+          as _i13.Future<List<_i4.RagDocument>>);
 
   @override
-  _i12.Future<_i5.PDFContent> extractPdfContent(String? url) =>
+  _i13.Future<_i5.PDFContent> extractPdfContent(String? url) =>
       (super.noSuchMethod(
             Invocation.method(#extractPdfContent, [url]),
-            returnValue: _i12.Future<_i5.PDFContent>.value(
+            returnValue: _i13.Future<_i5.PDFContent>.value(
               _FakePDFContent_3(
                 this,
                 Invocation.method(#extractPdfContent, [url]),
               ),
             ),
           )
-          as _i12.Future<_i5.PDFContent>);
+          as _i13.Future<_i5.PDFContent>);
 
   @override
-  _i12.Future<_i6.SearchResponse> searchByType({
+  _i13.Future<_i6.SearchResponseModel> searchByType({
     required String? query,
-    _i14.SearchType? searchType = _i14.SearchType.general,
-    _i14.SearchRecency? recency = _i14.SearchRecency.any,
+    _i15.SearchType? searchType = _i15.SearchType.general,
+    _i15.SearchRecency? recency = _i15.SearchRecency.any,
     int? maxResults = 10,
     String? language = 'auto',
   }) =>
@@ -484,8 +515,8 @@ class MockSearchService extends _i1.Mock implements _i10.SearchService {
               #maxResults: maxResults,
               #language: language,
             }),
-            returnValue: _i12.Future<_i6.SearchResponse>.value(
-              _FakeSearchResponse_4(
+            returnValue: _i13.Future<_i6.SearchResponseModel>.value(
+              _FakeSearchResponseModel_4(
                 this,
                 Invocation.method(#searchByType, [], {
                   #query: query,
@@ -497,7 +528,7 @@ class MockSearchService extends _i1.Mock implements _i10.SearchService {
               ),
             ),
           )
-          as _i12.Future<_i6.SearchResponse>);
+          as _i13.Future<_i6.SearchResponseModel>);
 
   @override
   Map<String, dynamic> getStatus() =>
@@ -516,24 +547,24 @@ class MockSearchService extends _i1.Mock implements _i10.SearchService {
           as Map<String, dynamic>);
 
   @override
-  _i12.Future<Map<String, dynamic>> testProvider() =>
+  _i13.Future<Map<String, dynamic>> testProvider() =>
       (super.noSuchMethod(
             Invocation.method(#testProvider, []),
-            returnValue: _i12.Future<Map<String, dynamic>>.value(
+            returnValue: _i13.Future<Map<String, dynamic>>.value(
               <String, dynamic>{},
             ),
           )
-          as _i12.Future<Map<String, dynamic>>);
+          as _i13.Future<Map<String, dynamic>>);
 
   @override
-  _i12.Future<Map<String, dynamic>> performHealthCheck() =>
+  _i13.Future<Map<String, dynamic>> performHealthCheck() =>
       (super.noSuchMethod(
             Invocation.method(#performHealthCheck, []),
-            returnValue: _i12.Future<Map<String, dynamic>>.value(
+            returnValue: _i13.Future<Map<String, dynamic>>.value(
               <String, dynamic>{},
             ),
           )
-          as _i12.Future<Map<String, dynamic>>);
+          as _i13.Future<Map<String, dynamic>>);
 
   @override
   void resetStatistics() => super.noSuchMethod(
@@ -550,13 +581,13 @@ class MockSearchService extends _i1.Mock implements _i10.SearchService {
           as Map<String, dynamic>);
 
   @override
-  _i12.Future<void> reinitialize() =>
+  _i13.Future<void> reinitialize() =>
       (super.noSuchMethod(
             Invocation.method(#reinitialize, []),
-            returnValue: _i12.Future<void>.value(),
-            returnValueForMissingStub: _i12.Future<void>.value(),
+            returnValue: _i13.Future<void>.value(),
+            returnValueForMissingStub: _i13.Future<void>.value(),
           )
-          as _i12.Future<void>);
+          as _i13.Future<void>);
 }
 
 /// A class which mocks [ConversationManager].
@@ -569,12 +600,12 @@ class MockConversationManager extends _i1.Mock
   }
 
   @override
-  _i12.Stream<_i7.ConversationState> get stateStream =>
+  _i13.Stream<_i7.ConversationState> get stateStream =>
       (super.noSuchMethod(
             Invocation.getter(#stateStream),
-            returnValue: _i12.Stream<_i7.ConversationState>.empty(),
+            returnValue: _i13.Stream<_i7.ConversationState>.empty(),
           )
-          as _i12.Stream<_i7.ConversationState>);
+          as _i13.Stream<_i7.ConversationState>);
 
   @override
   _i7.ConversationState get state =>
@@ -644,6 +675,12 @@ class MockConversationManager extends _i1.Mock
   );
 
   @override
+  void updateTitle(String? newTitle) => super.noSuchMethod(
+    Invocation.method(#updateTitle, [newTitle]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
   _i8.MessageBranchManager startNewConversation(
     String? query, {
     String? providedId,
@@ -687,56 +724,37 @@ class MockConversationManager extends _i1.Mock
   );
 }
 
-/// A class which mocks [ConversationSyncService].
+/// A class which mocks [ConversationDatabaseService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockConversationSyncService extends _i1.Mock
-    implements _i15.ConversationSyncService {
-  MockConversationSyncService() {
+class MockConversationDatabaseService extends _i1.Mock
+    implements _i16.ConversationDatabaseService {
+  MockConversationDatabaseService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  bool get isInitialized =>
-      (super.noSuchMethod(Invocation.getter(#isInitialized), returnValue: false)
-          as bool);
-
-  @override
-  bool get isCloudSyncEnabled =>
+  _i9.ConversationDatabase get database =>
       (super.noSuchMethod(
-            Invocation.getter(#isCloudSyncEnabled),
-            returnValue: false,
+            Invocation.getter(#database),
+            returnValue: _FakeConversationDatabase_7(
+              this,
+              Invocation.getter(#database),
+            ),
           )
-          as bool);
+          as _i9.ConversationDatabase);
 
   @override
-  bool get isAuthenticated =>
-      (super.noSuchMethod(
-            Invocation.getter(#isAuthenticated),
-            returnValue: false,
-          )
-          as bool);
-
-  @override
-  _i12.Future<void> initialize() =>
+  _i13.Future<void> initialize() =>
       (super.noSuchMethod(
             Invocation.method(#initialize, []),
-            returnValue: _i12.Future<void>.value(),
-            returnValueForMissingStub: _i12.Future<void>.value(),
+            returnValue: _i13.Future<void>.value(),
+            returnValueForMissingStub: _i13.Future<void>.value(),
           )
-          as _i12.Future<void>);
+          as _i13.Future<void>);
 
   @override
-  _i12.Future<void> setCloudSyncEnabled(bool? enabled) =>
-      (super.noSuchMethod(
-            Invocation.method(#setCloudSyncEnabled, [enabled]),
-            returnValue: _i12.Future<void>.value(),
-            returnValueForMissingStub: _i12.Future<void>.value(),
-          )
-          as _i12.Future<void>);
-
-  @override
-  _i12.Future<_i9.ConversationModel> saveConversation({
+  _i13.Future<_i10.ConversationModel> saveConversation({
     required String? conversationId,
     required String? title,
     required List<_i8.MessageBranchManager>? messageBranches,
@@ -749,8 +767,8 @@ class MockConversationSyncService extends _i1.Mock
               #messageBranches: messageBranches,
               #tags: tags,
             }),
-            returnValue: _i12.Future<_i9.ConversationModel>.value(
-              _FakeConversationModel_7(
+            returnValue: _i13.Future<_i10.ConversationModel>.value(
+              _FakeConversationModel_8(
                 this,
                 Invocation.method(#saveConversation, [], {
                   #conversationId: conversationId,
@@ -761,10 +779,10 @@ class MockConversationSyncService extends _i1.Mock
               ),
             ),
           )
-          as _i12.Future<_i9.ConversationModel>);
+          as _i13.Future<_i10.ConversationModel>);
 
   @override
-  _i12.Future<_i9.ConversationModel> updateConversation({
+  _i13.Future<_i10.ConversationModel> updateConversation({
     required String? conversationId,
     String? title,
     List<_i8.MessageBranchManager>? messageBranches,
@@ -779,8 +797,8 @@ class MockConversationSyncService extends _i1.Mock
               #isPinned: isPinned,
               #tags: tags,
             }),
-            returnValue: _i12.Future<_i9.ConversationModel>.value(
-              _FakeConversationModel_7(
+            returnValue: _i13.Future<_i10.ConversationModel>.value(
+              _FakeConversationModel_8(
                 this,
                 Invocation.method(#updateConversation, [], {
                   #conversationId: conversationId,
@@ -792,110 +810,113 @@ class MockConversationSyncService extends _i1.Mock
               ),
             ),
           )
-          as _i12.Future<_i9.ConversationModel>);
+          as _i13.Future<_i10.ConversationModel>);
 
   @override
-  _i12.Future<_i9.ConversationModel?> getConversationById(
+  _i13.Future<_i10.ConversationModel?> getConversationByConversationId(
     String? conversationId,
   ) =>
       (super.noSuchMethod(
-            Invocation.method(#getConversationById, [conversationId]),
-            returnValue: _i12.Future<_i9.ConversationModel?>.value(),
+            Invocation.method(#getConversationByConversationId, [
+              conversationId,
+            ]),
+            returnValue: _i13.Future<_i10.ConversationModel?>.value(),
           )
-          as _i12.Future<_i9.ConversationModel?>);
+          as _i13.Future<_i10.ConversationModel?>);
 
   @override
-  _i12.Future<List<_i9.ConversationModel>> getAllConversations({
+  _i13.Future<List<_i10.ConversationModel>> getAllConversations({
     bool? pinnedFirst = true,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#getAllConversations, [], {
               #pinnedFirst: pinnedFirst,
             }),
-            returnValue: _i12.Future<List<_i9.ConversationModel>>.value(
-              <_i9.ConversationModel>[],
+            returnValue: _i13.Future<List<_i10.ConversationModel>>.value(
+              <_i10.ConversationModel>[],
             ),
           )
-          as _i12.Future<List<_i9.ConversationModel>>);
+          as _i13.Future<List<_i10.ConversationModel>>);
 
   @override
-  _i12.Future<bool> deleteConversation(String? conversationId) =>
-      (super.noSuchMethod(
-            Invocation.method(#deleteConversation, [conversationId]),
-            returnValue: _i12.Future<bool>.value(false),
-          )
-          as _i12.Future<bool>);
-
-  @override
-  _i12.Future<void> deleteAllConversations() =>
-      (super.noSuchMethod(
-            Invocation.method(#deleteAllConversations, []),
-            returnValue: _i12.Future<void>.value(),
-            returnValueForMissingStub: _i12.Future<void>.value(),
-          )
-          as _i12.Future<void>);
-
-  @override
-  _i12.Future<void> togglePin(String? conversationId) =>
-      (super.noSuchMethod(
-            Invocation.method(#togglePin, [conversationId]),
-            returnValue: _i12.Future<void>.value(),
-            returnValueForMissingStub: _i12.Future<void>.value(),
-          )
-          as _i12.Future<void>);
-
-  @override
-  _i12.Future<List<_i9.ConversationModel>> searchConversations(String? query) =>
-      (super.noSuchMethod(
-            Invocation.method(#searchConversations, [query]),
-            returnValue: _i12.Future<List<_i9.ConversationModel>>.value(
-              <_i9.ConversationModel>[],
-            ),
-          )
-          as _i12.Future<List<_i9.ConversationModel>>);
-
-  @override
-  _i12.Future<void> syncAllToCloud() =>
-      (super.noSuchMethod(
-            Invocation.method(#syncAllToCloud, []),
-            returnValue: _i12.Future<void>.value(),
-            returnValueForMissingStub: _i12.Future<void>.value(),
-          )
-          as _i12.Future<void>);
-
-  @override
-  _i12.Future<int> getConversationCount() =>
-      (super.noSuchMethod(
-            Invocation.method(#getConversationCount, []),
-            returnValue: _i12.Future<int>.value(0),
-          )
-          as _i12.Future<int>);
-
-  @override
-  _i12.Future<List<_i9.ConversationModel>> getPinnedConversations() =>
-      (super.noSuchMethod(
-            Invocation.method(#getPinnedConversations, []),
-            returnValue: _i12.Future<List<_i9.ConversationModel>>.value(
-              <_i9.ConversationModel>[],
-            ),
-          )
-          as _i12.Future<List<_i9.ConversationModel>>);
-
-  @override
-  _i12.Future<Map<String, List<_i9.ConversationModel>>>
+  _i13.Future<Map<String, List<_i10.ConversationModel>>>
   getGroupedConversations() =>
       (super.noSuchMethod(
             Invocation.method(#getGroupedConversations, []),
             returnValue:
-                _i12.Future<Map<String, List<_i9.ConversationModel>>>.value(
-                  <String, List<_i9.ConversationModel>>{},
+                _i13.Future<Map<String, List<_i10.ConversationModel>>>.value(
+                  <String, List<_i10.ConversationModel>>{},
                 ),
           )
-          as _i12.Future<Map<String, List<_i9.ConversationModel>>>);
+          as _i13.Future<Map<String, List<_i10.ConversationModel>>>);
+
+  @override
+  _i13.Future<List<_i10.ConversationModel>> searchConversations(
+    String? query,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#searchConversations, [query]),
+            returnValue: _i13.Future<List<_i10.ConversationModel>>.value(
+              <_i10.ConversationModel>[],
+            ),
+          )
+          as _i13.Future<List<_i10.ConversationModel>>);
+
+  @override
+  _i13.Future<bool> deleteConversation(String? conversationId) =>
+      (super.noSuchMethod(
+            Invocation.method(#deleteConversation, [conversationId]),
+            returnValue: _i13.Future<bool>.value(false),
+          )
+          as _i13.Future<bool>);
+
+  @override
+  _i13.Future<int> deleteConversations(List<String>? conversationIds) =>
+      (super.noSuchMethod(
+            Invocation.method(#deleteConversations, [conversationIds]),
+            returnValue: _i13.Future<int>.value(0),
+          )
+          as _i13.Future<int>);
+
+  @override
+  _i13.Future<void> deleteAllConversations() =>
+      (super.noSuchMethod(
+            Invocation.method(#deleteAllConversations, []),
+            returnValue: _i13.Future<void>.value(),
+            returnValueForMissingStub: _i13.Future<void>.value(),
+          )
+          as _i13.Future<void>);
+
+  @override
+  _i13.Future<void> togglePin(String? conversationId) =>
+      (super.noSuchMethod(
+            Invocation.method(#togglePin, [conversationId]),
+            returnValue: _i13.Future<void>.value(),
+            returnValueForMissingStub: _i13.Future<void>.value(),
+          )
+          as _i13.Future<void>);
+
+  @override
+  _i13.Future<int> getConversationCount() =>
+      (super.noSuchMethod(
+            Invocation.method(#getConversationCount, []),
+            returnValue: _i13.Future<int>.value(0),
+          )
+          as _i13.Future<int>);
+
+  @override
+  _i13.Future<List<_i10.ConversationModel>> getPinnedConversations() =>
+      (super.noSuchMethod(
+            Invocation.method(#getPinnedConversations, []),
+            returnValue: _i13.Future<List<_i10.ConversationModel>>.value(
+              <_i10.ConversationModel>[],
+            ),
+          )
+          as _i13.Future<List<_i10.ConversationModel>>);
 
   @override
   List<_i8.MessageBranchManager> convertMessagesToBranches(
-    List<_i9.ConversationMessageModel>? messages,
+    List<_i10.ConversationMessageModel>? messages,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#convertMessagesToBranches, [messages]),
@@ -904,19 +925,114 @@ class MockConversationSyncService extends _i1.Mock
           as List<_i8.MessageBranchManager>);
 
   @override
-  _i12.Future<int> deleteConversations(List<String>? conversationIds) =>
-      (super.noSuchMethod(
-            Invocation.method(#deleteConversations, [conversationIds]),
-            returnValue: _i12.Future<int>.value(0),
-          )
-          as _i12.Future<int>);
-
-  @override
-  _i12.Future<void> close() =>
+  _i13.Future<void> close() =>
       (super.noSuchMethod(
             Invocation.method(#close, []),
-            returnValue: _i12.Future<void>.value(),
-            returnValueForMissingStub: _i12.Future<void>.value(),
+            returnValue: _i13.Future<void>.value(),
+            returnValueForMissingStub: _i13.Future<void>.value(),
           )
-          as _i12.Future<void>);
+          as _i13.Future<void>);
+}
+
+/// A class which mocks [ConversationModel].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockConversationModel extends _i1.Mock implements _i10.ConversationModel {
+  MockConversationModel() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  String get conversationId =>
+      (super.noSuchMethod(
+            Invocation.getter(#conversationId),
+            returnValue: _i12.dummyValue<String>(
+              this,
+              Invocation.getter(#conversationId),
+            ),
+          )
+          as String);
+
+  @override
+  String get title =>
+      (super.noSuchMethod(
+            Invocation.getter(#title),
+            returnValue: _i12.dummyValue<String>(
+              this,
+              Invocation.getter(#title),
+            ),
+          )
+          as String);
+
+  @override
+  DateTime get createdAt =>
+      (super.noSuchMethod(
+            Invocation.getter(#createdAt),
+            returnValue: _FakeDateTime_9(this, Invocation.getter(#createdAt)),
+          )
+          as DateTime);
+
+  @override
+  DateTime get updatedAt =>
+      (super.noSuchMethod(
+            Invocation.getter(#updatedAt),
+            returnValue: _FakeDateTime_9(this, Invocation.getter(#updatedAt)),
+          )
+          as DateTime);
+
+  @override
+  bool get isPinned =>
+      (super.noSuchMethod(Invocation.getter(#isPinned), returnValue: false)
+          as bool);
+
+  @override
+  int get messageCount =>
+      (super.noSuchMethod(Invocation.getter(#messageCount), returnValue: 0)
+          as int);
+
+  @override
+  List<String> get tags =>
+      (super.noSuchMethod(Invocation.getter(#tags), returnValue: <String>[])
+          as List<String>);
+
+  @override
+  List<_i10.ConversationMessageModel> get messages =>
+      (super.noSuchMethod(
+            Invocation.getter(#messages),
+            returnValue: <_i10.ConversationMessageModel>[],
+          )
+          as List<_i10.ConversationMessageModel>);
+
+  @override
+  String get preview =>
+      (super.noSuchMethod(
+            Invocation.getter(#preview),
+            returnValue: _i12.dummyValue<String>(
+              this,
+              Invocation.getter(#preview),
+            ),
+          )
+          as String);
+
+  @override
+  String get timeCategory =>
+      (super.noSuchMethod(
+            Invocation.getter(#timeCategory),
+            returnValue: _i12.dummyValue<String>(
+              this,
+              Invocation.getter(#timeCategory),
+            ),
+          )
+          as String);
+
+  @override
+  _i9.ConversationsCompanion toDriftCompanion() =>
+      (super.noSuchMethod(
+            Invocation.method(#toDriftCompanion, []),
+            returnValue: _FakeConversationsCompanion_10(
+              this,
+              Invocation.method(#toDriftCompanion, []),
+            ),
+          )
+          as _i9.ConversationsCompanion);
 }

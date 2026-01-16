@@ -6,20 +6,18 @@ import 'base_llm_provider.dart';
 class Google extends BaseLLMProvider {
   /// Default chat model for Google
   static const String defaultModel = 'gemini-2.5-flash';
-  
+
   /// Default embedding model for Google
   static const String defaultEmbeddingModel = 'gemini-embedding-001';
-  
+
   late ChatGoogleGenerativeAI _chatModel;
   late GoogleGenerativeAIEmbeddings _embeddings;
   String? _apiKey;
   String _model;
-  
-  Google({
-    String? apiKey,
-    String? model,
-  }) : _apiKey = apiKey,
-       _model = model ?? defaultModel;
+
+  Google({String? apiKey, String? model})
+    : _apiKey = apiKey,
+      _model = model ?? defaultModel;
 
   @override
   String get providerName => 'Google (Gemini)';
@@ -38,17 +36,13 @@ class Google extends BaseLLMProvider {
       ),
     );
 
-    _embeddings = GoogleGenerativeAIEmbeddings(
-      apiKey: _apiKey!,
-    );
+    _embeddings = GoogleGenerativeAIEmbeddings(apiKey: _apiKey!);
   }
 
   @override
   Future<String> generateResponse(String message) async {
     try {
-      final response = await _chatModel.invoke(
-        PromptValue.string(message),
-      );
+      final response = await _chatModel.invoke(PromptValue.string(message));
       return response.output.content;
     } catch (e) {
       throw Exception('Failed to generate response from Google AI: $e');
@@ -62,33 +56,36 @@ class Google extends BaseLLMProvider {
   ) async {
     try {
       final messages = <ChatMessage>[];
-      
+
       // Add history messages
       for (final historyItem in history) {
         final role = historyItem['role'] as String;
         final content = historyItem['content'] as String;
-        
+
         if (role == 'user') {
           messages.add(ChatMessage.humanText(content));
         } else if (role == 'assistant') {
           messages.add(ChatMessage.ai(content));
         }
       }
-      
+
       // Add current message
       messages.add(ChatMessage.humanText(message));
 
-      final response = await _chatModel.invoke(
-        PromptValue.chat(messages),
-      );
-      
+      final response = await _chatModel.invoke(PromptValue.chat(messages));
+
       return response.output.content;
     } catch (e) {
-      throw Exception('Failed to generate response with history from Google AI: $e');
+      throw Exception(
+        'Failed to generate response with history from Google AI: $e',
+      );
     }
   }
 
-  /// Generate embeddings for text
+  @override
+  bool get supportsEmbeddings => true;
+
+  @override
   Future<List<double>> generateEmbeddings(String text) async {
     try {
       final embeddings = await _embeddings.embedQuery(text);
@@ -122,16 +119,13 @@ class Google extends BaseLLMProvider {
 
   /// Gemini models optimized for textual use cases (2025)
   static const List<String> availableModels = [
-    'gemini-2.5-pro',    // Best for deep reasoning, complex text, coding
-    'gemini-2.5-flash',  // Balanced speed and quality for scalable text generation
-    'gemini-2.0-flash',  // Previous generation flash model useful for fast tasks
+    'gemini-2.5-pro', // Best for deep reasoning, complex text, coding
+    'gemini-2.5-flash', // Balanced speed and quality for scalable text generation
+    'gemini-2.0-flash', // Previous generation flash model useful for fast tasks
   ];
 
   /// Latest Google embedding model optimized for text
-  static const List<String> availableEmbeddingModels = [
-    'gemini-embedding-001',
-  ];
-
+  static const List<String> availableEmbeddingModels = ['gemini-embedding-001'];
 
   @override
   bool get isConfigured => _apiKey != null && _apiKey!.isNotEmpty;

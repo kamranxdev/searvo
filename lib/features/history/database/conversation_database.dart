@@ -14,13 +14,15 @@ class Conversations extends Table {
   IntColumn get messageCount => integer().withDefault(const Constant(0))();
   TextColumn get lastQuery => text().nullable()();
   TextColumn get lastAnswer => text().nullable()();
-  TextColumn get tags => text().withDefault(const Constant('[]'))(); // JSON array
+  TextColumn get tags =>
+      text().withDefault(const Constant('[]'))(); // JSON array
 }
 
 /// Messages table (related to conversations)
 class Messages extends Table {
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get conversationId => integer().references(Conversations, #id, onDelete: KeyAction.cascade)();
+  IntColumn get conversationId =>
+      integer().references(Conversations, #id, onDelete: KeyAction.cascade)();
   TextColumn get messageId => text()();
   TextColumn get query => text()();
   TextColumn get answer => text()();
@@ -31,14 +33,17 @@ class Messages extends Table {
   TextColumn get parentBranchId => text().nullable()();
   IntColumn get branchIndex => integer().withDefault(const Constant(0))();
   IntColumn get totalBranches => integer().withDefault(const Constant(1))();
-  TextColumn get relatedQuestions => text().withDefault(const Constant('[]'))(); // JSON array
-  TextColumn get images => text().withDefault(const Constant('[]'))(); // JSON array
+  TextColumn get relatedQuestions =>
+      text().withDefault(const Constant('[]'))(); // JSON array
+  TextColumn get images =>
+      text().withDefault(const Constant('[]'))(); // JSON array
 }
 
 /// Sources table (related to messages)
 class Sources extends Table {
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get messageId => integer().references(Messages, #id, onDelete: KeyAction.cascade)();
+  IntColumn get messageId =>
+      integer().references(Messages, #id, onDelete: KeyAction.cascade)();
   TextColumn get thumbnail => text()();
   TextColumn get favicon => text().nullable()();
   TextColumn get url => text()();
@@ -52,7 +57,8 @@ class Sources extends Table {
 /// Videos table (related to messages)
 class Videos extends Table {
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get messageId => integer().references(Messages, #id, onDelete: KeyAction.cascade)();
+  IntColumn get messageId =>
+      integer().references(Messages, #id, onDelete: KeyAction.cascade)();
   TextColumn get thumbnail => text()();
   TextColumn get url => text()();
   TextColumn get title => text()();
@@ -66,7 +72,8 @@ class Videos extends Table {
 /// Attachments table (related to messages)
 class Attachments extends Table {
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get messageId => integer().references(Messages, #id, onDelete: KeyAction.cascade)();
+  IntColumn get messageId =>
+      integer().references(Messages, #id, onDelete: KeyAction.cascade)();
   TextColumn get attachmentId => text()();
   TextColumn get name => text()();
   TextColumn get path => text()();
@@ -98,7 +105,9 @@ class ConversationDatabase extends _$ConversationDatabase {
   // ==================== Conversation Operations ====================
 
   /// Get all conversations sorted by date
-  Future<List<Conversation>> getAllConversations({bool pinnedFirst = true}) async {
+  Future<List<Conversation>> getAllConversations({
+    bool pinnedFirst = true,
+  }) async {
     final query = select(conversations);
     if (pinnedFirst) {
       query.orderBy([
@@ -106,14 +115,19 @@ class ConversationDatabase extends _$ConversationDatabase {
         (c) => OrderingTerm(expression: c.updatedAt, mode: OrderingMode.desc),
       ]);
     } else {
-      query.orderBy([(c) => OrderingTerm(expression: c.updatedAt, mode: OrderingMode.desc)]);
+      query.orderBy([
+        (c) => OrderingTerm(expression: c.updatedAt, mode: OrderingMode.desc),
+      ]);
     }
     return query.get();
   }
 
   /// Get conversation by conversation ID
-  Future<Conversation?> getConversationByConversationId(String conversationId) async {
-    final query = select(conversations)..where((c) => c.conversationId.equals(conversationId));
+  Future<Conversation?> getConversationByConversationId(
+    String conversationId,
+  ) async {
+    final query = select(conversations)
+      ..where((c) => c.conversationId.equals(conversationId));
     return query.getSingleOrNull();
   }
 
@@ -129,7 +143,9 @@ class ConversationDatabase extends _$ConversationDatabase {
 
   /// Delete a conversation by conversation ID
   Future<int> deleteConversationByConversationId(String conversationId) async {
-    return (delete(conversations)..where((c) => c.conversationId.equals(conversationId))).go();
+    return (delete(
+      conversations,
+    )..where((c) => c.conversationId.equals(conversationId))).go();
   }
 
   /// Delete all conversations
@@ -141,7 +157,9 @@ class ConversationDatabase extends _$ConversationDatabase {
   Future<List<Conversation>> getPinnedConversations() async {
     final query = select(conversations)
       ..where((c) => c.isPinned.equals(true))
-      ..orderBy([(c) => OrderingTerm(expression: c.updatedAt, mode: OrderingMode.desc)]);
+      ..orderBy([
+        (c) => OrderingTerm(expression: c.updatedAt, mode: OrderingMode.desc),
+      ]);
     return query.get();
   }
 
@@ -154,14 +172,33 @@ class ConversationDatabase extends _$ConversationDatabase {
   }
 
   /// Search conversations by query
+  /// Search conversations by query (including message content)
   Future<List<Conversation>> searchConversations(String query) async {
     final lowerQuery = query.toLowerCase();
-    return (select(conversations)
-          ..where((c) =>
-              c.title.lower().like('%$lowerQuery%') |
-              c.lastQuery.lower().like('%$lowerQuery%') |
-              c.lastAnswer.lower().like('%$lowerQuery%')))
-        .get();
+
+    // Perform a join to search within messages as well
+    final matchingConversations =
+        await (select(conversations).join([
+                leftOuterJoin(
+                  messages,
+                  messages.conversationId.equalsExp(conversations.id),
+                ),
+              ])
+              ..where(
+                conversations.title.lower().like('%$lowerQuery%') |
+                    conversations.lastQuery.lower().like('%$lowerQuery%') |
+                    conversations.lastAnswer.lower().like('%$lowerQuery%') |
+                    messages.query.lower().like('%$lowerQuery%') |
+                    messages.answer.lower().like('%$lowerQuery%'),
+              )
+              ..groupBy([
+                conversations.id,
+              ])) // Group by conversation to avoid duplicates
+            .get();
+
+    return matchingConversations
+        .map((row) => row.readTable(conversations))
+        .toList();
   }
 
   // ==================== Message Operations ====================
@@ -181,7 +218,9 @@ class ConversationDatabase extends _$ConversationDatabase {
 
   /// Delete all messages for a conversation
   Future<int> deleteMessagesForConversation(int conversationId) async {
-    return (delete(messages)..where((m) => m.conversationId.equals(conversationId))).go();
+    return (delete(
+      messages,
+    )..where((m) => m.conversationId.equals(conversationId))).go();
   }
 
   // ==================== Source Operations ====================
@@ -228,7 +267,8 @@ class ConversationDatabase extends _$ConversationDatabase {
 
   /// Get all attachments for a message
   Future<List<Attachment>> getAttachmentsForMessage(int messageId) async {
-    final query = select(attachments)..where((a) => a.messageId.equals(messageId));
+    final query = select(attachments)
+      ..where((a) => a.messageId.equals(messageId));
     return query.get();
   }
 
@@ -238,7 +278,9 @@ class ConversationDatabase extends _$ConversationDatabase {
   }
 
   /// Insert multiple attachments
-  Future<void> insertAttachments(List<AttachmentsCompanion> attachmentList) async {
+  Future<void> insertAttachments(
+    List<AttachmentsCompanion> attachmentList,
+  ) async {
     await batch((batch) {
       batch.insertAll(attachments, attachmentList);
     });

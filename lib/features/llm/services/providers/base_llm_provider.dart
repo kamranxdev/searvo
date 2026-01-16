@@ -18,6 +18,12 @@ abstract class BaseLLMProvider {
   /// Generate chat completion with streaming
   Stream<String> generateResponseStream(String message);
 
+  /// Generate embeddings for text
+  Future<List<double>> generateEmbeddings(String text);
+
+  /// Check if the provider supports embedding generation
+  bool get supportsEmbeddings;
+
   /// Check if the provider is configured and ready to use
   bool get isConfigured;
 

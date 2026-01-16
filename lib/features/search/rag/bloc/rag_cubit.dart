@@ -6,8 +6,8 @@ import '../services/data_ingestion/attachment_processor.dart';
 import '../services/data_ingestion/rag_scraper_adapter.dart';
 import '../services/data_ingestion/pdf_extractor_service.dart';
 import '../services/query_processing/query_analyzer.dart';
-import '../../models/message_data.dart';
-import '../../models/search_mode.dart';
+import '../../domain/entities/message_data.dart';
+import '../../domain/entities/search_mode.dart';
 
 class RAGCubit extends Cubit<RAGState> {
   final RAGOrchestrator _ragOrchestrator;

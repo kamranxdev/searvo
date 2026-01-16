@@ -1,8 +1,9 @@
-import 'dart:async';
-import '../../models/message_data.dart';
-
-import '../../models/search_step.dart';
-import '../../models/tool_widget_data.dart';
+import '../../domain/entities/message_data.dart';
+import '../../domain/entities/message_generation_state.dart';
+import '../../domain/entities/source_item.dart';
+import '../../domain/entities/video_item.dart';
+import '../../domain/entities/search_step.dart';
+import '../../domain/entities/tool_widget_data.dart';
 import '../models/orchestrator_plan.dart';
 import 'tool_registry.dart';
 import 'package:uuid/uuid.dart';

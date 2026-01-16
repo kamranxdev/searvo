@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:searvo/core/routing/app_router.dart';
 import 'package:searvo/core/theme/theme.dart';
-import 'package:searvo/features/auth/services/auth_service.dart';
-import 'package:searvo/features/auth/widgets/user_profile_widget.dart';
 import 'package:searvo/features/onboarding/onboarding.dart';
 import 'package:searvo/features/settings/widgets/embedding_settings_panel.dart';
 import 'package:searvo/features/settings/widgets/llm_provider_settings_panel.dart';
@@ -11,7 +9,6 @@ import 'package:searvo/features/settings/widgets/website_mappings_panel.dart';
 import 'package:searvo/features/settings/widgets/history_settings_panel.dart';
 import 'package:searvo/features/settings/widgets/settings_card.dart';
 import 'package:searvo/features/settings/theme/settings_theme.dart';
-import 'package:searvo/features/history/services/conversation_sync_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -39,12 +36,6 @@ class _SettingsScreenState extends State<SettingsScreen>
   bool _isThemeChanging = false;
 
   final List<TabItem> tabs = [
-    TabItem(
-      id: 'account',
-      label: 'Account',
-      icon: Icons.person_outline,
-      description: 'Manage your profile and account preferences',
-    ),
     TabItem(
       id: 'appearance',
       label: 'Appearance',
@@ -761,219 +752,56 @@ class _SettingsScreenState extends State<SettingsScreen>
   }) {
     switch (_selectedTabIndex) {
       case 0:
-        return _buildAccountTab(
-          isDark,
-          isDesktop: isDesktop,
-          isTablet: isTablet,
-        );
-      case 1:
         return _buildAppearanceTab(
           isDark,
           isDesktop: isDesktop,
           isTablet: isTablet,
         );
-      case 2:
+      case 1:
         return _buildLLMProviderTab(
           isDark,
           isDesktop: isDesktop,
           isTablet: isTablet,
         );
-      case 3:
+      case 2:
         return _buildEmbeddingTab(
           isDark,
           isDesktop: isDesktop,
           isTablet: isTablet,
         );
-      case 4:
+      case 3:
         return _buildSearchProviderTab(
           isDark,
           isDesktop: isDesktop,
           isTablet: isTablet,
         );
-      case 5:
+      case 4:
         return _buildWebsiteMappingsTab(
           isDark,
           isDesktop: isDesktop,
           isTablet: isTablet,
         );
-      case 6:
+      case 5:
         return _buildHistoryTab(
           isDark,
           isDesktop: isDesktop,
           isTablet: isTablet,
         );
-      case 7:
+      case 6:
         return _buildPermissionsTab(
           isDark,
           isDesktop: isDesktop,
           isTablet: isTablet,
         );
-      case 8:
+      case 7:
         return _buildHelpTab(isDark, isDesktop: isDesktop, isTablet: isTablet);
-      case 9:
-        return _buildMoreTab(isDark, isDesktop: isDesktop, isTablet: isTablet);
       default:
-        return _buildAccountTab(
+        return _buildAppearanceTab(
           isDark,
           isDesktop: isDesktop,
           isTablet: isTablet,
         );
     }
-  }
-
-  Widget _buildAccountTab(
-    bool isDark, {
-    bool isDesktop = false,
-    bool isTablet = false,
-  }) {
-    final colorScheme = context.colorScheme;
-    final authService = AuthService();
-    final isAuthenticated = authService.currentUser != null;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Profile Section with enhanced card
-        Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                colorScheme.primaryContainer.withOpacity(0.3),
-                colorScheme.surfaceContainer,
-              ],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: colorScheme.outlineVariant.withOpacity(0.5),
-            ),
-          ),
-          child: const Padding(
-            padding: EdgeInsets.all(4),
-            child: UserProfileWidget(),
-          ),
-        ),
-
-        const SizedBox(height: 8),
-
-        // Data Management Section
-        SectionHeader(
-          title: 'Data Management',
-          subtitle: 'Manage your local and cloud data',
-        ),
-
-        // Clear History
-        ActionCard(
-          icon: Icons.delete_sweep_outlined,
-          title: 'Clear History',
-          description: 'Remove all local search history and cached data',
-          buttonText: 'Clear',
-          buttonColor: Colors.orange.shade700,
-          onPressed: () => _showClearHistoryDialog(context),
-        ),
-
-        // Cloud Sync
-        if (isAuthenticated) ...[
-          Builder(
-            builder: (context) {
-              final syncService = ConversationSyncService();
-              return ToggleCard(
-                icon: Icons.cloud_sync_outlined,
-                title: 'Cloud Sync',
-                description:
-                    'Sync your conversation history across all devices',
-                value: syncService.isCloudSyncEnabled,
-                onChanged: (bool value) async {
-                  if (!syncService.isAuthenticated) return;
-
-                  try {
-                    await syncService.setCloudSyncEnabled(value);
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Row(
-                            children: [
-                              Icon(
-                                value ? Icons.cloud_done : Icons.cloud_off,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                value
-                                    ? 'Cloud sync enabled'
-                                    : 'Cloud sync disabled',
-                              ),
-                            ],
-                          ),
-                          behavior: SnackBarBehavior.floating,
-                          backgroundColor: colorScheme.primary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      );
-                    }
-                  } catch (error) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Row(
-                            children: [
-                              const Icon(
-                                Icons.error_outline,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(child: Text('Failed to update: $error')),
-                            ],
-                          ),
-                          behavior: SnackBarBehavior.floating,
-                          backgroundColor: colorScheme.error,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      );
-                    }
-                  }
-                },
-              );
-            },
-          ),
-        ] else ...[
-          SettingsCard(
-            icon: Icons.cloud_off_outlined,
-            title: 'Cloud Sync Unavailable',
-            description: 'Sign in to sync your data across all your devices',
-            iconColor: colorScheme.tertiary,
-            backgroundColor: colorScheme.tertiaryContainer.withOpacity(0.3),
-            showChevron: false,
-          ),
-        ],
-
-        // Account Management - Only for authenticated users
-        if (isAuthenticated) ...[
-          SectionHeader(
-            title: 'Account',
-            subtitle: 'Manage your account settings',
-          ),
-
-          ActionCard(
-            icon: Icons.logout_outlined,
-            title: 'Sign Out',
-            description: 'Sign out from your current account',
-            buttonText: 'Sign Out',
-            isDestructive: true,
-            onPressed: () => _showSignOutDialog(context, authService),
-          ),
-        ],
-
-        const SizedBox(height: 8),
-      ],
-    );
   }
 
   // Helper method for section titles
@@ -985,81 +813,6 @@ class _SettingsScreenState extends State<SettingsScreen>
         fontWeight: FontWeight.w600,
         color: colorScheme.onSurface,
         letterSpacing: -0.3,
-      ),
-    );
-  }
-
-  // Helper method for action cards
-  // Dialog for clearing history
-  void _showClearHistoryDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Clear History'),
-        content: const Text(
-          'Are you sure you want to clear all local search history? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Implement clear history logic
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Local history cleared'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.orange.shade400,
-            ),
-            child: const Text('Clear'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Dialog for signing out
-  void _showSignOutDialog(BuildContext context, AuthService authService) {
-    final colorScheme = context.colorScheme;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sign Out'),
-        content: const Text(
-          'Are you sure you want to sign out? You will need to sign in again to access cloud sync.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await authService.signOut();
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Signed out successfully'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              }
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: colorScheme.error,
-              foregroundColor: colorScheme.onError,
-            ),
-            child: const Text('Sign Out'),
-          ),
-        ],
       ),
     );
   }
@@ -1620,83 +1373,6 @@ class _SettingsScreenState extends State<SettingsScreen>
               locationEnabled = value;
             });
           },
-        ),
-
-        const SizedBox(height: 8),
-      ],
-    );
-  }
-
-  Widget _buildMoreTab(
-    bool isDark, {
-    bool isDesktop = false,
-    bool isTablet = false,
-  }) {
-    final colorScheme = context.colorScheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SectionHeader(
-          title: 'Legal & Policies',
-          subtitle: 'Privacy, terms, and legal information',
-        ),
-
-        SettingsCard(
-          icon: Icons.privacy_tip_outlined,
-          title: 'Privacy Policy',
-          description: 'Learn how we protect and handle your data',
-          iconColor: Colors.blue.shade600,
-          onTap: () {
-            AppRouter.goTo(context, AppRouter.privacyPolicy);
-          },
-        ),
-
-        SettingsCard(
-          icon: Icons.description_outlined,
-          title: 'Terms of Service',
-          description: 'Review our terms and conditions of use',
-          iconColor: colorScheme.secondary,
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Row(
-                  children: [
-                    Icon(Icons.open_in_new, color: Colors.white, size: 20),
-                    SizedBox(width: 12),
-                    Text('Opening Terms of Service...'),
-                  ],
-                ),
-                behavior: SnackBarBehavior.floating,
-                backgroundColor: colorScheme.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            );
-          },
-        ),
-
-        SettingsCard(
-          icon: Icons.info_outlined,
-          title: 'About',
-          description: 'App version, credits, and information',
-          iconColor: colorScheme.tertiary,
-          onTap: () {
-            _showAboutDialog(context);
-          },
-        ),
-
-        const SizedBox(height: 24),
-
-        SectionHeader(title: 'Setup', subtitle: 'Re-configure app settings'),
-
-        SettingsCard(
-          icon: Icons.restart_alt_rounded,
-          title: 'Re-run Setup Wizard',
-          description: 'Go through the initial configuration again',
-          iconColor: Colors.purple.shade600,
-          onTap: () => _showResetSetupDialog(context),
         ),
 
         const SizedBox(height: 8),

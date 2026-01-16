@@ -1,5 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '../models/message_branch_model.dart';
+import '../domain/entities/message_branch_manager.dart';
 
 part 'search_state.freezed.dart';
 
@@ -31,32 +31,32 @@ class SearchState with _$SearchState {
 // Extension to make it easier to access common properties
 extension SearchStateX on SearchState {
   List<MessageBranchManager> get messageBranches => when(
-        initial: () => [],
-        loading: (branches, _, __) => branches,
-        loaded: (branches, _, __, ___) => branches,
-        error: (_, branches, __, ___) => branches,
-      );
+    initial: () => [],
+    loading: (branches, _, __) => branches,
+    loaded: (branches, _, __, ___) => branches,
+    error: (_, branches, __, ___) => branches,
+  );
 
   bool get isProcessing => when(
-        initial: () => false,
-        loading: (_, __, ___) => true,
-        loaded: (_, isProcessing, __, ___) => isProcessing,
-        error: (_, __, ___, ____) => false,
-      );
+    initial: () => false,
+    loading: (_, __, ___) => true,
+    loaded: (_, isProcessing, __, ___) => isProcessing,
+    error: (_, __, ___, ____) => false,
+  );
 
   String? get conversationId => when(
-        initial: () => null,
-        loading: (_, id, __) => id,
-        loaded: (_, __, id, ___) => id,
-        error: (_, __, id, ___) => id,
-      );
+    initial: () => null,
+    loading: (_, id, __) => id,
+    loaded: (_, __, id, ___) => id,
+    error: (_, __, id, ___) => id,
+  );
 
   String? get conversationTitle => when(
-        initial: () => null,
-        loading: (_, __, title) => title,
-        loaded: (_, __, ___, title) => title,
-        error: (_, __, ___, title) => title,
-      );
+    initial: () => null,
+    loading: (_, __, title) => title,
+    loaded: (_, __, ___, title) => title,
+    error: (_, __, ___, title) => title,
+  );
 
   bool get hasActiveConversation => messageBranches.isNotEmpty;
 }

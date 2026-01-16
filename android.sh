@@ -44,54 +44,44 @@ check_docker() {
     print_success "Docker is available"
 }
 
-# Start SearXNG container
+# Start SearXNG with Caddy and Qdrant
 start_searxng() {
-    print_status "Starting SearXNG container..."
+    print_status "Starting SearXNG services (SearXNG + Caddy + Qdrant)..."
     
-    # Check if container is already running
-    if docker ps --filter name=searvo-searxng --filter status=running | grep -q searvo-searxng; then
-        print_status "SearXNG container is already running"
+    # Check if containers are already running
+    if docker ps --filter name=searvo-caddy --filter status=running | grep -q searvo-caddy; then
+        print_status "SearXNG services are already running"
         return 0
     fi
     
-    # Remove existing container if it exists but is stopped
-    if docker ps -a --filter name=searvo-searxng | grep -q searvo-searxng; then
-        print_status "Removing existing SearXNG container..."
-        docker rm searvo-searxng >/dev/null 2>&1
-    fi
+    # Build and start services with docker compose
+    print_status "Building images..."
+    docker compose build >/dev/null 2>&1
     
-    # Build and run SearXNG container
-    print_status "Building SearXNG image..."
-    docker build -t searvo-searxng -f searxng.dockerfile . >/dev/null 2>&1
+    print_status "Starting services on port 4000..."
+    docker compose up -d >/dev/null 2>&1
     
-    print_status "Starting SearXNG on port 4000..."
-    docker run -d \
-        --name searvo-searxng \
-        -p 4000:8080 \
-        -e SEARXNG_BOTDETECTION_ENABLED=false \
-        --restart unless-stopped \
-        searvo-searxng >/dev/null 2>&1
+    # Wait a moment for containers to start
+    sleep 3
     
-    # Wait a moment for container to start
-    sleep 2
-    
-    if docker ps --filter name=searvo-searxng --filter status=running | grep -q searvo-searxng; then
-        print_success "SearXNG is running on http://localhost:4000"
+    if docker ps --filter name=searvo-caddy --filter status=running | grep -q searvo-caddy; then
+        print_success "SearXNG + Caddy are running on http://localhost:4000"
+        print_success "Qdrant vector database is running on http://localhost:6333"
     else
-        print_error "Failed to start SearXNG container"
+        print_error "Failed to start services"
+        docker compose logs
         exit 1
     fi
 }
 
-# Stop SearXNG container
+# Stop SearXNG and all services
 stop_searxng() {
-    print_status "Stopping SearXNG container..."
-    if docker ps --filter name=searvo-searxng --filter status=running | grep -q searvo-searxng; then
-        docker stop searvo-searxng >/dev/null 2>&1
-        docker rm searvo-searxng >/dev/null 2>&1
-        print_success "SearXNG container stopped"
+    print_status "Stopping SearXNG services..."
+    if docker ps --filter name=searvo-caddy --filter status=running | grep -q searvo-caddy; then
+        docker compose down >/dev/null 2>&1
+        print_success "SearXNG services stopped"
     else
-        print_status "SearXNG container is not running"
+        print_status "SearXNG services are not running"
     fi
 }
 
@@ -232,6 +222,7 @@ run_dev() {
     print_success "🚀 Development environment ready!"
     print_success "   Android: will run on device $DEVICE_ID"
     print_success "   SearXNG API: http://localhost:4000"
+    print_success "   Qdrant Vector DB: http://localhost:6333"
     print_status "Press Ctrl+C to stop all services"
 
     flutter run -d "$DEVICE_ID"
@@ -276,6 +267,7 @@ show_help() {
     echo "Services:"
     echo "  - Flutter Android: runs on connected device/emulator"
     echo "  - SearXNG API: http://localhost:4000"
+    echo "  - Qdrant Vector DB: http://localhost:6333"
 }
 
 # Main script logic

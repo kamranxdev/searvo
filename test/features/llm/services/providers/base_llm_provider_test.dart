@@ -81,6 +81,18 @@ class MockLLMProvider implements BaseLLMProvider {
   }
 
   @override
+  bool get supportsEmbeddings => true;
+
+  @override
+  Future<List<double>> generateEmbeddings(String text) async {
+    receivedMessages.add(text);
+    if (_exceptionToThrow != null) {
+      throw _exceptionToThrow!;
+    }
+    return [0.1, 0.2, 0.3]; // Mock vector
+  }
+
+  @override
   void dispose() {
     _isInitialized = false;
     receivedMessages.clear();

@@ -11,7 +11,6 @@ import 'package:searvo/features/history/domain/usecases/search_conversations.dar
 import 'package:searvo/features/history/domain/usecases/toggle_pin_conversation.dart';
 import 'package:searvo/features/history/presentation/cubit/history_cubit.dart';
 import 'package:searvo/features/history/services/conversation_database_service.dart';
-import 'package:searvo/features/history/services/conversation_sync_service.dart';
 
 /// Register all dependencies for History feature
 Future<void> initHistoryDependencies() async {
@@ -23,11 +22,6 @@ Future<void> initHistoryDependencies() async {
       () => databaseService,
     );
   }
-
-  // Register ConversationSyncService
-  di.sl.registerLazySingleton<ConversationSyncService>(
-    () => ConversationSyncService(),
-  );
 
   // Data Sources
   di.sl.registerLazySingleton<ConversationLocalDataSource>(

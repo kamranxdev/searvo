@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:searvo/features/auth/screens/auth_screen.dart';
-import 'package:searvo/features/auth/services/auth_service.dart';
-import 'package:searvo/features/auth/widgets/auth_guard.dart';
 import 'package:searvo/features/onboarding/onboarding.dart';
-import 'package:searvo/features/search/models/search_mode.dart';
+import 'package:searvo/features/search/domain/entities/search_mode.dart';
 import 'package:searvo/features/settings/screens/privacy_policy_screen.dart';
 import 'package:searvo/common/navigation/root_navigation_screen.dart';
 
@@ -13,7 +10,6 @@ import 'package:searvo/common/navigation/root_navigation_screen.dart';
 class AppRouter {
   // Route paths for consistency and type safety
   static const String home = '/';
-  static const String auth = '/auth';
   static const String setup = '/setup'; // Setup wizard for new users
   static const String search =
       '/search'; // Same as home, both show search interface
@@ -31,68 +27,28 @@ class AppRouter {
   static const int historyIndex = 2;
   static const int settingsIndex = 3;
 
-  // Public routes that don't require authentication
-  // Add any new public routes to this list
-  static List<String> publicRoutes = [
-    auth,
-    privacyPolicy,
-    // Add more public routes here as needed
-    // Example: termsOfService, about, help, etc.
-  ];
-
-  /// Check if a route path is public (doesn't require authentication)
-  static bool isPublicRoute(String path) {
-    return publicRoutes.contains(path);
-  }
-
   /// Main GoRouter configuration
   static final GoRouter router = GoRouter(
     initialLocation: home,
     debugLogDiagnostics: true,
     redirect: (context, state) {
-      final authService = AuthService();
       final setupService = SetupService();
-      final isAuthenticated = authService.isAuthenticated;
-      final isInitialized = authService.isInitialized;
       final isSetupInitialized = setupService.isInitialized;
       final needsSetup = setupService.needsSetup;
       final currentPath = state.uri.path;
 
-      // Wait for auth to initialize
-      if (!isInitialized) {
+      // Wait for setup to initialize
+      if (!isSetupInitialized) {
         return null;
       }
 
-      // Allow access to public routes for everyone
-      if (isPublicRoute(currentPath)) {
-        return null;
-      }
-
-      // Redirect to auth if not authenticated
-      if (!isAuthenticated) {
-        return auth;
-      }
-
-      // Redirect to home if authenticated and going to auth
-      if (isAuthenticated && currentPath == auth) {
-        // Check if setup is needed
-        if (isSetupInitialized && needsSetup) {
-          return setup;
-        }
-        return home;
-      }
-
-      // Redirect to setup if authenticated but setup not complete
-      // Allow staying on setup route
-      if (isAuthenticated &&
-          isSetupInitialized &&
-          needsSetup &&
-          currentPath != setup) {
+      // Check if setup is needed
+      if (needsSetup && currentPath != setup) {
         return setup;
       }
 
       // Don't allow going to setup if already completed
-      if (isAuthenticated && currentPath == setup && !needsSetup) {
+      if (currentPath == setup && !needsSetup) {
         return home;
       }
 
@@ -103,15 +59,7 @@ class AppRouter {
       child: NotFoundScreen(error: state.error.toString()),
     ),
     routes: [
-      // Authentication Route
-      GoRoute(
-        path: auth,
-        name: 'auth',
-        pageBuilder: (context, state) =>
-            MaterialPage<void>(key: state.pageKey, child: const AuthScreen()),
-      ),
-
-      // Setup Wizard Route - For new users after authentication
+      // Setup Wizard Route - For new users
       GoRoute(
         path: setup,
         name: 'setup',
@@ -121,33 +69,29 @@ class AppRouter {
         ),
       ),
 
-      // Home Route (Search Interface) - Protected
+      // Home Route (Search Interface)
       GoRoute(
         path: home,
         name: 'home',
         pageBuilder: (context, state) {
           return MaterialPage<void>(
             key: state.pageKey,
-            child: AuthGuard(
-              child: const RootNavigationScreen(currentIndex: homeIndex),
-            ),
+            child: const RootNavigationScreen(currentIndex: homeIndex),
           );
         },
       ),
 
-      // Search Route (Same as home - shows search interface) - Protected
+      // Search Route (Same as home - shows search interface)
       GoRoute(
         path: search,
         name: 'search',
         pageBuilder: (context, state) => MaterialPage<void>(
           key: state.pageKey,
-          child: AuthGuard(
-            child: const RootNavigationScreen(currentIndex: homeIndex),
-          ),
+          child: const RootNavigationScreen(currentIndex: homeIndex),
         ),
       ),
 
-      // Search Conversation Route (Individual search with UUID) - Protected
+      // Search Conversation Route (Individual search with UUID)
       // Format: /search/[query+uuid] (query and uuid concatenated with +)
       // Example: /search/what+does+this+page+say+https://linkedin.com/in/kamranxdev+a1b2c3d4-e5f6-7890-abcd-ef1234567890
       GoRoute(
@@ -191,13 +135,11 @@ class AppRouter {
 
           return MaterialPage<void>(
             key: state.pageKey,
-            child: AuthGuard(
-              child: RootNavigationScreen(
-                currentIndex: homeIndex,
-                initialQuery: query,
-                searchMode: searchMode,
-                conversationId: conversationId,
-              ),
+            child: RootNavigationScreen(
+              currentIndex: homeIndex,
+              initialQuery: query,
+              searchMode: searchMode,
+              conversationId: conversationId,
             ),
           );
         },
@@ -213,7 +155,7 @@ class AppRouter {
         ),
       ),
 
-      // Privacy Policy Route - Public (no auth required)
+      // Privacy Policy Route
       GoRoute(
         path: privacyPolicy,
         name: 'privacyPolicy',
@@ -223,27 +165,23 @@ class AppRouter {
         ),
       ),
 
-      // Discover Route - Protected
+      // Discover Route
       GoRoute(
         path: discover,
         name: 'discover',
         pageBuilder: (context, state) => MaterialPage<void>(
           key: state.pageKey,
-          child: AuthGuard(
-            child: const RootNavigationScreen(currentIndex: discoverIndex),
-          ),
+          child: const RootNavigationScreen(currentIndex: discoverIndex),
         ),
       ),
 
-      // Conversation History Route - Protected
+      // Conversation History Route
       GoRoute(
         path: conversationHistory,
         name: 'conversationHistory',
         pageBuilder: (context, state) => MaterialPage<void>(
           key: state.pageKey,
-          child: AuthGuard(
-            child: const RootNavigationScreen(currentIndex: historyIndex),
-          ),
+          child: const RootNavigationScreen(currentIndex: historyIndex),
         ),
       ),
     ],

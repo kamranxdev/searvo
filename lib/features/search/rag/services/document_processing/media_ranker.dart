@@ -1,4 +1,4 @@
-import 'package:searvo/features/search/models/message_data.dart';
+import '../../../domain/entities/video_item.dart';
 
 /// Advanced media ranking service for images and videos using multiple relevance signals
 /// Implements sophisticated scoring algorithms for Perplexity AI-quality results
@@ -19,7 +19,9 @@ class MediaRanker {
   static const double _videoViewsWeight = 1.8;
   static const double _videoFreshnessWeight = 2.0;
   static const double _videoExactMatchBonus = 3.5;
-  static const double _videoPhraseMatchBonus = 2.5;  /// Rank image URLs using advanced multi-signal relevance scoring
+  static const double _videoPhraseMatchBonus = 2.5;
+
+  /// Rank image URLs using advanced multi-signal relevance scoring
   List<String> rankImages(String query, List<String> imageUrls) {
     if (imageUrls.isEmpty) {
       print('⚠️  No images to rank');
@@ -32,11 +34,18 @@ class MediaRanker {
     final keywords = _extractKeywords(query);
     final queryPhrases = _extractPhrases(query);
 
-    print('🔑 Extracted ${keywords.length} keywords and ${queryPhrases.length} phrases');
+    print(
+      '🔑 Extracted ${keywords.length} keywords and ${queryPhrases.length} phrases',
+    );
 
     // Create scored image items
     final scoredImages = imageUrls.map((url) {
-      final score = _calculateImageRelevanceScore(url, query, keywords, queryPhrases);
+      final score = _calculateImageRelevanceScore(
+        url,
+        query,
+        keywords,
+        queryPhrases,
+      );
       return _ScoredMediaItem(url: url, score: score, type: MediaType.image);
     }).toList();
 
@@ -47,7 +56,9 @@ class MediaRanker {
     print('✅ Image ranking complete. Top 3 results:');
     for (int i = 0; i < scoredImages.take(3).length; i++) {
       final item = scoredImages[i];
-      print('   ${i + 1}. ${item.url} (score: ${item.score.toStringAsFixed(2)})');
+      print(
+        '   ${i + 1}. ${item.url} (score: ${item.score.toStringAsFixed(2)})',
+      );
     }
 
     return scoredImages.map((item) => item.url).toList();
@@ -66,11 +77,18 @@ class MediaRanker {
     final keywords = _extractKeywords(query);
     final queryPhrases = _extractPhrases(query);
 
-    print('🔑 Extracted ${keywords.length} keywords and ${queryPhrases.length} phrases');
+    print(
+      '🔑 Extracted ${keywords.length} keywords and ${queryPhrases.length} phrases',
+    );
 
     // Create scored video items
     final scoredVideos = videos.map((video) {
-      final score = _calculateVideoRelevanceScore(video, query, keywords, queryPhrases);
+      final score = _calculateVideoRelevanceScore(
+        video,
+        query,
+        keywords,
+        queryPhrases,
+      );
       return _ScoredVideoItem(video: video, score: score);
     }).toList();
 
@@ -81,14 +99,18 @@ class MediaRanker {
     print('✅ Video ranking complete. Top 3 results:');
     for (int i = 0; i < scoredVideos.take(3).length; i++) {
       final item = scoredVideos[i];
-      print('   ${i + 1}. ${item.video.title} (score: ${item.score.toStringAsFixed(2)})');
+      print(
+        '   ${i + 1}. ${item.video.title} (score: ${item.score.toStringAsFixed(2)})',
+      );
     }
 
     return scoredVideos.map((item) => item.video).toList();
   }
 
   /// Filter and rank images by relevance - removes irrelevant images entirely
-  List<String> filterRelevantImages(String query, List<String> imageUrls, {
+  List<String> filterRelevantImages(
+    String query,
+    List<String> imageUrls, {
     double minRelevanceScore = 0.25,
     int maxImages = 8,
     bool ensureDiversity = true,
@@ -98,7 +120,9 @@ class MediaRanker {
       return [];
     }
 
-    print('🔍 Filtering ${imageUrls.length} images for relevance (query: "$query")');
+    print(
+      '🔍 Filtering ${imageUrls.length} images for relevance (query: "$query")',
+    );
     print('   Min score threshold: $minRelevanceScore, Max images: $maxImages');
 
     // Extract query features
@@ -107,7 +131,12 @@ class MediaRanker {
 
     // Calculate relevance scores for all images
     final scoredImages = imageUrls.map((url) {
-      final score = _calculateImageRelevanceScore(url, query, keywords, queryPhrases);
+      final score = _calculateImageRelevanceScore(
+        url,
+        query,
+        keywords,
+        queryPhrases,
+      );
       return _ScoredMediaItem(url: url, score: score, type: MediaType.image);
     }).toList();
 
@@ -116,7 +145,9 @@ class MediaRanker {
         .where((item) => item.score >= minRelevanceScore)
         .toList();
 
-    print('   After relevance filter: ${relevantImages.length}/${scoredImages.length} images passed (removed ${scoredImages.length - relevantImages.length} irrelevant)');
+    print(
+      '   After relevance filter: ${relevantImages.length}/${scoredImages.length} images passed (removed ${scoredImages.length - relevantImages.length} irrelevant)',
+    );
 
     if (relevantImages.isEmpty) {
       print('⚠️  No images met relevance threshold - returning empty list');
@@ -136,13 +167,17 @@ class MediaRanker {
     // Take top N images
     final result = finalImages.take(maxImages).toList();
 
-    print('✅ Final relevant images: ${result.length} (scores: ${result.map((i) => i.score.toStringAsFixed(2)).join(', ')})');
+    print(
+      '✅ Final relevant images: ${result.length} (scores: ${result.map((i) => i.score.toStringAsFixed(2)).join(', ')})',
+    );
 
     return result.map((item) => item.url).toList();
   }
 
   /// Filter and rank videos by relevance - removes irrelevant videos entirely
-  List<VideoItem> filterRelevantVideos(String query, List<VideoItem> videos, {
+  List<VideoItem> filterRelevantVideos(
+    String query,
+    List<VideoItem> videos, {
     double minRelevanceScore = 0.30,
     int maxVideos = 6,
     bool ensureDiversity = true,
@@ -152,7 +187,9 @@ class MediaRanker {
       return [];
     }
 
-    print('🔍 Filtering ${videos.length} videos for relevance (query: "$query")');
+    print(
+      '🔍 Filtering ${videos.length} videos for relevance (query: "$query")',
+    );
     print('   Min score threshold: $minRelevanceScore, Max videos: $maxVideos');
 
     // Extract query features
@@ -161,7 +198,12 @@ class MediaRanker {
 
     // Calculate relevance scores for all videos
     final scoredVideos = videos.map((video) {
-      final score = _calculateVideoRelevanceScore(video, query, keywords, queryPhrases);
+      final score = _calculateVideoRelevanceScore(
+        video,
+        query,
+        keywords,
+        queryPhrases,
+      );
       return _ScoredVideoItem(video: video, score: score);
     }).toList();
 
@@ -170,7 +212,9 @@ class MediaRanker {
         .where((item) => item.score >= minRelevanceScore)
         .toList();
 
-    print('   After relevance filter: ${relevantVideos.length}/${scoredVideos.length} videos passed (removed ${scoredVideos.length - relevantVideos.length} irrelevant)');
+    print(
+      '   After relevance filter: ${relevantVideos.length}/${scoredVideos.length} videos passed (removed ${scoredVideos.length - relevantVideos.length} irrelevant)',
+    );
 
     if (relevantVideos.isEmpty) {
       print('⚠️  No videos met relevance threshold - returning empty list');
@@ -190,7 +234,9 @@ class MediaRanker {
     // Take top N videos
     final result = finalVideos.take(maxVideos).toList();
 
-    print('✅ Final relevant videos: ${result.length} (scores: ${result.map((v) => v.score.toStringAsFixed(2)).join(', ')})');
+    print(
+      '✅ Final relevant videos: ${result.length} (scores: ${result.map((v) => v.score.toStringAsFixed(2)).join(', ')})',
+    );
 
     return result.map((item) => item.video).toList();
   }
@@ -200,15 +246,84 @@ class MediaRanker {
     final words = query.toLowerCase().split(RegExp(r'\s+'));
 
     final stopWords = {
-      'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-      'of', 'with', 'by', 'from', 'as', 'is', 'are', 'was', 'were', 'be',
-      'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will',
-      'would', 'could', 'should', 'may', 'might', 'must', 'can', 'shall',
-      'what', 'how', 'why', 'when', 'where', 'who', 'which', 'whom', 'whose',
-      'that', 'this', 'these', 'those', 'there', 'their', 'them', 'then',
-      'than', 'such', 'some', 'any', 'many', 'much', 'more', 'most', 'very',
-      'about', 'into', 'through', 'during', 'before', 'after', 'above',
-      'below', 'between', 'under', 'again', 'further', 'once', 'here',
+      'the',
+      'a',
+      'an',
+      'and',
+      'or',
+      'but',
+      'in',
+      'on',
+      'at',
+      'to',
+      'for',
+      'of',
+      'with',
+      'by',
+      'from',
+      'as',
+      'is',
+      'are',
+      'was',
+      'were',
+      'be',
+      'been',
+      'being',
+      'have',
+      'has',
+      'had',
+      'do',
+      'does',
+      'did',
+      'will',
+      'would',
+      'could',
+      'should',
+      'may',
+      'might',
+      'must',
+      'can',
+      'shall',
+      'what',
+      'how',
+      'why',
+      'when',
+      'where',
+      'who',
+      'which',
+      'whom',
+      'whose',
+      'that',
+      'this',
+      'these',
+      'those',
+      'there',
+      'their',
+      'them',
+      'then',
+      'than',
+      'such',
+      'some',
+      'any',
+      'many',
+      'much',
+      'more',
+      'most',
+      'very',
+      'about',
+      'into',
+      'through',
+      'during',
+      'before',
+      'after',
+      'above',
+      'below',
+      'between',
+      'under',
+      'again',
+      'further',
+      'once',
+      'here',
     };
 
     return words
@@ -385,7 +500,9 @@ class MediaRanker {
     score += _calculateVideoEngagementScore(video) * _videoViewsWeight;
 
     // 9. Author credibility (known channels score higher)
-    if (video.domain.contains('youtube.com') && video.views != null && video.views! > 10000) {
+    if (video.domain.contains('youtube.com') &&
+        video.views != null &&
+        video.views! > 10000) {
       score += 2.0; // Popular YouTube videos
     }
 
@@ -533,7 +650,6 @@ class MediaRanker {
       if (filename.length > 10 && filename.contains('-')) {
         score += 0.5;
       }
-
     } catch (e) {
       // Invalid URL, no semantic score
     }
@@ -554,7 +670,10 @@ class MediaRanker {
         keywordOccurrences += _countOccurrences(path, keyword);
       }
 
-      final pathWords = path.split(RegExp(r'[^a-zA-Z0-9]+')).where((w) => w.isNotEmpty).length;
+      final pathWords = path
+          .split(RegExp(r'[^a-zA-Z0-9]+'))
+          .where((w) => w.isNotEmpty)
+          .length;
       if (pathWords == 0) return 0.0;
 
       return keywordOccurrences / pathWords;
@@ -571,7 +690,8 @@ class MediaRanker {
     if (video.title.isNotEmpty && video.title.length > 10) quality += 2.0;
 
     // Has meaningful description
-    if (video.description.isNotEmpty && video.description.length > 50) quality += 1.5;
+    if (video.description.isNotEmpty && video.description.length > 50)
+      quality += 1.5;
 
     // Has duration (indicates complete video)
     if (video.duration != null && video.duration!.isNotEmpty) quality += 1.0;
@@ -595,13 +715,13 @@ class MediaRanker {
     if (daysSincePublished < 0) return 0.5; // Future date, treat as undated
 
     // Recency scoring with decay
-    if (daysSincePublished <= 1) return 5.0;      // Last day
-    if (daysSincePublished <= 7) return 4.0;      // Last week
-    if (daysSincePublished <= 30) return 3.0;     // Last month
-    if (daysSincePublished <= 90) return 2.0;     // Last quarter
-    if (daysSincePublished <= 180) return 1.5;    // Last 6 months
-    if (daysSincePublished <= 365) return 1.0;    // Last year
-    if (daysSincePublished <= 730) return 0.5;    // Last 2 years
+    if (daysSincePublished <= 1) return 5.0; // Last day
+    if (daysSincePublished <= 7) return 4.0; // Last week
+    if (daysSincePublished <= 30) return 3.0; // Last month
+    if (daysSincePublished <= 90) return 2.0; // Last quarter
+    if (daysSincePublished <= 180) return 1.5; // Last 6 months
+    if (daysSincePublished <= 365) return 1.0; // Last year
+    if (daysSincePublished <= 730) return 0.5; // Last 2 years
 
     return 0.2; // Older content
   }
@@ -613,12 +733,12 @@ class MediaRanker {
     final views = video.views!;
 
     // Logarithmic scaling for views (popular videos score higher but with diminishing returns)
-    if (views >= 10000000) return 5.0;     // 10M+ views
-    if (views >= 1000000) return 4.0;      // 1M+ views
-    if (views >= 100000) return 3.0;       // 100K+ views
-    if (views >= 10000) return 2.0;        // 10K+ views
-    if (views >= 1000) return 1.0;         // 1K+ views
-    if (views >= 100) return 0.5;          // 100+ views
+    if (views >= 10000000) return 5.0; // 10M+ views
+    if (views >= 1000000) return 4.0; // 1M+ views
+    if (views >= 100000) return 3.0; // 100K+ views
+    if (views >= 10000) return 2.0; // 10K+ views
+    if (views >= 1000) return 1.0; // 1K+ views
+    if (views >= 100) return 0.5; // 100+ views
 
     return 0.1; // Low engagement
   }
@@ -635,7 +755,9 @@ class MediaRanker {
       'totalImages': images.length,
       'uniqueDomains': domains.length,
       'domains': domains.toList(),
-      'averageUrlLength': images.map((url) => url.length).reduce((a, b) => a + b) / images.length,
+      'averageUrlLength':
+          images.map((url) => url.length).reduce((a, b) => a + b) /
+          images.length,
     };
   }
 
@@ -646,9 +768,13 @@ class MediaRanker {
     }
 
     final domains = videos.map((v) => v.domain).toSet();
-    final avgViews = videos.where((v) => v.views != null).map((v) => v.views!).isNotEmpty
-        ? videos.where((v) => v.views != null).map((v) => v.views!).reduce((a, b) => a + b) /
-          videos.where((v) => v.views != null).length
+    final avgViews =
+        videos.where((v) => v.views != null).map((v) => v.views!).isNotEmpty
+        ? videos
+                  .where((v) => v.views != null)
+                  .map((v) => v.views!)
+                  .reduce((a, b) => a + b) /
+              videos.where((v) => v.views != null).length
         : 0.0;
 
     return {
@@ -731,8 +857,5 @@ class _ScoredVideoItem {
   final VideoItem video;
   final double score;
 
-  _ScoredVideoItem({
-    required this.video,
-    required this.score,
-  });
+  _ScoredVideoItem({required this.video, required this.score});
 }

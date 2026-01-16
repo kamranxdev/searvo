@@ -5,27 +5,34 @@ import 'package:mockito/annotations.dart';
 import 'package:searvo/features/search/bloc/search_bloc.dart';
 import 'package:searvo/features/search/bloc/search_event.dart';
 import 'package:searvo/features/search/bloc/search_state.dart';
-import 'package:searvo/features/search/models/message_branch_model.dart';
-import 'package:searvo/features/search/models/message_data.dart';
-import 'package:searvo/features/search/models/search_mode.dart';
-import 'package:searvo/features/search/services/search_service.dart';
-import 'package:searvo/features/search/services/conversation_manager.dart';
+import 'package:searvo/features/search/domain/entities/message_branch_manager.dart';
+import 'package:searvo/features/search/domain/entities/message_branch.dart';
+import 'package:searvo/features/search/domain/entities/message_data.dart';
+import 'package:searvo/features/search/domain/entities/search_mode.dart';
+import 'package:searvo/features/search/domain/services/search_service.dart';
+import 'package:searvo/features/search/presentation/bloc/conversation_manager.dart';
 import 'package:searvo/features/search/rag/models/rag_models.dart';
-import 'package:searvo/features/history/services/conversation_sync_service.dart';
+import 'package:searvo/features/history/services/conversation_database_service.dart';
+import 'package:searvo/features/history/models/conversation_model.dart';
 
 import 'search_bloc_test.mocks.dart';
 
-@GenerateMocks([SearchService, ConversationManager, ConversationSyncService])
+@GenerateMocks([
+  SearchService,
+  ConversationManager,
+  ConversationDatabaseService,
+  ConversationModel,
+])
 void main() {
   late MockSearchService mockSearchService;
   late MockConversationManager mockConversationManager;
-  late MockConversationSyncService mockConversationSyncService;
+  late MockConversationDatabaseService mockConversationDatabaseService;
   late SearchBloc searchBloc;
 
   setUp(() {
     mockSearchService = MockSearchService();
     mockConversationManager = MockConversationManager();
-    mockConversationSyncService = MockConversationSyncService();
+    mockConversationDatabaseService = MockConversationDatabaseService();
 
     // Default stubs to prevent null errors
     when(mockConversationManager.state).thenReturn(ConversationState.initial());
@@ -36,7 +43,7 @@ void main() {
     searchBloc = SearchBloc(
       searchService: mockSearchService,
       conversationManager: mockConversationManager,
-      conversationSyncService: mockConversationSyncService,
+      conversationDatabaseService: mockConversationDatabaseService,
     );
   });
 
@@ -318,7 +325,7 @@ void main() {
       final bloc = SearchBloc(
         searchService: mockSearchService,
         conversationManager: mockConversationManager,
-        conversationSyncService: mockConversationSyncService,
+        conversationDatabaseService: mockConversationDatabaseService,
       );
       expect(bloc.state, const SearchState.initial());
       bloc.close();
@@ -329,7 +336,7 @@ void main() {
       build: () => SearchBloc(
         searchService: mockSearchService,
         conversationManager: mockConversationManager,
-        conversationSyncService: mockConversationSyncService,
+        conversationDatabaseService: mockConversationDatabaseService,
       ),
       act: (bloc) => bloc.add(const SearchEvent.initialize()),
       verify: (bloc) {
@@ -371,13 +378,27 @@ void main() {
             any,
             attachments: anyNamed('attachments'),
             searchMode: anyNamed('searchMode'),
+            isNewConversation: anyNamed('isNewConversation'),
           ),
         ).thenAnswer((_) => Stream.empty());
+
+        when(
+          mockConversationDatabaseService.getConversationByConversationId(any),
+        ).thenAnswer((_) async => null);
+
+        when(
+          mockConversationDatabaseService.saveConversation(
+            conversationId: anyNamed('conversationId'),
+            title: anyNamed('title'),
+            messageBranches: anyNamed('messageBranches'),
+            tags: anyNamed('tags'),
+          ),
+        ).thenAnswer((_) async => MockConversationModel());
 
         return SearchBloc(
           searchService: mockSearchService,
           conversationManager: mockConversationManager,
-          conversationSyncService: mockConversationSyncService,
+          conversationDatabaseService: mockConversationDatabaseService,
         );
       },
       act: (bloc) => bloc.add(

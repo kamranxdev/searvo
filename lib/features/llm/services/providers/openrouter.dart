@@ -125,6 +125,39 @@ class OpenRouterProvider extends BaseLLMProvider {
     }
   }
 
+  @override
+  bool get supportsEmbeddings => true;
+
+  @override
+  Future<List<double>> generateEmbeddings(String text) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/embeddings'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $_apiKey',
+        },
+        body: jsonEncode({
+          'model':
+              'text-embedding-3-small', // Default fallback, but configurable ideally
+          'input': text,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> embeddingJson = data['data'][0]['embedding'];
+        return embeddingJson.cast<double>();
+      } else {
+        throw Exception(
+          'Embedding request failed: ${response.statusCode} - ${response.body}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Failed to generate embeddings from OpenRouter: $e');
+    }
+  }
+
   /// Set API key
   void setApiKey(String apiKey) {
     _apiKey = apiKey;

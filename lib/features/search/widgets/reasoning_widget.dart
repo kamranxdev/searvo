@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:searvo/features/search/models/message_data.dart';
-import 'package:searvo/features/search/models/search_step.dart';
+import 'package:searvo/features/search/domain/entities/message_generation_state.dart';
+import 'package:searvo/features/search/domain/entities/search_step.dart';
+import 'package:searvo/features/search/domain/entities/source_item.dart';
 import 'package:searvo/features/search/theme/search_theme.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 

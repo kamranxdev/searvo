@@ -4,13 +4,78 @@ import 'package:searvo/features/search/rag/models/rag_models.dart';
 /// Implements intelligent chunking, deduplication, and quality optimization
 class ContextFusion {
   /// Fuse documents into optimized context chunks for LLM processing
-  /// 
+  ///
   /// Modern LLMs support much larger context windows:
   /// - GPT-4 Turbo/GPT-4o: 128k tokens (~100k chars)
-  /// - Gemini 1.5/2.0: 1M-2M tokens (~800k chars)  
+  /// - Gemini 1.5/2.0: 1M-2M tokens (~800k chars)
   /// - Claude 3: 200k tokens (~160k chars)
   /// - Llama 3.1/3.2: 128k tokens (~100k chars)
-  /// 
+  ///
+  /// Default of 32k chars is conservative but works across all providers.
+  /// Public wrapper to chunk documents without fusion (for Vector Search)
+  List<ContextChunk> chunkDocuments(
+    List<Document> documents, {
+    int maxChunkSize = 4000,
+    int overlapSize = 200,
+    int maxContentPerDocument = 8000,
+  }) {
+    final allChunks = <ContextChunk>[];
+    for (final doc in documents) {
+      allChunks.addAll(
+        _chunkDocument(
+          doc,
+          maxChunkSize,
+          overlapSize,
+          maxContentLength: maxContentPerDocument,
+        ),
+      );
+    }
+    return allChunks;
+  }
+
+  /// Fuse specific chunks (e.g. from Vector Search results) into final context
+  List<ContextChunk> fuseChunks(
+    List<ContextChunk> inputChunks, {
+    int maxTotalLength = 32000,
+    bool optimizeForQuality = true,
+    bool deduplicateContent = true,
+  }) {
+    final chunks = <ContextChunk>[];
+    int totalLength = 0;
+    final seenContent = <String>{};
+
+    for (final chunk in inputChunks) {
+      if (totalLength + chunk.content.length > maxTotalLength) {
+        break;
+      }
+
+      if (deduplicateContent) {
+        final contentHash = _generateContentHash(chunk.content);
+        if (seenContent.contains(contentHash)) {
+          continue;
+        }
+        seenContent.add(contentHash);
+      }
+
+      chunks.add(chunk);
+      totalLength += chunk.content.length;
+    }
+
+    if (optimizeForQuality) {
+      return _optimizeChunks(chunks, maxTotalLength);
+    }
+
+    return chunks;
+  }
+
+  /// Fuse documents into optimized context chunks for LLM processing
+  ///
+  /// Modern LLMs support much larger context windows:
+  /// - GPT-4 Turbo/GPT-4o: 128k tokens (~100k chars)
+  /// - Gemini 1.5/2.0: 1M-2M tokens (~800k chars)
+  /// - Claude 3: 200k tokens (~160k chars)
+  /// - Llama 3.1/3.2: 128k tokens (~100k chars)
+  ///
   /// Default of 32k chars is conservative but works across all providers.
   List<ContextChunk> fuseContext(
     List<Document> documents, {
@@ -56,8 +121,8 @@ class ContextFusion {
       }
 
       // Adjust chunk size based on remaining space
-      final effectiveChunkSize = remainingLength < maxChunkSize 
-          ? remainingLength 
+      final effectiveChunkSize = remainingLength < maxChunkSize
+          ? remainingLength
           : maxChunkSize;
 
       // Generate chunks for this document with content limit
@@ -72,13 +137,17 @@ class ContextFusion {
       // Track if we truncated this document
       if (doc.content.length > maxContentPerDocument) {
         truncatedDocs++;
-        print('   ✂️  Truncated ${doc.domain} from ${doc.content.length} to $maxContentPerDocument chars');
+        print(
+          '   ✂️  Truncated ${doc.domain} from ${doc.content.length} to $maxContentPerDocument chars',
+        );
       }
 
       // Limit chunks per document to ensure source diversity
       final chunksToAdd = docChunks.take(maxChunksPerDocument).toList();
       if (docChunks.length > maxChunksPerDocument) {
-        print('   ℹ️  Limited ${doc.domain} to $maxChunksPerDocument chunks (had ${docChunks.length})');
+        print(
+          '   ℹ️  Limited ${doc.domain} to $maxChunksPerDocument chunks (had ${docChunks.length})',
+        );
       }
 
       // Add chunks with deduplication
@@ -105,7 +174,8 @@ class ContextFusion {
     print('✅ Fused ${chunks.length} chunks (${totalLength} chars total)');
     if (truncatedDocs > 0) {
       print('✂️  Truncated $truncatedDocs documents for source diversity');
-    }    if (duplicatesSkipped > 0) {
+    }
+    if (duplicatesSkipped > 0) {
       print('🔍 Skipped $duplicatesSkipped duplicate chunks');
     }
 
@@ -123,20 +193,24 @@ class ContextFusion {
 
     final buffer = StringBuffer();
     buffer.writeln('# RELEVANT SEARCH RESULTS\n');
-    buffer.writeln('The following information has been retrieved from web sources:\n');
+    buffer.writeln(
+      'The following information has been retrieved from web sources:\n',
+    );
 
     for (int i = 0; i < chunks.length; i++) {
       final chunk = chunks[i];
-      final sourceInfo = chunk.citations.isNotEmpty 
-          ? chunk.citations.first.document 
+      final sourceInfo = chunk.citations.isNotEmpty
+          ? chunk.citations.first.document
           : null;
 
       buffer.writeln('## Source [${i + 1}]');
-      
+
       if (sourceInfo != null) {
         buffer.writeln('**Title**: ${sourceInfo.title}');
         buffer.writeln('**Domain**: ${sourceInfo.domain}');
-        buffer.writeln('**Relevance**: ${(sourceInfo.relevanceScore * 100).toStringAsFixed(0)}%');
+        buffer.writeln(
+          '**Relevance**: ${(sourceInfo.relevanceScore * 100).toStringAsFixed(0)}%',
+        );
         if (sourceInfo.publishedDate != null) {
           buffer.writeln('**Published**: ${sourceInfo.publishedDate}');
         }
@@ -159,9 +233,10 @@ class ContextFusion {
     bool optimizeForQuality = true,
   }) {
     final chunks = <ContextChunk>[];
-    
+
     // NEW: Truncate content if maxContentLength is specified
-    final content = maxContentLength != null && doc.content.length > maxContentLength
+    final content =
+        maxContentLength != null && doc.content.length > maxContentLength
         ? doc.content.substring(0, maxContentLength)
         : doc.content;
 
@@ -182,11 +257,13 @@ class ContextFusion {
 
       final formattedContent = _formatDocumentContent(doc, content);
 
-      chunks.add(ContextChunk(
-        content: formattedContent,
-        citations: [citation],
-        relevanceScore: doc.relevanceScore,
-      ));
+      chunks.add(
+        ContextChunk(
+          content: formattedContent,
+          citations: [citation],
+          relevanceScore: doc.relevanceScore,
+        ),
+      );
 
       return chunks;
     }
@@ -211,7 +288,7 @@ class ContextFusion {
 
       // Extract chunk content
       final chunkContent = content.substring(start, end).trim();
-      
+
       // Skip empty chunks
       if (chunkContent.isEmpty) {
         break;
@@ -228,11 +305,13 @@ class ContextFusion {
       // Format and add chunk
       final formattedContent = _formatDocumentContent(doc, chunkContent);
 
-      chunks.add(ContextChunk(
-        content: formattedContent,
-        citations: [citation],
-        relevanceScore: doc.relevanceScore,
-      ));
+      chunks.add(
+        ContextChunk(
+          content: formattedContent,
+          citations: [citation],
+          relevanceScore: doc.relevanceScore,
+        ),
+      );
 
       // Calculate next start position with overlap
       final nextStart = end - overlapSize;
@@ -337,16 +416,19 @@ class ContextFusion {
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim()
         .toLowerCase();
-    
-    final hashContent = normalized.length > 200 
+
+    final hashContent = normalized.length > 200
         ? normalized.substring(0, 200)
         : normalized;
-    
+
     return hashContent;
   }
 
   /// Optimize chunks for better quality
-  List<ContextChunk> _optimizeChunks(List<ContextChunk> chunks, int maxTotalLength) {
+  List<ContextChunk> _optimizeChunks(
+    List<ContextChunk> chunks,
+    int maxTotalLength,
+  ) {
     if (chunks.isEmpty) return chunks;
 
     // Remove chunks that are too short (likely low quality)
@@ -385,10 +467,12 @@ class ContextFusion {
 
     // Sort by combined relevance and quality score
     scoredChunks.sort((a, b) {
-      final scoreA = (a['chunk'] as ContextChunk).relevanceScore * 0.6 + 
-                     (a['quality'] as double) * 0.4;
-      final scoreB = (b['chunk'] as ContextChunk).relevanceScore * 0.6 + 
-                     (b['quality'] as double) * 0.4;
+      final scoreA =
+          (a['chunk'] as ContextChunk).relevanceScore * 0.6 +
+          (a['quality'] as double) * 0.4;
+      final scoreB =
+          (b['chunk'] as ContextChunk).relevanceScore * 0.6 +
+          (b['quality'] as double) * 0.4;
       return scoreB.compareTo(scoreA); // Descending order
     });
 
@@ -420,7 +504,8 @@ class ContextFusion {
     }
 
     // Diversity score (variety of words)
-    final uniqueWords = content.toLowerCase()
+    final uniqueWords = content
+        .toLowerCase()
         .split(RegExp(r'\s+'))
         .toSet()
         .length;
@@ -433,11 +518,51 @@ class ContextFusion {
   /// Count meaningful words (excluding common stop words)
   int _countMeaningfulWords(String content) {
     final stopWords = {
-      'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-      'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'be',
-      'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will',
-      'would', 'should', 'could', 'may', 'might', 'can', 'this', 'that',
-      'these', 'those', 'it', 'its', 'they', 'their', 'them',
+      'the',
+      'a',
+      'an',
+      'and',
+      'or',
+      'but',
+      'in',
+      'on',
+      'at',
+      'to',
+      'for',
+      'of',
+      'with',
+      'by',
+      'from',
+      'as',
+      'is',
+      'was',
+      'are',
+      'were',
+      'be',
+      'been',
+      'being',
+      'have',
+      'has',
+      'had',
+      'do',
+      'does',
+      'did',
+      'will',
+      'would',
+      'should',
+      'could',
+      'may',
+      'might',
+      'can',
+      'this',
+      'that',
+      'these',
+      'those',
+      'it',
+      'its',
+      'they',
+      'their',
+      'them',
     };
 
     final words = content.toLowerCase().split(RegExp(r'\s+'));
@@ -465,7 +590,7 @@ class ContextFusion {
 
       final currentChunk = chunks[i];
       final currentCitation = currentChunk.citations.firstOrNull;
-      
+
       if (currentCitation == null) {
         merged.add(currentChunk);
         processed.add(i);
@@ -474,7 +599,7 @@ class ContextFusion {
 
       // Look for overlapping chunks from same document
       final overlapping = <int>[i];
-      
+
       for (int j = i + 1; j < chunks.length; j++) {
         if (processed.contains(j)) continue;
 
@@ -490,7 +615,8 @@ class ContextFusion {
             otherCitation.endIndex,
           );
 
-          if (overlap > 0.3) { // 30% overlap threshold
+          if (overlap > 0.3) {
+            // 30% overlap threshold
             overlapping.add(j);
           }
         }
@@ -517,14 +643,14 @@ class ContextFusion {
   double _calculateOverlap(int start1, int end1, int start2, int end2) {
     final overlapStart = start1 > start2 ? start1 : start2;
     final overlapEnd = end1 < end2 ? end1 : end2;
-    
+
     if (overlapStart >= overlapEnd) return 0.0;
-    
+
     final overlapLength = overlapEnd - overlapStart;
     final length1 = end1 - start1;
     final length2 = end2 - start2;
     final minLength = length1 < length2 ? length1 : length2;
-    
+
     return minLength > 0 ? overlapLength / minLength : 0.0;
   }
 
@@ -557,10 +683,9 @@ class ContextFusion {
     }
 
     // Calculate average relevance score
-    final avgRelevance = chunks.fold<double>(
-      0.0,
-      (sum, chunk) => sum + chunk.relevanceScore,
-    ) / chunks.length;
+    final avgRelevance =
+        chunks.fold<double>(0.0, (sum, chunk) => sum + chunk.relevanceScore) /
+        chunks.length;
 
     return ContextChunk(
       content: combinedContent.toString(),
@@ -589,19 +714,20 @@ class ContextFusion {
 
     final avgChunkLength = totalLength / chunks.length;
 
-    final avgRelevance = chunks.fold<double>(
-      0.0,
-      (sum, chunk) => sum + chunk.relevanceScore,
-    ) / chunks.length;
+    final avgRelevance =
+        chunks.fold<double>(0.0, (sum, chunk) => sum + chunk.relevanceScore) /
+        chunks.length;
 
-    final avgQuality = chunks.fold<double>(
-      0.0,
-      (sum, chunk) => sum + _calculateChunkQuality(chunk),
-    ) / chunks.length;
+    final avgQuality =
+        chunks.fold<double>(
+          0.0,
+          (sum, chunk) => sum + _calculateChunkQuality(chunk),
+        ) /
+        chunks.length;
 
     // Calculate overall quality score
     int score = 0;
-    
+
     // Chunk count score (prefer 3-10 chunks)
     if (chunks.length >= 3 && chunks.length <= 10) {
       score += 25;
@@ -658,7 +784,8 @@ class ContextFusion {
     for (final chunk in chunks) {
       final chunkLength = chunk.content.length;
 
-      if (currentLength + chunkLength > maxCharsPerBatch && currentBatch.isNotEmpty) {
+      if (currentLength + chunkLength > maxCharsPerBatch &&
+          currentBatch.isNotEmpty) {
         // Start new batch
         batches.add(currentBatch);
         currentBatch = [chunk];
@@ -686,11 +813,11 @@ class ContextFusion {
     for (final chunk in chunks) {
       for (final citation in chunk.citations) {
         domains.add(citation.document.domain);
-        
+
         if (citation.document.title.isNotEmpty) {
           titles.add(citation.document.title);
         }
-        
+
         if (citation.document.publishedDate != null) {
           dates.add(citation.document.publishedDate!.toIso8601String());
         }
@@ -702,8 +829,12 @@ class ContextFusion {
       'domains': domains.toList(),
       'titleCount': titles.length,
       'datedSources': dates.length,
-      'oldestDate': dates.isNotEmpty ? dates.reduce((a, b) => a.compareTo(b) < 0 ? a : b) : null,
-      'newestDate': dates.isNotEmpty ? dates.reduce((a, b) => a.compareTo(b) > 0 ? a : b) : null,
+      'oldestDate': dates.isNotEmpty
+          ? dates.reduce((a, b) => a.compareTo(b) < 0 ? a : b)
+          : null,
+      'newestDate': dates.isNotEmpty
+          ? dates.reduce((a, b) => a.compareTo(b) > 0 ? a : b)
+          : null,
     };
   }
 }

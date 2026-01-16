@@ -1,7 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '../models/message_data.dart';
-import '../models/message_branch_model.dart';
-import '../models/search_mode.dart';
+import '../domain/entities/message_branch_manager.dart';
+import '../domain/entities/search_mode.dart';
 import '../../../common/widgets/attachment_input_widget.dart'; // For AttachmentData
 
 part 'search_event.freezed.dart';

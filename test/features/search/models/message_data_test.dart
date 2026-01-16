@@ -1,13 +1,28 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:searvo/features/search/models/message_data.dart';
+import 'package:searvo/features/search/domain/entities/message_data.dart';
+import 'package:searvo/features/search/domain/entities/source_item.dart';
+import 'package:searvo/features/search/domain/entities/attachment_metadata.dart';
+import 'package:searvo/features/search/domain/entities/message_generation_state.dart';
 
 void main() {
   group('MessageGenerationState Tests', () {
     test('should have all expected states', () {
-      expect(MessageGenerationState.values, contains(MessageGenerationState.searching));
-      expect(MessageGenerationState.values, contains(MessageGenerationState.generating));
-      expect(MessageGenerationState.values, contains(MessageGenerationState.streaming));
-      expect(MessageGenerationState.values, contains(MessageGenerationState.completed));
+      expect(
+        MessageGenerationState.values,
+        contains(MessageGenerationState.searching),
+      );
+      expect(
+        MessageGenerationState.values,
+        contains(MessageGenerationState.generating),
+      );
+      expect(
+        MessageGenerationState.values,
+        contains(MessageGenerationState.streaming),
+      );
+      expect(
+        MessageGenerationState.values,
+        contains(MessageGenerationState.completed),
+      );
     });
 
     test('should have exactly 4 states', () {
@@ -17,12 +32,9 @@ void main() {
 
   group('MessageData Tests', () {
     final testTimestamp = DateTime(2024, 1, 15, 10, 30);
-    
+
     test('should create MessageData with required fields', () {
-      final message = MessageData(
-        query: 'Test query',
-        answer: 'Test answer',
-      );
+      final message = MessageData(query: 'Test query', answer: 'Test answer');
 
       expect(message.query, 'Test query');
       expect(message.answer, 'Test answer');
@@ -218,9 +230,30 @@ void main() {
           query: 'Test',
           answer: 'Test',
           attachments: [
-            AttachmentMetadata(id: '1', name: 'file1.pdf', path: '/p1', type: 'pdf', size: 100, uploadedAt: now),
-            AttachmentMetadata(id: '2', name: 'file2.pdf', path: '/p2', type: 'pdf', size: 200, uploadedAt: now),
-            AttachmentMetadata(id: '3', name: 'file3.pdf', path: '/p3', type: 'pdf', size: 300, uploadedAt: now),
+            AttachmentMetadata(
+              id: '1',
+              name: 'file1.pdf',
+              path: '/p1',
+              type: 'pdf',
+              size: 100,
+              uploadedAt: now,
+            ),
+            AttachmentMetadata(
+              id: '2',
+              name: 'file2.pdf',
+              path: '/p2',
+              type: 'pdf',
+              size: 200,
+              uploadedAt: now,
+            ),
+            AttachmentMetadata(
+              id: '3',
+              name: 'file3.pdf',
+              path: '/p3',
+              type: 'pdf',
+              size: 300,
+              uploadedAt: now,
+            ),
           ],
         );
         expect(message.attachmentSummary, '3 files attached');

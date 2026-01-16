@@ -1,10 +1,14 @@
 /// Example demonstrating how to use the AutocompleteService
-/// 
+///
 /// This file shows various use cases and best practices for integrating
 /// the NLP-enhanced autocomplete into your Flutter application.
 
 import 'package:flutter/material.dart';
-import 'package:searvo/features/search/services/autocomplete_service.dart';
+import 'package:searvo/features/search/domain/usecases/get_autocomplete_suggestions_usecase.dart';
+import 'package:searvo/features/search/domain/entities/autocomplete_entities.dart';
+import 'package:searvo/features/search/data/repositories/search_repository_impl.dart';
+import 'package:searvo/features/search/data/datasources/searxng_remote_data_source.dart';
+import 'package:searvo/features/search/data/datasources/search_local_data_source.dart';
 
 void main() {
   runApp(const AutocompleteExample());
@@ -17,10 +21,7 @@ class AutocompleteExample extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Autocomplete Service Example',
-      theme: ThemeData(
-        primarySwatch: Colors.teal,
-        useMaterial3: true,
-      ),
+      theme: ThemeData(primarySwatch: Colors.teal, useMaterial3: true),
       home: const AutocompleteDemo(),
     );
   }
@@ -34,7 +35,7 @@ class AutocompleteDemo extends StatefulWidget {
 }
 
 class _AutocompleteDemoState extends State<AutocompleteDemo> {
-  late AutocompleteService _autocompleteService;
+  late GetAutocompleteSuggestionsUseCase _autocompleteUseCase;
   final TextEditingController _controller = TextEditingController();
   List<AutocompleteSuggestion> _suggestions = [];
   bool _isLoading = false;
@@ -43,22 +44,29 @@ class _AutocompleteDemoState extends State<AutocompleteDemo> {
   @override
   void initState() {
     super.initState();
-    
-    // Initialize the autocomplete service
-    // You can customize the baseUrl to point to your SearxNG instance
-    _autocompleteService = AutocompleteService(
-      baseUrl: 'http://localhost:4000',
-    );
-
+    _initializeAutocomplete();
     // Listen to text changes and fetch suggestions
     _controller.addListener(_onTextChanged);
+  }
+
+  Future<void> _initializeAutocomplete() async {
+    // Initialize the autocomplete use case with dependencies
+    // You can customize the baseUrl to point to your SearxNG instance
+    final remoteDataSource = SearXNGRemoteDataSource();
+    await remoteDataSource.initialize(baseUrl: 'http://localhost:4000');
+    final localDataSource = SearchLocalDataSource();
+    final repository = SearchRepositoryImpl(
+      remoteDataSource: remoteDataSource,
+      localDataSource: localDataSource,
+    );
+    _autocompleteUseCase = GetAutocompleteSuggestionsUseCase(repository);
   }
 
   @override
   void dispose() {
     _controller.removeListener(_onTextChanged);
     _controller.dispose();
-    _autocompleteService.dispose();
+    _autocompleteUseCase.cancelPendingRequests();
     super.dispose();
   }
 
@@ -83,34 +91,36 @@ class _AutocompleteDemoState extends State<AutocompleteDemo> {
 
     // Fetch suggestions with debouncing
     // The callback is called after the debounce duration
-    _autocompleteService.getSuggestionsDebounced(query, (suggestions) {
-      if (mounted) {
-        setState(() {
-          _suggestions = suggestions;
-          _isLoading = false;
-          
-          // Show message if no suggestions found
-          if (suggestions.isEmpty && query.isNotEmpty) {
-            _errorMessage = 'No suggestions found';
+    _autocompleteUseCase
+        .callDebounced(query, (suggestions) {
+          if (mounted) {
+            setState(() {
+              _suggestions = suggestions;
+              _isLoading = false;
+
+              // Show message if no suggestions found
+              if (suggestions.isEmpty && query.isNotEmpty) {
+                _errorMessage = 'No suggestions found';
+              }
+            });
           }
+        })
+        .catchError((error) {
+          if (mounted) {
+            setState(() {
+              _suggestions = [];
+              _isLoading = false;
+              _errorMessage = 'Failed to fetch suggestions: $error';
+            });
+          }
+          return <AutocompleteSuggestion>[]; // Return empty list on error
         });
-      }
-    }).catchError((error) {
-      if (mounted) {
-        setState(() {
-          _suggestions = [];
-          _isLoading = false;
-          _errorMessage = 'Failed to fetch suggestions: $error';
-        });
-      }
-      return <AutocompleteSuggestion>[]; // Return empty list on error
-    });
   }
 
   void _onSuggestionTap(AutocompleteSuggestion suggestion) {
     // Update the text field with the selected suggestion
     _controller.text = suggestion.text;
-    
+
     // Move cursor to the end
     _controller.selection = TextSelection.fromPosition(
       TextPosition(offset: _controller.text.length),
@@ -128,7 +138,7 @@ class _AutocompleteDemoState extends State<AutocompleteDemo> {
   void _performSearch(String query) {
     // Implement your search logic here
     print('Searching for: $query');
-    
+
     // Show a snackbar for demonstration
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -186,10 +196,7 @@ class _AutocompleteDemoState extends State<AutocompleteDemo> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('NLP Autocomplete Demo'),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('NLP Autocomplete Demo'), elevation: 0),
       body: Column(
         children: [
           // Search input
@@ -214,17 +221,17 @@ class _AutocompleteDemoState extends State<AutocompleteDemo> {
                             ),
                           )
                         : _controller.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear),
-                                onPressed: () {
-                                  _controller.clear();
-                                  setState(() {
-                                    _suggestions = [];
-                                    _errorMessage = null;
-                                  });
-                                },
-                              )
-                            : null,
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _controller.clear();
+                              setState(() {
+                                _suggestions = [];
+                                _errorMessage = null;
+                              });
+                            },
+                          )
+                        : null,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -237,10 +244,7 @@ class _AutocompleteDemoState extends State<AutocompleteDemo> {
                   const SizedBox(height: 8),
                   Text(
                     _errorMessage!,
-                    style: TextStyle(
-                      color: Colors.red.shade700,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.red.shade700, fontSize: 12),
                   ),
                 ],
               ],
@@ -264,8 +268,8 @@ class _AutocompleteDemoState extends State<AutocompleteDemo> {
                           _controller.text.isEmpty
                               ? 'Type something to see suggestions'
                               : _isLoading
-                                  ? 'Loading suggestions...'
-                                  : 'No suggestions found',
+                              ? 'Loading suggestions...'
+                              : 'No suggestions found',
                           style: TextStyle(
                             color: Colors.grey.shade600,
                             fontSize: 16,
@@ -346,7 +350,7 @@ class ImmediateAutocompleteExample extends StatefulWidget {
 
 class _ImmediateAutocompleteExampleState
     extends State<ImmediateAutocompleteExample> {
-  late AutocompleteService _autocompleteService;
+  late GetAutocompleteSuggestionsUseCase _autocompleteUseCase;
   final TextEditingController _controller = TextEditingController();
   List<AutocompleteSuggestion> _suggestions = [];
   bool _isLoading = false;
@@ -354,19 +358,31 @@ class _ImmediateAutocompleteExampleState
   @override
   void initState() {
     super.initState();
-    _autocompleteService = AutocompleteService();
+    _initializeAutocomplete();
+  }
+
+  Future<void> _initializeAutocomplete() async {
+    // Initialize with default localhost configuration
+    final remoteDataSource = SearXNGRemoteDataSource();
+    await remoteDataSource.initialize(baseUrl: 'http://localhost:4000');
+    final localDataSource = SearchLocalDataSource();
+    final repository = SearchRepositoryImpl(
+      remoteDataSource: remoteDataSource,
+      localDataSource: localDataSource,
+    );
+    _autocompleteUseCase = GetAutocompleteSuggestionsUseCase(repository);
   }
 
   @override
   void dispose() {
     _controller.dispose();
-    _autocompleteService.dispose();
+    _autocompleteUseCase.cancelPendingRequests();
     super.dispose();
   }
 
   Future<void> _fetchSuggestions() async {
     final query = _controller.text;
-    
+
     if (query.trim().length < 2) {
       setState(() {
         _suggestions = [];
@@ -380,8 +396,8 @@ class _ImmediateAutocompleteExampleState
 
     try {
       // Get suggestions immediately without debouncing
-      final suggestions = await _autocompleteService.getSuggestions(query);
-      
+      final suggestions = await _autocompleteUseCase.call(query);
+
       if (mounted) {
         setState(() {
           _suggestions = suggestions;
@@ -401,9 +417,7 @@ class _ImmediateAutocompleteExampleState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Immediate Autocomplete'),
-      ),
+      appBar: AppBar(title: const Text('Immediate Autocomplete')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

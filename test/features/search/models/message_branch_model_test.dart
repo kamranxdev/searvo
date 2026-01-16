@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:searvo/features/search/models/message_branch_model.dart';
-import 'package:searvo/features/search/models/message_data.dart';
+import 'package:searvo/features/search/domain/entities/message_branch.dart';
+import 'package:searvo/features/search/domain/entities/message_branch_manager.dart';
+import 'package:searvo/features/search/domain/entities/message_data.dart';
 
 void main() {
   group('MessageBranch Tests', () {
@@ -8,10 +9,7 @@ void main() {
     late DateTime testCreatedAt;
 
     setUp(() {
-      testMessage = MessageData(
-        query: 'Test query',
-        answer: 'Test answer',
-      );
+      testMessage = MessageData(query: 'Test query', answer: 'Test answer');
       testCreatedAt = DateTime(2024, 1, 15, 10, 30);
     });
 
@@ -59,7 +57,10 @@ void main() {
       });
 
       test('should return new MessageBranch with updated message', () {
-        final newMessage = MessageData(query: 'New query', answer: 'New answer');
+        final newMessage = MessageData(
+          query: 'New query',
+          answer: 'New answer',
+        );
         final updated = originalBranch.copyWith(message: newMessage);
         expect(updated.message.query, 'New query');
         expect(updated.id, originalBranch.id);
@@ -224,7 +225,9 @@ void main() {
 
     group('totalBranches', () {
       test('should return correct count', () {
-        final manager = MessageBranchManager(branches: [branch1, branch2, branch3]);
+        final manager = MessageBranchManager(
+          branches: [branch1, branch2, branch3],
+        );
         expect(manager.totalBranches, 3);
       });
     });
@@ -257,7 +260,9 @@ void main() {
 
     group('goToNextBranch', () {
       test('should navigate to next branch', () {
-        final manager = MessageBranchManager(branches: [branch1, branch2, branch3]);
+        final manager = MessageBranchManager(
+          branches: [branch1, branch2, branch3],
+        );
         manager.goToNextBranch();
         expect(manager.currentBranchIndex, 1);
       });
@@ -274,7 +279,9 @@ void main() {
 
     group('goToBranch', () {
       test('should navigate to specific branch', () {
-        final manager = MessageBranchManager(branches: [branch1, branch2, branch3]);
+        final manager = MessageBranchManager(
+          branches: [branch1, branch2, branch3],
+        );
         manager.goToBranch(2);
         expect(manager.currentBranchIndex, 2);
       });
@@ -296,7 +303,7 @@ void main() {
       test('should add new branch and set as current', () {
         final manager = MessageBranchManager(branches: [branch1]);
         manager.addBranch(branch2);
-        
+
         expect(manager.totalBranches, 2);
         expect(manager.currentBranchIndex, 1);
         expect(manager.currentBranch.id, 'branch-2');
@@ -306,10 +313,13 @@ void main() {
     group('updateCurrentBranch', () {
       test('should update current branch message', () {
         final manager = MessageBranchManager(branches: [branch1, branch2]);
-        final newMessage = MessageData(query: 'Updated', answer: 'Updated answer');
-        
+        final newMessage = MessageData(
+          query: 'Updated',
+          answer: 'Updated answer',
+        );
+
         manager.updateCurrentBranch(newMessage);
-        
+
         expect(manager.currentMessage.query, 'Updated');
         expect(manager.currentMessage.answer, 'Updated answer');
       });
@@ -317,9 +327,11 @@ void main() {
 
     group('getBranchById', () {
       test('should return branch when found', () {
-        final manager = MessageBranchManager(branches: [branch1, branch2, branch3]);
+        final manager = MessageBranchManager(
+          branches: [branch1, branch2, branch3],
+        );
         final found = manager.getBranchById('branch-2');
-        
+
         expect(found, isNotNull);
         expect(found!.id, 'branch-2');
       });
@@ -327,16 +339,18 @@ void main() {
       test('should return null when not found', () {
         final manager = MessageBranchManager(branches: [branch1, branch2]);
         final found = manager.getBranchById('non-existent');
-        
+
         expect(found, isNull);
       });
     });
 
     group('removeBranch', () {
       test('should remove branch at index', () {
-        final manager = MessageBranchManager(branches: [branch1, branch2, branch3]);
+        final manager = MessageBranchManager(
+          branches: [branch1, branch2, branch3],
+        );
         final removed = manager.removeBranch(1);
-        
+
         expect(removed, true);
         expect(manager.totalBranches, 2);
         expect(manager.branches[1].id, 'branch-3');
@@ -345,14 +359,14 @@ void main() {
       test('should not remove if only one branch', () {
         final manager = MessageBranchManager(branches: [branch1]);
         final removed = manager.removeBranch(0);
-        
+
         expect(removed, false);
         expect(manager.totalBranches, 1);
       });
 
       test('should not remove at invalid index', () {
         final manager = MessageBranchManager(branches: [branch1, branch2]);
-        
+
         expect(manager.removeBranch(-1), false);
         expect(manager.removeBranch(5), false);
       });
@@ -363,7 +377,7 @@ void main() {
           currentBranchIndex: 2,
         );
         manager.removeBranch(0);
-        
+
         expect(manager.currentBranchIndex, 1);
       });
 
@@ -373,14 +387,16 @@ void main() {
           currentBranchIndex: 1,
         );
         manager.removeBranch(1);
-        
+
         expect(manager.currentBranchIndex, 0);
       });
     });
 
     group('Navigation sequence', () {
       test('should correctly navigate through all branches', () {
-        final manager = MessageBranchManager(branches: [branch1, branch2, branch3]);
+        final manager = MessageBranchManager(
+          branches: [branch1, branch2, branch3],
+        );
 
         expect(manager.currentBranchNumber, 1);
         expect(manager.hasPreviousBranch, false);

@@ -1,18 +1,23 @@
 import 'package:searvo/features/llm/services/providers/llm_provider_manager.dart';
 import 'package:searvo/features/llm/services/providers/context_window_config.dart';
 import 'package:searvo/features/search/rag/models/rag_models.dart';
-import 'package:searvo/features/search/services/searxng_service.dart';
-import 'package:searvo/features/search/services/search_cache_service.dart';
-import 'package:searvo/features/search/services/intent/intent_classifier.dart';
-import 'package:searvo/features/search/models/search_intent.dart';
+import 'package:searvo/features/search/data/datasources/searxng_remote_data_source.dart';
+import 'package:searvo/features/search/data/datasources/search_local_data_source.dart';
+import 'package:searvo/features/search/domain/services/intent_classifier.dart';
+import 'package:searvo/features/search/domain/entities/search_intent.dart';
 import 'package:searvo/features/search/tools/search_tools.dart';
-import 'package:searvo/features/search/models/search_step.dart';
+import '../../../domain/entities/message_generation_state.dart';
+import '../../../domain/entities/source_item.dart';
+import '../../../domain/entities/attachment_metadata.dart';
+import 'package:searvo/features/search/domain/entities/search_step.dart';
 import 'package:uuid/uuid.dart';
 import '../query_processing/query_analyzer.dart';
 import '../data_ingestion/rag_scraper_adapter.dart';
-import 'package:searvo/features/search/models/search_mode.dart';
+import 'package:searvo/features/search/domain/entities/search_mode.dart';
+import 'agent_orchestrator.dart'; // Add import
+import '../vector_store/qdrant_vector_store.dart';
 
-import '../../../models/message_data.dart';
+import '../../../domain/entities/message_data.dart';
 import '../document_processing/document_ranker.dart';
 
 import '../document_processing/context_fusion.dart';
@@ -22,7 +27,7 @@ import '../data_ingestion/attachment_processor.dart';
 
 /// Advanced RAG orchestrator with attachment support, conversation history, and intelligent web scraping
 class RAGOrchestrator {
-  final SearXNGService _searxngService;
+  final SearXNGRemoteDataSource _searxngService;
   final DocumentRanker _documentRanker;
 
   final ContextFusion _contextFusion;
@@ -35,26 +40,29 @@ class RAGOrchestrator {
 
   final IntentClassifier _intentClassifier;
   late final List<SearchTool> _tools;
+  late final AgentOrchestrator _agentOrchestrator; // Add field
 
+  final QdrantVectorStore _vectorStore;
   final Map<String, dynamic> _performanceMetrics = {};
 
   RAGOrchestrator({
-    SearXNGService? searxngService,
+    SearXNGRemoteDataSource? searxngService,
     DocumentRanker? documentRanker,
 
     ContextFusion? contextFusion,
+    QdrantVectorStore? vectorStore,
     CitationManager? citationManager,
     LLMProviderManager? llmManager,
     PromptEngineer? promptEngineer,
     AttachmentProcessor? attachmentProcessor,
     QueryAnalyzer? queryAnalyzer,
     RAGScraperAdapter? scraperAdapter,
-    SearchCacheService? cacheService,
+    SearchLocalDataSource? cacheService,
     IntentClassifier? intentClassifier,
-  }) : _searxngService = searxngService ?? SearXNGService(),
+  }) : _searxngService = searxngService ?? SearXNGRemoteDataSource(),
        _documentRanker = documentRanker ?? DocumentRanker(),
-
        _contextFusion = contextFusion ?? ContextFusion(),
+       _vectorStore = vectorStore ?? QdrantVectorStore(),
        _citationManager = citationManager ?? CitationManager(),
        _llmManager = llmManager ?? LLMProviderManager(),
        _promptEngineer = promptEngineer ?? PromptEngineer(),
@@ -62,7 +70,17 @@ class RAGOrchestrator {
        _queryAnalyzer = queryAnalyzer ?? QueryAnalyzer(),
        _scraperAdapter = scraperAdapter ?? RAGScraperAdapter(),
        _intentClassifier = intentClassifier ?? IntentClassifier() {
-    _tools = [WebSearchTool(_searxngService), ImageSearchTool(_searxngService)];
+    _tools = [
+      WebSearchTool(_searxngService),
+      ImageSearchTool(_searxngService),
+      ReadPageTool(_scraperAdapter),
+      CalculatorTool(),
+    ];
+    _agentOrchestrator = AgentOrchestrator(
+      llmManager: _llmManager,
+      promptEngineer: _promptEngineer,
+      tools: _tools,
+    );
   }
 
   /// Get adaptive context length based on current LLM provider and model
@@ -136,6 +154,7 @@ class RAGOrchestrator {
     SearchMode searchMode = SearchMode.search,
     List<MessageData>? previousMessages,
     int maxHistoryMessages = 3,
+    bool isNewConversation = false,
   }) async* {
     final List<SearchStep> steps = [];
     final uuid = Uuid();
@@ -174,6 +193,31 @@ class RAGOrchestrator {
       message: 'Starting search...',
       steps: List.from(steps),
     );
+
+    // 0. Complexity Check (Routing)
+    final complexityAnalysis = analyzeQueryComplexity(query);
+    // Trigger agent for complex OR moderate queries if in research mode
+    // Also trigger if strictly complex
+    final complexity = complexityAnalysis['complexity'];
+    final shouldTriggerAgent =
+        (complexity == 'complex') ||
+        (complexity == 'moderate' && searchMode == SearchMode.research) ||
+        (query.toLowerCase().contains("calculate")) ||
+        (query.toLowerCase().contains("compare"));
+
+    yield RAGUpdate(
+      status: RAGStatus.planning,
+      message: shouldTriggerAgent
+          ? 'Switching to Agent Mode...'
+          : 'Using Fast Search...',
+      steps: List.from(steps),
+    );
+
+    // If complex (and not explicitly forced to simple), use Agent Loop
+    if (shouldTriggerAgent) {
+      yield* _agentOrchestrator.executeAgentLoop(query);
+      return;
+    }
 
     // 1. Intent Classification Step
     final intentStep = createStep("Analyzing query intent");
@@ -388,12 +432,110 @@ class RAGOrchestrator {
         }
 
         // Context Fusion
-        final contextChunks = _contextFusion.fuseContext(
-          enrichedDocuments,
-          maxTotalLength: attachmentContext != null
-              ? effectiveMaxContext ~/ 2
-              : effectiveMaxContext,
-        );
+        // Context Construction Strategy (Vector Search vs Standard)
+        List<ContextChunk> contextChunks;
+        final activeProvider = _llmManager.activeProvider;
+        final supportsEmbeddings = activeProvider?.supportsEmbeddings ?? false;
+
+        if (supportsEmbeddings) {
+          final vectorStep = createStep("Semantic filtering (Vector Search)");
+          yield RAGUpdate(status: RAGStatus.fusion, steps: List.from(steps));
+          final vsStopwatch = Stopwatch()..start();
+
+          try {
+            // 1. Chunk all documents
+            final allChunks = _contextFusion.chunkDocuments(
+              enrichedDocuments,
+              maxChunkSize: 1000, // Smaller chunks for vector search
+              overlapSize: 100,
+            );
+
+            if (allChunks.isNotEmpty) {
+              // 2. Generate embeddings for chunks
+              final texts = allChunks.map((c) => c.content).toList();
+              // Batch processing due to API limits usually handled by provider or we do simple serial for now
+              final embeddings = <List<double>>[];
+
+              for (final text in texts) {
+                embeddings.add(await _llmManager.generateEmbeddings(text));
+              }
+
+              // 3. Clear previous vector store content
+              // Note: For Qdrant, we might want to keep persistent data in future,
+              // but for "session-based" RAG we clear.
+              await _vectorStore.clear();
+
+              // 4. Index chunks in Vector Store
+              // _updateStatus(onUpdate, RAGStatus.fusion, 'Indexing ${embeddings.length} chunks...'); // This line was not in the original, and onUpdate is not available here.
+              await _vectorStore.addDocuments(allChunks, embeddings);
+
+              // 5. Generate embedding for user query
+              final queryEmbedding = await _llmManager.generateEmbeddings(
+                effectiveQuery,
+              );
+
+              // 6. Semantic Search
+              // _updateStatus(onUpdate, RAGStatus.fusion, 'Finding most relevant context...'); // This line was not in the original, and onUpdate is not available here.
+              final searchResults = await _vectorStore.search(
+                queryEmbedding,
+                limit: 15, // Increase limit as we fusion them next
+                threshold: 0.3, // Adjust threshold
+              );
+
+              final retrievedChunks = searchResults
+                  .map((r) => r.chunk)
+                  .toList();
+
+              updateStep(
+                vectorStep.id,
+                status: SearchStepStatus.completed,
+                description:
+                    "Retrieved ${retrievedChunks.length} semantic chunks",
+                duration: vsStopwatch.elapsed,
+              );
+
+              // 6. Fuse the retrieved chunks
+              contextChunks = _contextFusion.fuseChunks(
+                retrievedChunks,
+                maxTotalLength: attachmentContext != null
+                    ? effectiveMaxContext ~/ 2
+                    : effectiveMaxContext,
+              );
+            } else {
+              contextChunks = [];
+              updateStep(
+                vectorStep.id,
+                status: SearchStepStatus.completed,
+                description: "No chunks to index",
+              );
+            }
+          } catch (e) {
+            print(
+              '⚠️ Vector Search failed, falling back to standard fusion: $e',
+            );
+            updateStep(
+              vectorStep.id,
+              status: SearchStepStatus.failed,
+              description: "Fallback to standard fusion: $e",
+            );
+
+            // Fallback to standard fusion
+            contextChunks = _contextFusion.fuseContext(
+              enrichedDocuments,
+              maxTotalLength: attachmentContext != null
+                  ? effectiveMaxContext ~/ 2
+                  : effectiveMaxContext,
+            );
+          }
+        } else {
+          // Standard Fusion (No embeddings)
+          contextChunks = _contextFusion.fuseContext(
+            enrichedDocuments,
+            maxTotalLength: attachmentContext != null
+                ? effectiveMaxContext ~/ 2
+                : effectiveMaxContext,
+          );
+        }
 
         // Generation Step
         final thinkingStep = createStep("Generating answer");
@@ -403,16 +545,29 @@ class RAGOrchestrator {
         final systemPrompt = _promptEngineer.createSystemPrompt(
           searchMode: searchMode,
         );
+
+        // Prepare conversation context if history exists
+        String? conversationContext;
+        if (previousMessages != null && previousMessages.isNotEmpty) {
+          conversationContext = _promptEngineer.formatConversationHistory(
+            previousMessages,
+          );
+        }
+
         final userPrompt = enableAdaptivePrompting
             ? _promptEngineer.createAdaptivePrompt(
-                effectiveQuery, // Use effectiveQuery
+                effectiveQuery,
                 contextChunks,
                 attachmentContext: attachmentContext,
+                conversationContext: conversationContext, // Pass history
+                generateTitle: isNewConversation,
               )
             : _promptEngineer.createUserPrompt(
                 effectiveQuery,
                 contextChunks,
                 attachmentContext: attachmentContext,
+                conversationContext: conversationContext, // Pass history
+                generateTitle: isNewConversation,
               );
         final fullPrompt = '$systemPrompt\n\n$userPrompt';
 
@@ -424,15 +579,81 @@ class RAGOrchestrator {
           description: "Streaming response...",
         );
 
+        bool processingTitle = isNewConversation;
+        final titleBuffer = StringBuffer();
+
         await for (final token in _llmManager.generateResponseStream(
           fullPrompt,
         )) {
-          fullAnswer.write(token);
-          yield RAGUpdate(
-            status: RAGStatus.streaming,
-            token: token,
-            steps: List.from(steps),
-          );
+          if (processingTitle) {
+            titleBuffer.write(token);
+            final bufferStr = titleBuffer.toString();
+
+            // Check if we have the start tag
+            if (bufferStr.contains('<title>')) {
+              // Check if we have the end tag
+              if (bufferStr.contains('</title>')) {
+                final startIdx = bufferStr.indexOf('<title>');
+                final endIdx = bufferStr.indexOf('</title>');
+
+                if (startIdx != -1 && endIdx > startIdx) {
+                  // Extract title
+                  final extractedTitle = bufferStr
+                      .substring(startIdx + 7, endIdx)
+                      .trim();
+
+                  yield RAGUpdate(
+                    status: RAGStatus.streaming,
+                    generatedTitle: extractedTitle,
+                    steps: List.from(steps),
+                  );
+
+                  // Process remaining content (real answer)
+                  final remaining = bufferStr.substring(endIdx + 8);
+                  if (remaining.isNotEmpty) {
+                    fullAnswer.write(remaining);
+                    yield RAGUpdate(
+                      status: RAGStatus.streaming,
+                      token: remaining,
+                      steps: List.from(steps),
+                    );
+                  }
+                  processingTitle = false; // Done with title
+                } else {
+                  // Malformed tags? Just flush
+                  fullAnswer.write(bufferStr);
+                  yield RAGUpdate(
+                    status: RAGStatus.streaming,
+                    token: bufferStr,
+                    steps: List.from(steps),
+                  );
+                  processingTitle = false;
+                }
+              }
+              // Else keep buffering waiting for </title>
+            } else {
+              // If we don't have <title> yet
+              // Logic check: if buffer is long enough and still no <title>, give up
+              if (bufferStr.length > 20 && !bufferStr.contains('<title>')) {
+                fullAnswer.write(bufferStr);
+                yield RAGUpdate(
+                  status: RAGStatus.streaming,
+                  token: bufferStr,
+                  steps: List.from(steps),
+                );
+                processingTitle = false;
+              }
+              // Else keep buffering
+            }
+          } else {
+            // Normal streaming
+            fullAnswer.write(token);
+            yield RAGUpdate(
+              status: RAGStatus.streaming,
+              token: token,
+              steps: List.from(steps),
+            );
+          }
         }
 
         updateStep(
@@ -486,6 +707,7 @@ class RAGOrchestrator {
     List<dynamic>? attachments,
     SearchMode searchMode = SearchMode.search,
     Function(MessageData)? onSearchComplete,
+    bool isNewConversation = false,
   }) async {
     MessageData? lastData;
     await for (final update in generateRAGStream(
@@ -497,6 +719,7 @@ class RAGOrchestrator {
       enableAdaptivePrompting: enableAdaptivePrompting,
       attachments: attachments,
       searchMode: searchMode,
+      isNewConversation: isNewConversation,
     )) {
       if (update.finalResult != null) {
         lastData = update.finalResult;
@@ -696,7 +919,9 @@ class RAGOrchestrator {
       complexity = 'simple';
       recommendedDocs = 5;
       recommendedContext = 4000;
-    } else if (wordCount > 20) {
+    } else if (wordCount > 10 ||
+        query.contains(" and ") ||
+        query.contains(" vs ")) {
       complexity = 'complex';
       recommendedDocs = 15;
       recommendedContext = 10000;

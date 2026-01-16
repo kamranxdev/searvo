@@ -1,8 +1,14 @@
 import 'dart:convert';
 import '../database/conversation_database.dart';
 import '../models/conversation_model.dart';
-import '../../search/models/message_data.dart';
-import '../../search/models/message_branch_model.dart';
+import '../../search/domain/entities/message_data.dart';
+
+import '../../search/domain/entities/message_branch_manager.dart';
+import '../../search/domain/entities/message_branch.dart';
+import '../../search/domain/entities/source_item.dart';
+import '../../search/domain/entities/video_item.dart';
+import '../../search/domain/entities/attachment_metadata.dart';
+import '../../search/domain/entities/message_generation_state.dart';
 
 /// Service for managing conversation history in Drift database
 class ConversationDatabaseService {
@@ -58,15 +64,17 @@ class ConversationDatabaseService {
 
       // Insert sources
       if (message.sources.isNotEmpty) {
-        final sourceCompanions =
-            message.sources.map((s) => s.toDriftCompanion(messageId)).toList();
+        final sourceCompanions = message.sources
+            .map((s) => s.toDriftCompanion(messageId))
+            .toList();
         await db.insertSources(sourceCompanions);
       }
 
       // Insert videos
       if (message.videos.isNotEmpty) {
-        final videoCompanions =
-            message.videos.map((v) => v.toDriftCompanion(messageId)).toList();
+        final videoCompanions = message.videos
+            .map((v) => v.toDriftCompanion(messageId))
+            .toList();
         await db.insertVideos(videoCompanions);
       }
 
@@ -110,8 +118,9 @@ class ConversationDatabaseService {
       isPinned: isPinned ?? existing.isPinned,
       messageCount: messages.length,
       lastQuery: messages.isNotEmpty ? messages.last.query : existing.lastQuery,
-      lastAnswer:
-          messages.isNotEmpty ? messages.last.answer : existing.lastAnswer,
+      lastAnswer: messages.isNotEmpty
+          ? messages.last.answer
+          : existing.lastAnswer,
       tags: tags ?? existing.tags,
     );
 
@@ -142,15 +151,17 @@ class ConversationDatabaseService {
 
         // Insert sources
         if (message.sources.isNotEmpty) {
-          final sourceCompanions =
-              message.sources.map((s) => s.toDriftCompanion(messageId)).toList();
+          final sourceCompanions = message.sources
+              .map((s) => s.toDriftCompanion(messageId))
+              .toList();
           await db.insertSources(sourceCompanions);
         }
 
         // Insert videos
         if (message.videos.isNotEmpty) {
-          final videoCompanions =
-              message.videos.map((v) => v.toDriftCompanion(messageId)).toList();
+          final videoCompanions = message.videos
+              .map((v) => v.toDriftCompanion(messageId))
+              .toList();
           await db.insertVideos(videoCompanions);
         }
 
@@ -169,10 +180,12 @@ class ConversationDatabaseService {
 
   /// Get a conversation by conversation ID
   Future<ConversationModel?> getConversationByConversationId(
-      String conversationId) async {
+    String conversationId,
+  ) async {
     final db = database;
-    final conversation =
-        await db.getConversationByConversationId(conversationId);
+    final conversation = await db.getConversationByConversationId(
+      conversationId,
+    );
     if (conversation == null) return null;
 
     return _loadFullConversation(conversation.id);
@@ -183,7 +196,9 @@ class ConversationDatabaseService {
     bool pinnedFirst = true,
   }) async {
     final db = database;
-    final conversations = await db.getAllConversations(pinnedFirst: pinnedFirst);
+    final conversations = await db.getAllConversations(
+      pinnedFirst: pinnedFirst,
+    );
 
     final result = <ConversationModel>[];
     for (final conversation in conversations) {
@@ -323,20 +338,23 @@ class ConversationDatabaseService {
 
   /// Convert MessageBranchManager list to ConversationMessageModel list
   List<ConversationMessageModel> _convertBranchesToMessages(
-      List<MessageBranchManager> branches) {
+    List<MessageBranchManager> branches,
+  ) {
     final messages = <ConversationMessageModel>[];
 
     for (final branchManager in branches) {
       final currentBranch = branchManager.currentBranch;
       final message = currentBranch.message;
 
-      messages.add(ConversationMessageModel.create(
-        messageId: currentBranch.id,
-        query: message.query,
-        answer: message.answer,
-        timestamp: message.timestamp,
-        sources: message.sources
-            .map((s) => ConversationSourceModel(
+      messages.add(
+        ConversationMessageModel.create(
+          messageId: currentBranch.id,
+          query: message.query,
+          answer: message.answer,
+          timestamp: message.timestamp,
+          sources: message.sources
+              .map(
+                (s) => ConversationSourceModel(
                   thumbnail: s.thumbnail,
                   favicon: s.favicon,
                   url: s.url,
@@ -345,12 +363,14 @@ class ConversationDatabaseService {
                   domain: s.domain,
                   publishedDate: s.publishedDate,
                   source: s.source,
-                ))
-            .toList(),
-        relatedQuestions: message.relatedQuestions,
-        images: message.images,
-        videos: message.videos
-            .map((v) => ConversationVideoModel(
+                ),
+              )
+              .toList(),
+          relatedQuestions: message.relatedQuestions,
+          images: message.images,
+          videos: message.videos
+              .map(
+                (v) => ConversationVideoModel(
                   thumbnail: v.thumbnail,
                   url: v.url,
                   title: v.title,
@@ -359,10 +379,12 @@ class ConversationDatabaseService {
                   duration: v.duration,
                   publishedDate: v.publishedDate,
                   views: v.views,
-                ))
-            .toList(),
-        attachments: message.attachments
-            .map((a) => ConversationAttachmentModel.create(
+                ),
+              )
+              .toList(),
+          attachments: message.attachments
+              .map(
+                (a) => ConversationAttachmentModel.create(
                   attachmentId: a.id,
                   name: a.name,
                   path: a.path,
@@ -370,15 +392,17 @@ class ConversationDatabaseService {
                   size: a.size,
                   uploadedAt: a.uploadedAt,
                   extractedText: a.extractedText,
-                ))
-            .toList(),
-        isFallback: message.isFallback,
-        errorMessage: message.errorMessage,
-        branchId: currentBranch.id,
-        parentBranchId: currentBranch.parentBranchId,
-        branchIndex: branchManager.currentBranchIndex,
-        totalBranches: branchManager.totalBranches,
-      ));
+                ),
+              )
+              .toList(),
+          isFallback: message.isFallback,
+          errorMessage: message.errorMessage,
+          branchId: currentBranch.id,
+          parentBranchId: currentBranch.parentBranchId,
+          branchIndex: branchManager.currentBranchIndex,
+          totalBranches: branchManager.totalBranches,
+        ),
+      );
     }
 
     return messages;
@@ -386,7 +410,8 @@ class ConversationDatabaseService {
 
   /// Convert ConversationMessageModel list back to MessageBranchManager list
   List<MessageBranchManager> convertMessagesToBranches(
-      List<ConversationMessageModel> messages) {
+    List<ConversationMessageModel> messages,
+  ) {
     final branches = <MessageBranchManager>[];
 
     for (final message in messages) {
@@ -395,41 +420,47 @@ class ConversationDatabaseService {
         answer: message.answer,
         timestamp: message.timestamp,
         sources: message.sources
-            .map((s) => SourceItem(
-                  thumbnail: s.thumbnail,
-                  favicon: s.favicon,
-                  url: s.url,
-                  title: s.title,
-                  description: s.description,
-                  domain: s.domain,
-                  publishedDate: s.publishedDate,
-                  source: s.source,
-                ))
+            .map(
+              (s) => SourceItem(
+                thumbnail: s.thumbnail,
+                favicon: s.favicon,
+                url: s.url,
+                title: s.title,
+                description: s.description,
+                domain: s.domain,
+                publishedDate: s.publishedDate,
+                source: s.source,
+              ),
+            )
             .toList(),
         relatedQuestions: message.relatedQuestions,
         images: message.images,
         videos: message.videos
-            .map((v) => VideoItem(
-                  thumbnail: v.thumbnail,
-                  url: v.url,
-                  title: v.title,
-                  description: v.description,
-                  domain: v.domain,
-                  duration: v.duration,
-                  publishedDate: v.publishedDate,
-                  views: v.views,
-                ))
+            .map(
+              (v) => VideoItem(
+                thumbnail: v.thumbnail,
+                url: v.url,
+                title: v.title,
+                description: v.description,
+                domain: v.domain,
+                duration: v.duration,
+                publishedDate: v.publishedDate,
+                views: v.views,
+              ),
+            )
             .toList(),
         attachments: message.attachments
-            .map((a) => AttachmentMetadata(
-                  id: a.attachmentId,
-                  name: a.name,
-                  path: a.path,
-                  type: a.type,
-                  size: a.size,
-                  uploadedAt: a.uploadedAt,
-                  extractedText: a.extractedText,
-                ))
+            .map(
+              (a) => AttachmentMetadata(
+                id: a.attachmentId,
+                name: a.name,
+                path: a.path,
+                type: a.type,
+                size: a.size,
+                uploadedAt: a.uploadedAt,
+                extractedText: a.extractedText,
+              ),
+            )
             .toList(),
         isFallback: message.isFallback,
         errorMessage: message.errorMessage,
@@ -443,10 +474,9 @@ class ConversationDatabaseService {
         parentBranchId: message.parentBranchId,
       );
 
-      branches.add(MessageBranchManager(
-        branches: [branch],
-        currentBranchIndex: 0,
-      ));
+      branches.add(
+        MessageBranchManager(branches: [branch], currentBranchIndex: 0),
+      );
     }
 
     return branches;

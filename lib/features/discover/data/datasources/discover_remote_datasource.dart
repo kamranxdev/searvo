@@ -2,8 +2,9 @@ import 'dart:math';
 import 'package:searvo/core/error/exceptions.dart';
 import 'package:searvo/features/discover/data/models/article_model.dart';
 import 'package:searvo/features/discover/domain/entities/article.dart';
-import 'package:searvo/features/search/models/search_provider_config.dart';
-import 'package:searvo/features/search/services/searxng_service.dart';
+import 'package:searvo/features/search/data/models/search_response_model.dart';
+import 'package:searvo/features/search/data/datasources/searxng_remote_data_source.dart';
+import 'package:searvo/features/search/domain/entities/search_enums.dart';
 
 /// Remote data source for discover articles
 abstract class DiscoverRemoteDataSource {
@@ -15,7 +16,7 @@ abstract class DiscoverRemoteDataSource {
 }
 
 class DiscoverRemoteDataSourceImpl implements DiscoverRemoteDataSource {
-  final SearXNGService searxngService;
+  final SearXNGRemoteDataSource searxngService;
 
   DiscoverRemoteDataSourceImpl({required this.searxngService});
 
@@ -25,7 +26,7 @@ class DiscoverRemoteDataSourceImpl implements DiscoverRemoteDataSource {
       final topicConfig = _getTopicConfig(topic);
       final List<ArticleModel> articles = [];
       final Set<String> seenUrls = {};
-      final List<Future<SearchResponse>> searchFutures = [];
+      final List<Future<SearchResponseModel>> searchFutures = [];
 
       // Create all search combinations
       for (final link in topicConfig.links) {
@@ -45,7 +46,7 @@ class DiscoverRemoteDataSourceImpl implements DiscoverRemoteDataSource {
       final responses = await Future.wait(searchFutures);
 
       // Collect all results
-      final allResults = <SearchResult>[];
+      final allResults = <SearchResultModel>[];
       for (final response in responses) {
         allResults.addAll(response.results);
       }
@@ -73,8 +74,10 @@ class DiscoverRemoteDataSourceImpl implements DiscoverRemoteDataSource {
     try {
       final topicConfig = _getTopicConfig(topic);
       final random = Random();
-      final randomLink = topicConfig.links[random.nextInt(topicConfig.links.length)];
-      final randomQuery = topicConfig.queries[random.nextInt(topicConfig.queries.length)];
+      final randomLink =
+          topicConfig.links[random.nextInt(topicConfig.links.length)];
+      final randomQuery =
+          topicConfig.queries[random.nextInt(topicConfig.queries.length)];
 
       final response = await searxngService.search(
         'site:$randomLink $randomQuery',
@@ -89,24 +92,25 @@ class DiscoverRemoteDataSourceImpl implements DiscoverRemoteDataSource {
           .map(_convertToArticleModel)
           .toList();
     } catch (e) {
-      throw ServerException('Failed to fetch preview articles: ${e.toString()}');
+      throw ServerException(
+        'Failed to fetch preview articles: ${e.toString()}',
+      );
     }
   }
 
   /// Check if a search result has a thumbnail
-  bool _hasThumbnail(SearchResult result) {
-    return result.thumbnail != null &&
-        result.thumbnail!.isNotEmpty &&
-        !result.thumbnail!.contains('favicon.im');
+  bool _hasThumbnail(SearchResultModel result) {
+    return result.thumbnail.isNotEmpty &&
+        !result.thumbnail.contains('favicon.im');
   }
 
   /// Convert search result to ArticleModel
-  ArticleModel _convertToArticleModel(SearchResult result) {
+  ArticleModel _convertToArticleModel(SearchResultModel result) {
     return ArticleModel(
       title: result.title,
       content: result.snippet,
       url: result.url,
-      thumbnail: result.thumbnail ?? '',
+      thumbnail: result.thumbnail,
     );
   }
 
@@ -115,7 +119,12 @@ class DiscoverRemoteDataSourceImpl implements DiscoverRemoteDataSource {
     switch (topic) {
       case DiscoverTopic.tech:
         return _TopicConfig(
-          queries: ['technology news', 'latest tech', 'AI', 'science and innovation'],
+          queries: [
+            'technology news',
+            'latest tech',
+            'AI',
+            'science and innovation',
+          ],
           links: ['techcrunch.com', 'wired.com', 'theverge.com'],
         );
       case DiscoverTopic.finance:
@@ -147,8 +156,5 @@ class _TopicConfig {
   final List<String> queries;
   final List<String> links;
 
-  _TopicConfig({
-    required this.queries,
-    required this.links,
-  });
+  _TopicConfig({required this.queries, required this.links});
 }

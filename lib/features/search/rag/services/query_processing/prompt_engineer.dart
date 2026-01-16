@@ -1,9 +1,26 @@
-import 'package:searvo/features/search/models/message_data.dart';
+import 'package:searvo/features/search/domain/entities/message_data.dart';
 import 'package:searvo/features/search/rag/models/rag_models.dart';
-import 'package:searvo/features/search/models/search_mode.dart';
+import 'package:searvo/features/search/domain/entities/search_mode.dart';
 
 /// Enhanced prompt engineering with conversation-aware follow-up questions
 class PromptEngineer {
+  /// Format conversation history for context
+  String formatConversationHistory(List<MessageData> messages) {
+    if (messages.isEmpty) return '';
+
+    final buffer = StringBuffer();
+    buffer.writeln('CONVERSATION HISTORY:');
+
+    for (int i = 0; i < messages.length; i++) {
+      final msg = messages[i];
+      buffer.writeln('User: ${msg.query}');
+      buffer.writeln('Assistant: ${msg.answer}');
+      buffer.writeln();
+    }
+
+    return buffer.toString();
+  }
+
   String createSystemPrompt({SearchMode searchMode = SearchMode.search}) {
     switch (searchMode) {
       case SearchMode.research:
@@ -88,9 +105,29 @@ AVOID:
     String query,
     List<ContextChunk> contextChunks, {
     String? attachmentContext,
+    String? conversationContext,
     bool hasUserProvidedUrls = false,
+    bool generateTitle = false,
   }) {
     final buffer = StringBuffer();
+
+    if (generateTitle) {
+      buffer.writeln('TITLE INSTRUCTION:');
+      buffer.writeln(
+        'Please generate a short, descriptive title (3-5 words) for this conversation.',
+      );
+      buffer.writeln(
+        'Wrap the title EXACTLY in <title> and </title> tags, e.g., <title>Quantum Computing Basics</title>.',
+      );
+      buffer.writeln(
+        'Place this tag at the VERY BEGINNING of your response.\n',
+      );
+    }
+
+    if (conversationContext != null && conversationContext.isNotEmpty) {
+      buffer.writeln(conversationContext);
+      buffer.writeln('---\n');
+    }
 
     if (attachmentContext != null && attachmentContext.isNotEmpty) {
       buffer.writeln(attachmentContext);
@@ -152,6 +189,15 @@ AVOID:
     buffer.writeln(
       'Write a comprehensive answer synthesizing the sources above.',
     );
+
+    if (conversationContext != null && conversationContext.isNotEmpty) {
+      buffer.writeln(
+        '- Consider the CONVERSATION HISTORY above to resolve references (pronouns, context)',
+      );
+      buffer.writeln(
+        '- This query is likely a follow-up or related to the previous discussion',
+      );
+    }
 
     if (hasUserProvidedUrls) {
       buffer.writeln(
@@ -304,7 +350,9 @@ AVOID:
     String query,
     List<ContextChunk> contextChunks, {
     String? attachmentContext,
+    String? conversationContext,
     bool hasUserProvidedUrls = false,
+    bool generateTitle = false,
   }) {
     final queryLower = query.toLowerCase();
 
@@ -324,7 +372,9 @@ AVOID:
         query,
         contextChunks,
         attachmentContext,
+        conversationContext,
         hasUserProvidedUrls,
+        generateTitle,
       );
     }
 
@@ -343,7 +393,9 @@ AVOID:
         query,
         contextChunks,
         attachmentContext,
+        conversationContext,
         hasUserProvidedUrls,
+        generateTitle,
       );
     }
 
@@ -351,7 +403,9 @@ AVOID:
       query,
       contextChunks,
       attachmentContext: attachmentContext,
+      conversationContext: conversationContext,
       hasUserProvidedUrls: hasUserProvidedUrls,
+      generateTitle: generateTitle,
     );
   }
 
@@ -359,9 +413,18 @@ AVOID:
     String query,
     List<ContextChunk> contextChunks,
     String? attachmentContext,
+    String? conversationContext,
     bool hasUserProvidedUrls,
+    bool generateTitle,
   ) {
     final buffer = StringBuffer();
+
+    if (generateTitle) {
+      buffer.writeln('TITLE INSTRUCTION:');
+      buffer.writeln(
+        'Generate a short title (3-5 words) wrapped in <title>...</title> tags at the start of response.\n',
+      );
+    }
 
     if (attachmentContext != null) {
       buffer.writeln(attachmentContext);
@@ -405,6 +468,12 @@ AVOID:
     buffer.writeln('---\n');
     buffer.writeln('COMPARATIVE QUESTION: $query\n');
     buffer.writeln('INSTRUCTIONS:');
+
+    if (conversationContext != null && conversationContext.isNotEmpty) {
+      buffer.writeln(
+        '- Use CONVERSATION HISTORY to identify what to compare if implicit',
+      );
+    }
     if (hasUserProvidedUrls) {
       buffer.writeln(
         '- IMPORTANT: The user has provided specific URL(s). Prioritize content from those URLs (source [1]).',
@@ -422,9 +491,18 @@ AVOID:
     String query,
     List<ContextChunk> contextChunks,
     String? attachmentContext,
+    String? conversationContext,
     bool hasUserProvidedUrls,
+    bool generateTitle,
   ) {
     final buffer = StringBuffer();
+
+    if (generateTitle) {
+      buffer.writeln('TITLE INSTRUCTION:');
+      buffer.writeln(
+        'Generate a short title (3-5 words) wrapped in <title>...</title> tags at the start of response.\n',
+      );
+    }
 
     if (attachmentContext != null) {
       buffer.writeln(attachmentContext);
@@ -2475,5 +2553,44 @@ Provide a helpful response that:
       'been',
     };
     return stopWords.contains(word);
+  }
+
+  /// Create system prompt for the Agentic Loop
+  /// Supports batch execution of tools
+  String createAgentPrompt(String query, String toolDescriptions) {
+    return '''You are an advanced AI research agent capable of multi-step reasoning. 
+Your goal is to answer the user's question by planning and executing actions.
+
+QUESTION: $query
+
+AVAILABLE TOOLS:
+$toolDescriptions
+
+INSTRUCTIONS:
+1. Analyze the query complexity.
+2. If simple/opinion-based, answer directly with {"action": "final_answer"}.
+3. If research is needed, create a PLAN.
+4. You can execute MULTIPLE tools in parallel to be efficient.
+
+FORMAT:
+You MUST output valid JSON only. No markdown formatting.
+{
+  "thought": "Your reasoning process here...",
+  "actions": [
+    {
+      "tool": "tool_id",
+      "input": "search query or math expression",
+      "reason": "why you need this"
+    }
+  ]
+}
+
+OR for the final answer:
+{
+  "thought": "I have gathered enough information...",
+  "action": "final_answer",
+  "answer": "Your comprehensive final answer here..."
+}
+''';
   }
 }

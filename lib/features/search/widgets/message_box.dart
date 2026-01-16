@@ -5,15 +5,14 @@ import 'package:flutter/gestures.dart';
 
 import 'package:searvo/core/theme/theme.dart';
 import 'package:searvo/features/search/theme/search_theme.dart';
-import 'package:searvo/features/search/models/message_branch_model.dart';
-import 'package:searvo/features/search/models/message_data.dart';
+import 'package:searvo/features/search/domain/entities/message_branch_manager.dart';
+import 'package:searvo/features/search/domain/entities/message_data.dart';
 
 import 'package:searvo/features/voice/services/voice_service.dart';
 import 'package:searvo/common/widgets/streaming_text_widget.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:media_kit/media_kit.dart';
 import 'package:searvo/common/widgets/link_preview.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shimmer/shimmer.dart';
@@ -23,7 +22,7 @@ import 'package:searvo/features/search/widgets/tools/weather_widget.dart';
 import 'package:searvo/features/search/widgets/tools/stock_widget.dart';
 import 'package:searvo/features/search/widgets/tools/crypto_widget.dart';
 import 'package:searvo/features/search/widgets/tools/dictionary_widget.dart';
-import 'package:searvo/features/search/models/tool_widget_data.dart';
+import 'package:searvo/features/search/domain/entities/tool_widget_data.dart';
 
 class MessageBox extends StatefulWidget {
   final MessageBranchManager branchManager;
@@ -55,7 +54,6 @@ class _MessageBoxState extends State<MessageBox> with TickerProviderStateMixin {
 
   @override
   void initState() {
-    MediaKit.ensureInitialized();
     super.initState();
     _queryEditController.text = widget.branchManager.currentMessage.query;
     _voiceService.addListener(_onVoiceStateChanged);

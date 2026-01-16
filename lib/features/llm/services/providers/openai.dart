@@ -6,20 +6,18 @@ import 'base_llm_provider.dart';
 class OpenAI extends BaseLLMProvider {
   /// Default chat model for OpenAI
   static const String defaultModel = 'gpt-4-turbo';
-  
+
   /// Default embedding model for OpenAI
   static const String defaultEmbeddingModel = 'text-embedding-3-small';
-  
+
   late ChatOpenAI _chatModel;
   late OpenAIEmbeddings _embeddings;
   String? _apiKey;
   String _model;
-  
-  OpenAI({
-    String? apiKey,
-    String? model,
-  }) : _apiKey = apiKey,
-       _model = model ?? defaultModel;
+
+  OpenAI({String? apiKey, String? model})
+    : _apiKey = apiKey,
+      _model = model ?? defaultModel;
 
   @override
   String get providerName => 'OpenAI';
@@ -32,23 +30,16 @@ class OpenAI extends BaseLLMProvider {
 
     _chatModel = ChatOpenAI(
       apiKey: _apiKey!,
-      defaultOptions: ChatOpenAIOptions(
-        model: _model,
-        temperature: 0.7,
-      ),
+      defaultOptions: ChatOpenAIOptions(model: _model, temperature: 0.7),
     );
 
-    _embeddings = OpenAIEmbeddings(
-      apiKey: _apiKey!,
-    );
+    _embeddings = OpenAIEmbeddings(apiKey: _apiKey!);
   }
 
   @override
   Future<String> generateResponse(String message) async {
     try {
-      final response = await _chatModel.invoke(
-        PromptValue.string(message),
-      );
+      final response = await _chatModel.invoke(PromptValue.string(message));
       return response.output.content;
     } catch (e) {
       throw Exception('Failed to generate response from OpenAI: $e');
@@ -62,33 +53,36 @@ class OpenAI extends BaseLLMProvider {
   ) async {
     try {
       final messages = <ChatMessage>[];
-      
+
       // Add history messages
       for (final historyItem in history) {
         final role = historyItem['role'] as String;
         final content = historyItem['content'] as String;
-        
+
         if (role == 'user') {
           messages.add(ChatMessage.humanText(content));
         } else if (role == 'assistant') {
           messages.add(ChatMessage.ai(content));
         }
       }
-      
+
       // Add current message
       messages.add(ChatMessage.humanText(message));
 
-      final response = await _chatModel.invoke(
-        PromptValue.chat(messages),
-      );
-      
+      final response = await _chatModel.invoke(PromptValue.chat(messages));
+
       return response.output.content;
     } catch (e) {
-      throw Exception('Failed to generate response with history from OpenAI: $e');
+      throw Exception(
+        'Failed to generate response with history from OpenAI: $e',
+      );
     }
   }
 
-  /// Generate embeddings for text
+  @override
+  bool get supportsEmbeddings => true;
+
+  @override
   Future<List<double>> generateEmbeddings(String text) async {
     try {
       final embeddings = await _embeddings.embedQuery(text);
@@ -122,18 +116,17 @@ class OpenAI extends BaseLLMProvider {
 
   /// Recommended OpenAI models optimized for textual use cases (2025)
   static const List<String> availableModels = [
-    'o3-pro',          // High-end reasoning and text generation
-    'o4-mini',         // Fast and cost-efficient reasoning model
-    'gpt-4-turbo',     // Balanced high-quality text generation
-    'gpt-3.5-turbo',   // Cost-effective simple text generation
+    'o3-pro', // High-end reasoning and text generation
+    'o4-mini', // Fast and cost-efficient reasoning model
+    'gpt-4-turbo', // Balanced high-quality text generation
+    'gpt-3.5-turbo', // Cost-effective simple text generation
   ];
 
   /// Recommended OpenAI embedding models (2025)
   static const List<String> availableEmbeddingModels = [
-    'text-embedding-3-large',  // High quality embeddings
-    'text-embedding-3-small',  // Efficient embedding for scale
+    'text-embedding-3-large', // High quality embeddings
+    'text-embedding-3-small', // Efficient embedding for scale
   ];
-
 
   @override
   bool get isConfigured => _apiKey != null && _apiKey!.isNotEmpty;

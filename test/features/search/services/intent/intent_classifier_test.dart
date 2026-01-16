@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
-import 'package:searvo/features/search/services/intent/intent_classifier.dart';
-import 'package:searvo/features/search/models/search_intent.dart';
+import 'package:searvo/features/search/domain/services/intent_classifier.dart';
+import 'package:searvo/features/search/domain/entities/search_intent.dart';
 
 void main() {
   group('IntentClassifier', () {

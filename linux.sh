@@ -66,6 +66,7 @@ start_searxng() {
     
     if docker ps --filter name=searvo-caddy --filter status=running | grep -q searvo-caddy; then
         print_success "SearXNG + Caddy are running on http://localhost:4000"
+        print_success "Qdrant vector database is running on http://localhost:6333"
         print_success "CORS is properly configured for cross-origin requests"
     else
         print_error "Failed to start services"
@@ -114,6 +115,7 @@ run_dev() {
     print_success "🚀 Development environment ready!"
     print_success "   Flutter Linux: Running in desktop window"
     print_success "   SearXNG API: http://localhost:4000"
+    print_success "   Qdrant Vector DB: http://localhost:6333"
     print_status "Press Ctrl+C to stop all services"
 
     flutter run -d linux
@@ -159,6 +161,7 @@ show_help() {
     echo "Services:"
     echo "  - Flutter Linux: Desktop application window"
     echo "  - SearXNG API: http://localhost:4000"
+    echo "  - Qdrant Vector DB: http://localhost:6333"
 }
 
 # Main script logic

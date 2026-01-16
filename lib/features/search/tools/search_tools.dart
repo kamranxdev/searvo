@@ -1,11 +1,14 @@
-import 'package:searvo/features/search/models/search_provider_config.dart';
-import 'package:searvo/features/search/services/searxng_service.dart';
+import 'package:searvo/features/search/data/datasources/searxng_remote_data_source.dart';
+import 'package:searvo/features/search/domain/entities/search_enums.dart';
 import 'package:searvo/features/search/rag/models/rag_models.dart';
+import 'package:math_expressions/math_expressions.dart';
+export 'read_page_tool.dart';
 
 abstract class SearchTool {
   String get name;
   String get id;
   String get icon;
+  String get description;
 
   Future<ToolResult> execute(String query, {Map<String, dynamic>? params});
 }
@@ -36,7 +39,7 @@ class ToolResult {
 }
 
 class WebSearchTool extends SearchTool {
-  final SearXNGService _service;
+  final SearXNGRemoteDataSource _service;
 
   WebSearchTool(this._service);
 
@@ -46,6 +49,9 @@ class WebSearchTool extends SearchTool {
   String get id => 'web_search';
   @override
   String get icon => 'search';
+  @override
+  String get description =>
+      'Search the web for current information, news, and facts.';
 
   @override
   Future<ToolResult> execute(
@@ -70,7 +76,7 @@ class WebSearchTool extends SearchTool {
 }
 
 class ImageSearchTool extends SearchTool {
-  final SearXNGService _service;
+  final SearXNGRemoteDataSource _service;
 
   ImageSearchTool(this._service);
 
@@ -80,6 +86,8 @@ class ImageSearchTool extends SearchTool {
   String get id => 'image_search';
   @override
   String get icon => 'image';
+  @override
+  String get description => 'Search for images and visual content.';
 
   @override
   Future<ToolResult> execute(
@@ -108,3 +116,32 @@ class ImageSearchTool extends SearchTool {
 }
 
 // TODO: Add VideoSearchTool, CodeSearchTool, etc.
+
+class CalculatorTool extends SearchTool {
+  @override
+  String get name => 'Calculator';
+  @override
+  String get id => 'calculator';
+  @override
+  String get icon => 'calculate';
+  @override
+  String get description =>
+      'Perform mathematical calculations (usage: "5 + 5", "sqrt(144)").';
+
+  @override
+  Future<ToolResult> execute(
+    String query, {
+    Map<String, dynamic>? params,
+  }) async {
+    try {
+      final cm = ContextModel();
+      final parser = Parser();
+      final expression = parser.parse(query);
+      final result = expression.evaluate(EvaluationType.REAL, cm);
+
+      return ToolResult.success("Calculation result: $result");
+    } catch (e) {
+      return ToolResult.failure("Math error: $e");
+    }
+  }
+}

@@ -22,9 +22,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
           children: [
             Text(
               'Searvo - Privacy Policy',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8.h),
             Text(
@@ -69,7 +69,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
             _buildSection(
               context,
               'How We Use Your Information',
-              'We use the collected information to:\n• Provide and maintain the Searvo service\n• Process search queries and generate AI responses\n• Authenticate users via Google Sign-In\n• Store user preferences and search history\n• Improve app performance and user experience\n• Analyze usage patterns and optimize features',
+              'We use the collected information to:\n• Provide and maintain the Searvo service\n• Process search queries and generate AI responses\n• Store user preferences and search history locally on your device\n• Improve app performance and user experience',
             ),
             _buildSection(
               context,
@@ -78,30 +78,20 @@ class PrivacyPolicyScreen extends StatelessWidget {
               subsections: [
                 _buildSubsection(
                   context,
-                  'Firebase (Google)',
-                  '• Authentication\n• Cloud Firestore (data storage)\n• [Firebase Privacy Policy](https://firebase.google.com/support/privacy)',
-                ),
-                _buildSubsection(
-                  context,
                   'AI Providers',
-                  '• OpenAI (GPT models)\n• Google AI (Gemini)\n• Anthropic (Claude)\n• Ollama (local models)\n\nEach provider processes your queries according to their respective privacy policies.',
+                  '• OpenAI (GPT models)\n• Google AI (Gemini)\n• Anthropic (Claude)\n• Ollama (local models)\n• OpenRouter\n\nEach provider processes your queries according to their respective privacy policies.',
                 ),
                 _buildSubsection(
                   context,
                   'Search Providers',
                   '• SearXNG (self-hosted or third-party instances)\n• SerpAPI',
                 ),
-                _buildSubsection(
-                  context,
-                  'Google Sign-In',
-                  '• Authentication and profile information\n• [Google Privacy Policy](https://policies.google.com/privacy)',
-                ),
               ],
             ),
             _buildSection(
               context,
               'Data Storage and Security',
-              '• Search history and user preferences are stored in Firebase Cloud Firestore\n• Data is encrypted in transit using HTTPS/TLS\n• Voice recordings are processed in real-time and not permanently stored\n• We implement industry-standard security measures to protect your data',
+              '• Search history and user preferences are stored locally on your device\n• Data is encrypted in transit using HTTPS/TLS\n• Voice recordings are processed in real-time and not permanently stored\n• We implement industry-standard security measures to protect your data',
             ),
             _buildSection(
               context,
@@ -165,41 +155,31 @@ class PrivacyPolicyScreen extends StatelessWidget {
         SizedBox(height: 24.h),
         Text(
           title,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         SizedBox(height: 8.h),
         if (content.isNotEmpty)
-          Text(
-            content,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
+          Text(content, style: Theme.of(context).textTheme.bodyMedium),
         if (subsections != null) ...subsections,
       ],
     );
   }
 
-  Widget _buildSubsection(
-    BuildContext context,
-    String title,
-    String content,
-  ) {
+  Widget _buildSubsection(BuildContext context, String title, String content) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(height: 16.h),
         Text(
           title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
         ),
         SizedBox(height: 4.h),
-        Text(
-          content,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
+        Text(content, style: Theme.of(context).textTheme.bodyMedium),
       ],
     );
   }

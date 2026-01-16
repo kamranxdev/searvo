@@ -2,26 +2,27 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'search_event.dart';
 import 'search_state.dart';
-import '../models/message_data.dart';
-import '../models/message_branch_model.dart';
-import '../services/search_service.dart';
-import '../services/conversation_manager.dart';
-import '../models/search_mode.dart';
+import '../domain/entities/message_branch_manager.dart';
+import '../domain/entities/message_generation_state.dart';
+import '../domain/entities/source_item.dart';
+import '../domain/services/search_service.dart';
+import '../presentation/bloc/conversation_manager.dart';
+import '../domain/entities/search_mode.dart';
 import '../../../common/widgets/attachment_input_widget.dart';
 import '../rag/models/rag_models.dart';
-import '../../history/services/conversation_sync_service.dart';
+import '../../history/services/conversation_database_service.dart';
 
 class SearchBloc extends Bloc<SearchEvent, SearchState> {
   final SearchService _searchService;
   final ConversationManager _conversationManager;
-  final ConversationSyncService _conversationSyncService;
+  final ConversationDatabaseService _conversationDatabaseService;
 
   SearchBloc({
     required SearchService searchService,
-    required ConversationSyncService conversationSyncService,
+    required ConversationDatabaseService conversationDatabaseService,
     ConversationManager? conversationManager,
   }) : _searchService = searchService,
-       _conversationSyncService = conversationSyncService,
+       _conversationDatabaseService = conversationDatabaseService,
        _conversationManager = conversationManager ?? ConversationManager(),
        super(const SearchState.initial()) {
     on<SearchEvent>((event, emit) async {
@@ -112,8 +113,15 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
             query,
             attachments: attachments,
             searchMode: searchMode,
+            isNewConversation: true,
           )
           .forEach((update) {
+            // Handle valid title generation
+            if (update.generatedTitle != null) {
+              print('✨ Smart Title Generated: ${update.generatedTitle}');
+              _conversationManager.updateTitle(update.generatedTitle!);
+            }
+
             // Handle token updates or final result
             if (update.finalResult != null) {
               accumulatedAnswer = update.finalResult!.answer;
@@ -728,18 +736,17 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
 
     try {
       // Check if conversation already exists to decide between save (new) or update
-      final existing = await _conversationSyncService.getConversationById(
-        conversationId,
-      );
+      final existing = await _conversationDatabaseService
+          .getConversationByConversationId(conversationId);
 
       if (existing == null) {
-        await _conversationSyncService.saveConversation(
+        await _conversationDatabaseService.saveConversation(
           conversationId: conversationId,
           title: title,
           messageBranches: messages,
         );
       } else {
-        await _conversationSyncService.updateConversation(
+        await _conversationDatabaseService.updateConversation(
           conversationId: conversationId,
           title: title, // Update title just in case it changed
           messageBranches: messages,
