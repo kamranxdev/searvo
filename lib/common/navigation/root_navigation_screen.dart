@@ -6,9 +6,9 @@ import 'package:searvo/core/routing/app_router.dart';
 import 'package:searvo/features/discover/screens/discover_screen.dart';
 import 'package:searvo/features/home/screens/home_screen.dart';
 import 'package:searvo/features/history/screens/conversation_history_screen.dart';
-import 'package:searvo/features/search/bloc/search_bloc.dart';
-import 'package:searvo/features/search/bloc/search_event.dart';
-import 'package:searvo/features/search/screens/search_results_screen.dart';
+import 'package:searvo/features/search/presentation/bloc/search_bloc.dart';
+import 'package:searvo/features/search/presentation/bloc/search_event.dart';
+import 'package:searvo/features/search/presentation/pages/search_results_page.dart';
 
 import 'package:searvo/features/search/domain/entities/search_mode.dart';
 import 'package:searvo/features/settings/screens/settings_screen.dart';

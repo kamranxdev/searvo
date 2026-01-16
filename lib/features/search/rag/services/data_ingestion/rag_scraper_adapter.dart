@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'package:searvo/features/search/scrapers/scraper_manager.dart';
-import 'package:searvo/features/search/scrapers/base/scraper_models.dart';
+import 'package:searvo/features/search/data/datasources/scrapers/scraper_manager.dart';
+import 'package:searvo/features/search/data/datasources/scrapers/base/scraper_models.dart';
 import 'package:searvo/features/search/rag/models/rag_models.dart';
 
 /// Adapter service that bridges ScraperManager with RAG system

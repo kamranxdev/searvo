@@ -1,6 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'package:searvo/features/history/services/conversation_database_service.dart';
-import 'package:searvo/features/search/bloc/search_bloc.dart';
+import 'package:searvo/features/search/presentation/bloc/search_bloc.dart';
 import 'package:searvo/features/search/rag/bloc/rag_cubit.dart';
 import 'package:searvo/features/search/rag/services/orchestration/rag_orchestrator.dart';
 import 'package:searvo/features/search/domain/services/search_service.dart';

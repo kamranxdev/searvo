@@ -5,7 +5,7 @@ import 'package:searvo/features/search/rag/models/rag_models.dart';
 import 'package:searvo/features/search/domain/entities/search_step.dart';
 import 'package:searvo/features/search/domain/entities/message_data.dart';
 import '../query_processing/prompt_engineer.dart';
-import 'package:searvo/features/search/tools/search_tools.dart';
+import 'package:searvo/features/search/domain/tools/search_tools.dart';
 
 /// Advanced Agentic Orchestrator implementing ReAct (Reasoning + Acting) loop
 class AgentOrchestrator {

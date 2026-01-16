@@ -12,12 +12,12 @@ import 'package:searvo/features/llm/services/providers/base_llm_provider.dart'
 import 'package:searvo/features/llm/services/providers/llm_provider_manager.dart'
     as _i3;
 import 'package:searvo/features/search/domain/entities/message_data.dart'
-    as _i10;
-import 'package:searvo/features/search/domain/entities/search_mode.dart' as _i8;
-import 'package:searvo/features/search/rag/models/rag_models.dart' as _i9;
+    as _i8;
+import 'package:searvo/features/search/domain/entities/search_mode.dart' as _i9;
+import 'package:searvo/features/search/rag/models/rag_models.dart' as _i10;
 import 'package:searvo/features/search/rag/services/query_processing/prompt_engineer.dart'
     as _i7;
-import 'package:searvo/features/search/tools/search_tools.dart' as _i2;
+import 'package:searvo/features/search/domain/tools/search_tools.dart' as _i2;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -194,8 +194,19 @@ class MockPromptEngineer extends _i1.Mock implements _i7.PromptEngineer {
   }
 
   @override
+  String formatConversationHistory(List<_i8.MessageData>? messages) =>
+      (super.noSuchMethod(
+            Invocation.method(#formatConversationHistory, [messages]),
+            returnValue: _i6.dummyValue<String>(
+              this,
+              Invocation.method(#formatConversationHistory, [messages]),
+            ),
+          )
+          as String);
+
+  @override
   String createSystemPrompt({
-    _i8.SearchMode? searchMode = _i8.SearchMode.search,
+    _i9.SearchMode? searchMode = _i9.SearchMode.search,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#createSystemPrompt, [], {
@@ -213,7 +224,7 @@ class MockPromptEngineer extends _i1.Mock implements _i7.PromptEngineer {
   @override
   String createUserPrompt(
     String? query,
-    List<_i9.ContextChunk>? contextChunks, {
+    List<_i10.ContextChunk>? contextChunks, {
     String? attachmentContext,
     String? conversationContext,
     bool? hasUserProvidedUrls = false,
@@ -249,7 +260,7 @@ class MockPromptEngineer extends _i1.Mock implements _i7.PromptEngineer {
   @override
   String createUserPromptWithHistory(
     String? query,
-    List<_i9.ContextChunk>? contextChunks, {
+    List<_i10.ContextChunk>? contextChunks, {
     String? conversationContext,
     String? attachmentContext,
   }) =>
@@ -279,7 +290,7 @@ class MockPromptEngineer extends _i1.Mock implements _i7.PromptEngineer {
   @override
   String createAdaptivePrompt(
     String? query,
-    List<_i9.ContextChunk>? contextChunks, {
+    List<_i10.ContextChunk>? contextChunks, {
     String? attachmentContext,
     String? conversationContext,
     bool? hasUserProvidedUrls = false,
@@ -326,8 +337,8 @@ class MockPromptEngineer extends _i1.Mock implements _i7.PromptEngineer {
   @override
   List<String> generateFollowUpQuestionsWithHistory(
     String? query,
-    List<_i9.ContextChunk>? contextChunks,
-    List<_i10.MessageData>? previousMessages, {
+    List<_i10.ContextChunk>? contextChunks,
+    List<_i8.MessageData>? previousMessages, {
     bool? hasAttachments = false,
   }) =>
       (super.noSuchMethod(
@@ -343,7 +354,7 @@ class MockPromptEngineer extends _i1.Mock implements _i7.PromptEngineer {
   @override
   List<String> generateFollowUpQuestions(
     String? query,
-    List<_i9.ContextChunk>? contextChunks, {
+    List<_i10.ContextChunk>? contextChunks, {
     bool? hasAttachments = false,
   }) =>
       (super.noSuchMethod(
@@ -377,7 +388,7 @@ class MockPromptEngineer extends _i1.Mock implements _i7.PromptEngineer {
 
   @override
   Map<String, dynamic> analyzeContextQuality(
-    List<_i9.ContextChunk>? contextChunks,
+    List<_i10.ContextChunk>? contextChunks,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#analyzeContextQuality, [contextChunks]),
@@ -388,7 +399,7 @@ class MockPromptEngineer extends _i1.Mock implements _i7.PromptEngineer {
   @override
   String resolveContextualQuery(
     String? query,
-    List<_i10.MessageData>? conversationHistory, {
+    List<_i8.MessageData>? conversationHistory, {
     int? maxHistoryMessages = 2,
   }) =>
       (super.noSuchMethod(

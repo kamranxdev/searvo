@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:searvo/features/search/theme/search_theme.dart';
-import 'package:searvo/features/search/widgets/citation_chip.dart';
+import 'package:searvo/features/search/presentation/widgets/citation_chip.dart';
 import 'package:searvo/common/widgets/code_block_view.dart';
 import 'package:searvo/features/search/domain/entities/message_data.dart';
 import 'package:searvo/features/search/domain/entities/source_item.dart';

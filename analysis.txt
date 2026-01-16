@@ -1,0 +1,1035 @@
+Analyzing searvo...                                             
+
+   info • 'scale' is deprecated and shouldn't be used. Use scaleByVector3, scaleByVector4, or scaleByDouble instead • lib/common/navigation/sidebar.dart:167:23 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/navigation/sidebar.dart:389:84 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/navigation/sidebar.dart:648:84 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/app_logo.dart:106:35 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/attachment_input_widget.dart:127:34 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/attachment_input_widget.dart:166:28 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/attachment_input_widget.dart:168:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/code_block_view.dart:53:50 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/code_block_view.dart:62:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/code_sandbox/code_sandbox_mobile.dart:38:47 • deprecated_member_use
+   info • 'dart:html' is deprecated and shouldn't be used. Use package:web and dart:js_interop instead • lib/common/widgets/code_sandbox/code_sandbox_web.dart:2:1 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/code_sandbox/code_sandbox_web.dart:36:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/install_modal.dart:179:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/install_modal.dart:237:38 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/install_modal.dart:284:58 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/install_modal.dart:313:54 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/install_modal.dart:320:56 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/install_modal.dart:346:38 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/install_modal.dart:366:43 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/install_modal.dart:375:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/install_modal.dart:384:45 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/install_modal.dart:461:58 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/install_modal.dart:485:38 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/install_modal.dart:501:83 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/install_modal.dart:512:83 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/install_modal.dart:517:60 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/install_modal.dart:525:80 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/install_modal.dart:538:50 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/install_modal.dart:649:61 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/install_modal.dart:654:44 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/install_modal.dart:682:39 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/install_modal.dart:687:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/install_modal.dart:688:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/link_preview.dart:225:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/common/widgets/link_preview.dart:231:49 • deprecated_member_use
+   info • Unnecessary use of multiple underscores • lib/common/widgets/link_preview.dart:242:33 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/common/widgets/link_preview.dart:242:37 • unnecessary_underscores
+   info • The imported package 'markdown' isn't a dependency of the importing package • lib/common/widgets/streaming_text_widget.dart:3:8 • depend_on_referenced_packages
+warning • Unused import: 'package:searvo/features/search/domain/entities/message_data.dart' • lib/common/widgets/streaming_text_widget.dart:7:8 • unused_import
+   info • Don't invoke 'print' in production code • lib/common/widgets/streaming_text_widget.dart:111:9 • avoid_print
+   info • Parameters ''message' and 'code'' could be super parameters • lib/core/error/exceptions.dart:14:9 • use_super_parameters
+   info • Parameters ''message' and 'code'' could be super parameters • lib/core/error/exceptions.dart:19:9 • use_super_parameters
+   info • Parameters ''message' and 'code'' could be super parameters • lib/core/error/exceptions.dart:24:9 • use_super_parameters
+   info • Parameters ''message' and 'code'' could be super parameters • lib/core/error/exceptions.dart:29:9 • use_super_parameters
+   info • Parameters ''message' and 'code'' could be super parameters • lib/core/error/exceptions.dart:34:9 • use_super_parameters
+   info • Parameters ''message' and 'code'' could be super parameters • lib/core/error/exceptions.dart:39:9 • use_super_parameters
+   info • Parameters ''message' and 'code'' could be super parameters • lib/core/error/exceptions.dart:44:9 • use_super_parameters
+   info • Parameters ''message' and 'code'' could be super parameters • lib/core/error/exceptions.dart:49:9 • use_super_parameters
+   info • Parameter 'message' could be a super parameter • lib/core/error/failures.dart:21:9 • use_super_parameters
+   info • Parameter 'message' could be a super parameter • lib/core/error/failures.dart:30:9 • use_super_parameters
+   info • Parameter 'message' could be a super parameter • lib/core/error/failures.dart:38:9 • use_super_parameters
+   info • Parameter 'message' could be a super parameter • lib/core/error/failures.dart:46:9 • use_super_parameters
+   info • Parameter 'message' could be a super parameter • lib/core/error/failures.dart:54:9 • use_super_parameters
+   info • Parameter 'message' could be a super parameter • lib/core/error/failures.dart:62:9 • use_super_parameters
+   info • Parameter 'message' could be a super parameter • lib/core/error/failures.dart:71:9 • use_super_parameters
+   info • Parameter 'message' could be a super parameter • lib/core/error/failures.dart:79:9 • use_super_parameters
+   info • Parameter 'message' could be a super parameter • lib/core/error/failures.dart:87:9 • use_super_parameters
+   info • Parameter 'message' could be a super parameter • lib/core/error/failures.dart:95:9 • use_super_parameters
+   info • Parameter 'message' could be a super parameter • lib/core/error/failures.dart:103:9 • use_super_parameters
+   info • Parameter 'message' could be a super parameter • lib/core/error/failures.dart:114:9 • use_super_parameters
+   info • Parameter 'message' could be a super parameter • lib/core/error/failures.dart:121:9 • use_super_parameters
+   info • Parameter 'message' could be a super parameter • lib/core/error/failures.dart:128:9 • use_super_parameters
+   info • Parameter 'message' could be a super parameter • lib/core/error/failures.dart:135:9 • use_super_parameters
+   info • Parameter 'message' could be a super parameter • lib/core/error/failures.dart:142:9 • use_super_parameters
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/core/routing/app_router.dart:337:37 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/core/routing/app_router.dart:346:37 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/core/routing/app_router.dart:348:56 • deprecated_member_use
+   info • The type parameter name 'Type' matches a visible type name • lib/core/usecases/usecase.dart:8:24 • avoid_types_as_parameter_names
+   info • The type parameter name 'Type' matches a visible type name • lib/core/usecases/usecase.dart:14:32 • avoid_types_as_parameter_names
+   info • The type parameter name 'Type' matches a visible type name • lib/core/usecases/usecase.dart:19:28 • avoid_types_as_parameter_names
+   info • Parameter 'key' could be a super parameter • lib/features/discover/screens/discover_screen.dart:13:9 • use_super_parameters
+   info • Parameter 'key' could be a super parameter • lib/features/discover/screens/discover_screen.dart:25:9 • use_super_parameters
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/discover/screens/discover_screen.dart:508:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/discover/screens/discover_screen.dart:738:29 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/discover/theme/discover_theme.dart:214:27 • deprecated_member_use
+   info • Parameter 'key' could be a super parameter • lib/features/discover/widgets/editorial_article_card.dart:11:9 • use_super_parameters
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/discover/widgets/editorial_article_card.dart:117:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/discover/widgets/editorial_article_card.dart:163:37 • deprecated_member_use
+   info • Parameter 'key' could be a super parameter • lib/features/discover/widgets/editorial_compact_card.dart:11:9 • use_super_parameters
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/discover/widgets/editorial_compact_card.dart:149:33 • deprecated_member_use
+   info • Parameter 'key' could be a super parameter • lib/features/discover/widgets/editorial_hero_card.dart:12:9 • use_super_parameters
+   info • 'scale' is deprecated and shouldn't be used. Use scaleByVector3, scaleByVector4, or scaleByDouble instead • lib/features/discover/widgets/editorial_hero_card.dart:40:38 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/discover/widgets/editorial_hero_card.dart:46:37 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/discover/widgets/editorial_hero_card.dart:184:26 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/discover/widgets/editorial_hero_card.dart:261:40 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/discover/widgets/editorial_hero_card.dart:294:35 • deprecated_member_use
+   info • Parameter 'key' could be a super parameter • lib/features/discover/widgets/major_news_card.dart:9:9 • use_super_parameters
+   info • Parameter 'key' could be a super parameter • lib/features/discover/widgets/small_news_card.dart:8:9 • use_super_parameters
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/discover/widgets/small_news_card.dart:28:49 • deprecated_member_use
+   info • Unnecessary use of multiple underscores • lib/features/history/presentation/cubit/history_cubit.dart:68:43 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/history/presentation/cubit/history_cubit.dart:68:47 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/history/presentation/cubit/history_cubit.dart:114:23 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/history/presentation/cubit/history_cubit.dart:114:27 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/history/presentation/cubit/history_cubit.dart:114:32 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/history/presentation/cubit/history_cubit.dart:114:38 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/history/presentation/cubit/history_cubit.dart:150:43 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/history/presentation/cubit/history_cubit.dart:150:47 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/history/presentation/cubit/history_cubit.dart:189:43 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/history/presentation/cubit/history_cubit.dart:189:47 • unnecessary_underscores
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/history/screens/conversation_history_screen.dart:167:44 • deprecated_member_use
+   info • Unnecessary use of multiple underscores • lib/features/history/screens/conversation_history_screen.dart:190:50 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/history/screens/conversation_history_screen.dart:190:54 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/history/screens/conversation_history_screen.dart:190:59 • unnecessary_underscores
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/history/screens/conversation_history_screen.dart:308:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/history/screens/conversation_history_screen.dart:314:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/history/screens/conversation_history_screen.dart:318:62 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps • lib/features/history/screens/conversation_history_screen.dart:552:13 • use_build_context_synchronously
+   info • Uses 'await' on an instance of 'SimpleSelectStatement<$ConversationsTable, Conversation>', which is not a subtype of 'Future' • lib/features/history/services/conversation_database_service.dart:299:26 • await_only_futures
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/history/widgets/conversation_list_item.dart:53:44 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/history/widgets/conversation_list_item_bloc.dart:53:44 • deprecated_member_use
+   info • Don't invoke 'print' in production code • lib/features/home/screens/home_screen.dart:41:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/home/screens/home_screen.dart:206:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/home/screens/home_screen.dart:210:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/llm/services/llm_service.dart:50:9 • avoid_print
+   info • The member 'generateResponseStream' overrides an inherited member but isn't annotated with '@override' • lib/features/llm/services/providers/anthropic.dart:89:18 • annotate_overrides
+   info • The member 'generateResponseStream' overrides an inherited member but isn't annotated with '@override' • lib/features/llm/services/providers/google.dart:99:18 • annotate_overrides
+   info • Statements in an if should be enclosed in a block • lib/features/llm/services/providers/llm_provider_manager.dart:80:7 • curly_braces_in_flow_control_structures
+   info • Don't invoke 'print' in production code • lib/features/llm/services/providers/llm_provider_manager.dart:302:11 • avoid_print
+   info • The member 'generateResponseStream' overrides an inherited member but isn't annotated with '@override' • lib/features/llm/services/providers/ollama.dart:115:18 • annotate_overrides
+   info • The member 'generateResponseStream' overrides an inherited member but isn't annotated with '@override' • lib/features/llm/services/providers/openai.dart:96:18 • annotate_overrides
+   info • The member 'generateResponseStream' overrides an inherited member but isn't annotated with '@override' • lib/features/llm/services/providers/openrouter.dart:196:18 • annotate_overrides
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/screens/setup_wizard_screen.dart:311:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/screens/setup_wizard_screen.dart:312:35 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/screens/setup_wizard_screen.dart:330:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/screens/setup_wizard_screen.dart:331:43 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/screens/setup_wizard_screen.dart:358:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/screens/setup_wizard_screen.dart:408:40 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/screens/setup_wizard_screen.dart:432:48 • deprecated_member_use
+   info • Don't invoke 'print' in production code • lib/features/onboarding/services/setup_service.dart:33:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/onboarding/services/setup_service.dart:35:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/onboarding/services/setup_service.dart:50:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/onboarding/services/setup_service.dart:63:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/onboarding/services/setup_service.dart:66:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/onboarding/services/setup_service.dart:78:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/onboarding/services/setup_service.dart:81:7 • avoid_print
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/setup_step_indicator.dart:109:43 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/setup_step_indicator.dart:114:54 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/setup_step_indicator.dart:174:53 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/setup_step_indicator.dart:181:55 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/setup_step_indicator.dart:187:64 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/api_key_step.dart:154:59 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/api_key_step.dart:214:53 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/api_key_step.dart:252:51 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/api_key_step.dart:324:51 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/api_key_step.dart:331:44 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/api_key_step.dart:337:44 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/api_key_step.dart:413:40 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/api_key_step.dart:500:45 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/api_key_step.dart:503:38 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/api_key_step.dart:557:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/api_key_step.dart:560:39 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/completion_step.dart:147:59 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/completion_step.dart:156:38 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/completion_step.dart:299:40 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/completion_step.dart:382:29 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/completion_step.dart:385:31 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/completion_step.dart:416:35 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/completion_step.dart:446:38 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/completion_step.dart:589:34 • deprecated_member_use
+   info • Unnecessary use of multiple underscores • lib/features/onboarding/widgets/steps/provider_selection_step.dart:155:29 • unnecessary_underscores
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/provider_selection_step.dart:181:40 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/provider_selection_step.dart:268:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/provider_selection_step.dart:274:39 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/provider_selection_step.dart:280:48 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/provider_selection_step.dart:313:43 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/provider_selection_step.dart:339:45 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/provider_selection_step.dart:369:39 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/provider_selection_step.dart:371:58 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/provider_selection_step.dart:416:39 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/provider_selection_step.dart:454:45 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/provider_selection_step.dart:457:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/provider_selection_step.dart:522:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/welcome_step.dart:110:45 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/welcome_step.dart:111:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/welcome_step.dart:116:52 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/welcome_step.dart:226:53 • deprecated_member_use
+warning • A value for optional parameter 'delay' isn't ever given • lib/features/onboarding/widgets/steps/welcome_step.dart:310:10 • unused_element_parameter
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/welcome_step.dart:330:38 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/welcome_step.dart:341:48 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/onboarding/widgets/steps/welcome_step.dart:379:48 • deprecated_member_use
+   info • Don't invoke 'print' in production code • lib/features/search/agent/services/intent_orchestrator.dart:87:7 • avoid_print
+   info • Unnecessary constructor invocation • lib/features/search/data/datasources/search_local_data_source.dart:21:7 • prefer_collection_literals
+   info • Unnecessary constructor invocation • lib/features/search/data/datasources/search_local_data_source.dart:25:7 • prefer_collection_literals
+   info • Don't invoke 'print' in production code • lib/features/search/data/datasources/search_local_data_source.dart:47:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/data/datasources/search_local_data_source.dart:86:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/data/datasources/search_local_data_source.dart:116:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/data/datasources/searxng_remote_data_source.dart:31:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/data/datasources/searxng_remote_data_source.dart:192:7 • avoid_print
+   info • Parameters ''title', 'url', 'publishedDate', and 'source'' could be super parameters • lib/features/search/data/models/search_response_model.dart:93:3 • use_super_parameters
+   info • Use the null-aware operator '?.' rather than an explicit 'null' comparison • lib/features/search/data/models/search_response_model.dart:133:27 • prefer_null_aware_operators
+   info • The member 'toMap' overrides an inherited member but isn't annotated with '@override' • lib/features/search/data/models/search_response_model.dart:169:24 • annotate_overrides
+warning • The value of the field '_llmManager' isn't used • lib/features/search/domain/services/intent_classifier.dart:5:28 • unused_field
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/intent_classifier.dart:41:7 • avoid_print
+   info • The import of '../../rag/domain/entities/rag_update.dart' is unnecessary because all of the used elements are also provided by the import of '../../rag/models/rag_models.dart' • lib/features/search/domain/services/search_service.dart:38:8 • unnecessary_import
+   info • The import of '../../rag/domain/entities/rag_status.dart' is unnecessary because all of the used elements are also provided by the import of '../../rag/models/rag_models.dart' • lib/features/search/domain/services/search_service.dart:39:8 • unnecessary_import
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:83:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:87:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:91:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:95:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:98:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:102:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:105:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:111:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:113:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:117:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:137:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:140:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:145:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:270:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:352:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:353:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:355:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:361:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:363:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:367:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:376:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:381:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:395:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:403:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:409:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:429:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:430:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:435:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:436:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:437:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:484:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:485:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:486:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:488:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:490:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:511:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:512:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:517:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:518:7 • avoid_print
+   info • Use interpolation to compose strings and values • lib/features/search/domain/services/search_service.dart:663:15 • prefer_interpolation_to_compose_strings
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:685:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:686:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:687:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:711:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:712:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:716:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:717:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:718:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:729:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:735:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:746:5 • avoid_print
+   info • Use interpolation to compose strings and values • lib/features/search/domain/services/search_service.dart:756:15 • prefer_interpolation_to_compose_strings
+   info • Don't invoke 'print' in production code • lib/features/search/domain/services/search_service.dart:766:5 • avoid_print
+   info • Dangling library doc comment • lib/features/search/examples/autocomplete_example.dart:1:1 • dangling_library_doc_comments
+   info • Don't invoke 'print' in production code • lib/features/search/examples/autocomplete_example.dart:140:5 • avoid_print
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/search/examples/autocomplete_example.dart:205:51 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/search/examples/autocomplete_example.dart:304:37 • deprecated_member_use
+   info • The imported package 'rxdart' isn't a dependency of the importing package • lib/features/search/presentation/bloc/conversation_manager.dart:2:8 • depend_on_referenced_packages
+  error • Target of URI doesn't exist: '../domain/entities/message_branch_manager.dart' • lib/features/search/presentation/bloc/search_bloc.dart:5:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../domain/entities/message_generation_state.dart' • lib/features/search/presentation/bloc/search_bloc.dart:6:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../domain/entities/source_item.dart' • lib/features/search/presentation/bloc/search_bloc.dart:7:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../domain/services/search_service.dart' • lib/features/search/presentation/bloc/search_bloc.dart:8:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../presentation/bloc/conversation_manager.dart' • lib/features/search/presentation/bloc/search_bloc.dart:9:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../domain/entities/search_mode.dart' • lib/features/search/presentation/bloc/search_bloc.dart:10:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../../../common/widgets/attachment_input_widget.dart' • lib/features/search/presentation/bloc/search_bloc.dart:11:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../rag/models/rag_models.dart' • lib/features/search/presentation/bloc/search_bloc.dart:12:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../../history/services/conversation_database_service.dart' • lib/features/search/presentation/bloc/search_bloc.dart:13:8 • uri_does_not_exist
+  error • Undefined class 'SearchService' • lib/features/search/presentation/bloc/search_bloc.dart:16:9 • undefined_class
+  error • Undefined class 'ConversationManager' • lib/features/search/presentation/bloc/search_bloc.dart:17:9 • undefined_class
+  error • Undefined class 'ConversationDatabaseService' • lib/features/search/presentation/bloc/search_bloc.dart:18:9 • undefined_class
+  error • Undefined class 'SearchService' • lib/features/search/presentation/bloc/search_bloc.dart:21:14 • undefined_class
+  error • Undefined class 'ConversationDatabaseService' • lib/features/search/presentation/bloc/search_bloc.dart:22:14 • undefined_class
+  error • Undefined class 'ConversationManager' • lib/features/search/presentation/bloc/search_bloc.dart:23:5 • undefined_class
+  error • The method 'ConversationManager' isn't defined for the type 'SearchBloc' • lib/features/search/presentation/bloc/search_bloc.dart:26:54 • undefined_method
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_bloc.dart:60:10 • non_type_as_type_argument
+  error • Undefined class 'SearchMode' • lib/features/search/presentation/bloc/search_bloc.dart:76:5 • undefined_class
+  error • Undefined name 'MessageGenerationState' • lib/features/search/presentation/bloc/search_bloc.dart:101:26 • undefined_identifier
+   info • Don't invoke 'print' in production code • lib/features/search/presentation/bloc/search_bloc.dart:121:15 • avoid_print
+  error • Undefined name 'RAGStatus' • lib/features/search/presentation/bloc/search_bloc.dart:135:47 • undefined_identifier
+  error • Undefined name 'MessageGenerationState' • lib/features/search/presentation/bloc/search_bloc.dart:136:19 • undefined_identifier
+  error • Undefined name 'RAGStatus' • lib/features/search/presentation/bloc/search_bloc.dart:137:36 • undefined_identifier
+  error • Undefined name 'MessageGenerationState' • lib/features/search/presentation/bloc/search_bloc.dart:138:19 • undefined_identifier
+  error • Undefined name 'MessageGenerationState' • lib/features/search/presentation/bloc/search_bloc.dart:139:19 • undefined_identifier
+  error • The name 'SourceItem' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_bloc.dart:142:18 • non_type_as_type_argument
+  error • The method 'SourceItem' isn't defined for the type 'SearchBloc' • lib/features/search/presentation/bloc/search_bloc.dart:146:28 • undefined_method
+  error • Undefined name 'MessageGenerationState' • lib/features/search/presentation/bloc/search_bloc.dart:186:45 • undefined_identifier
+  error • Undefined name 'RAGStatus' • lib/features/search/presentation/bloc/search_bloc.dart:191:59 • undefined_identifier
+  error • Undefined name 'MessageGenerationState' • lib/features/search/presentation/bloc/search_bloc.dart:198:29 • undefined_identifier
+  error • Undefined name 'MessageGenerationState' • lib/features/search/presentation/bloc/search_bloc.dart:219:26 • undefined_identifier
+   info • Don't invoke 'print' in production code • lib/features/search/presentation/bloc/search_bloc.dart:235:7 • avoid_print
+  error • The name 'AttachmentData' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_bloc.dart:250:10 • non_type_as_type_argument
+  error • Undefined name 'MessageGenerationState' • lib/features/search/presentation/bloc/search_bloc.dart:273:46 • undefined_identifier
+   info • Don't invoke 'print' in production code • lib/features/search/presentation/bloc/search_bloc.dart:276:7 • avoid_print
+  error • Undefined name 'MessageGenerationState' • lib/features/search/presentation/bloc/search_bloc.dart:282:26 • undefined_identifier
+  error • Undefined name 'RAGStatus' • lib/features/search/presentation/bloc/search_bloc.dart:301:47 • undefined_identifier
+  error • Undefined name 'MessageGenerationState' • lib/features/search/presentation/bloc/search_bloc.dart:302:19 • undefined_identifier
+  error • Undefined name 'RAGStatus' • lib/features/search/presentation/bloc/search_bloc.dart:303:36 • undefined_identifier
+  error • Undefined name 'MessageGenerationState' • lib/features/search/presentation/bloc/search_bloc.dart:304:19 • undefined_identifier
+  error • Undefined name 'MessageGenerationState' • lib/features/search/presentation/bloc/search_bloc.dart:305:19 • undefined_identifier
+  error • The name 'SourceItem' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_bloc.dart:307:18 • non_type_as_type_argument
+  error • The method 'SourceItem' isn't defined for the type 'SearchBloc' • lib/features/search/presentation/bloc/search_bloc.dart:311:28 • undefined_method
+  error • Undefined name 'MessageGenerationState' • lib/features/search/presentation/bloc/search_bloc.dart:361:26 • undefined_identifier
+   info • Don't invoke 'print' in production code • lib/features/search/presentation/bloc/search_bloc.dart:377:7 • avoid_print
+  error • Undefined name 'MessageGenerationState' • lib/features/search/presentation/bloc/search_bloc.dart:408:26 • undefined_identifier
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_bloc.dart:413:30 • non_type_as_type_argument
+  error • Undefined name 'SearchMode' • lib/features/search/presentation/bloc/search_bloc.dart:435:25 • undefined_identifier
+  error • Undefined name 'RAGStatus' • lib/features/search/presentation/bloc/search_bloc.dart:445:47 • undefined_identifier
+  error • Undefined name 'MessageGenerationState' • lib/features/search/presentation/bloc/search_bloc.dart:446:19 • undefined_identifier
+  error • Undefined name 'RAGStatus' • lib/features/search/presentation/bloc/search_bloc.dart:447:36 • undefined_identifier
+  error • Undefined name 'MessageGenerationState' • lib/features/search/presentation/bloc/search_bloc.dart:448:19 • undefined_identifier
+  error • Undefined name 'MessageGenerationState' • lib/features/search/presentation/bloc/search_bloc.dart:449:19 • undefined_identifier
+  error • The name 'SourceItem' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_bloc.dart:451:18 • non_type_as_type_argument
+  error • The method 'SourceItem' isn't defined for the type 'SearchBloc' • lib/features/search/presentation/bloc/search_bloc.dart:455:28 • undefined_method
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_bloc.dart:489:32 • non_type_as_type_argument
+  error • Undefined name 'MessageGenerationState' • lib/features/search/presentation/bloc/search_bloc.dart:507:26 • undefined_identifier
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_bloc.dart:512:26 • non_type_as_type_argument
+   info • Don't invoke 'print' in production code • lib/features/search/presentation/bloc/search_bloc.dart:530:7 • avoid_print
+  error • Undefined name 'MessageGenerationState' • lib/features/search/presentation/bloc/search_bloc.dart:565:26 • undefined_identifier
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_bloc.dart:569:30 • non_type_as_type_argument
+  error • Undefined name 'SearchMode' • lib/features/search/presentation/bloc/search_bloc.dart:588:25 • undefined_identifier
+  error • Undefined name 'RAGStatus' • lib/features/search/presentation/bloc/search_bloc.dart:598:47 • undefined_identifier
+  error • Undefined name 'MessageGenerationState' • lib/features/search/presentation/bloc/search_bloc.dart:599:19 • undefined_identifier
+  error • Undefined name 'RAGStatus' • lib/features/search/presentation/bloc/search_bloc.dart:600:36 • undefined_identifier
+  error • Undefined name 'MessageGenerationState' • lib/features/search/presentation/bloc/search_bloc.dart:601:19 • undefined_identifier
+  error • Undefined name 'MessageGenerationState' • lib/features/search/presentation/bloc/search_bloc.dart:602:19 • undefined_identifier
+  error • The name 'SourceItem' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_bloc.dart:604:18 • non_type_as_type_argument
+  error • The method 'SourceItem' isn't defined for the type 'SearchBloc' • lib/features/search/presentation/bloc/search_bloc.dart:608:28 • undefined_method
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_bloc.dart:642:32 • non_type_as_type_argument
+  error • Undefined name 'MessageGenerationState' • lib/features/search/presentation/bloc/search_bloc.dart:660:26 • undefined_identifier
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_bloc.dart:665:26 • non_type_as_type_argument
+   info • Don't invoke 'print' in production code • lib/features/search/presentation/bloc/search_bloc.dart:683:7 • avoid_print
+  error • The property 'currentMessage' can't be unconditionally accessed because the receiver can be 'null' • lib/features/search/presentation/bloc/search_bloc.dart:731:18 • unchecked_use_of_nullable_value
+  error • Undefined name 'MessageGenerationState' • lib/features/search/presentation/bloc/search_bloc.dart:732:11 • undefined_identifier
+   info • Don't invoke 'print' in production code • lib/features/search/presentation/bloc/search_bloc.dart:756:7 • avoid_print
+  error • Target of URI doesn't exist: '../domain/entities/message_branch_manager.dart' • lib/features/search/presentation/bloc/search_event.dart:2:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../domain/entities/search_mode.dart' • lib/features/search/presentation/bloc/search_event.dart:3:8 • uri_does_not_exist
+  error • Target of URI doesn't exist: '../../../common/widgets/attachment_input_widget.dart' • lib/features/search/presentation/bloc/search_event.dart:4:8 • uri_does_not_exist
+  error • Undefined class 'SearchMode' • lib/features/search/presentation/bloc/search_event.dart:13:14 • undefined_class
+  error • The name 'AttachmentData' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_event.dart:21:10 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_event.dart:41:19 • non_type_as_type_argument
+  error • Undefined class 'SearchMode' • lib/features/search/presentation/bloc/search_event.freezed.dart:143:96 • undefined_class
+  error • The name 'AttachmentData' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_event.freezed.dart:143:234 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_event.freezed.dart:143:482 • non_type_as_type_argument
+  error • Undefined class 'SearchMode' • lib/features/search/presentation/bloc/search_event.freezed.dart:171:100 • undefined_class
+  error • The name 'AttachmentData' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_event.freezed.dart:171:246 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_event.freezed.dart:171:526 • non_type_as_type_argument
+  error • Undefined class 'SearchMode' • lib/features/search/presentation/bloc/search_event.freezed.dart:198:99 • undefined_class
+  error • The name 'AttachmentData' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_event.freezed.dart:198:238 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_event.freezed.dart:198:490 • non_type_as_type_argument
+  error • Undefined class 'SearchMode' • lib/features/search/presentation/bloc/search_event.freezed.dart:224:9 • undefined_class
+  error • Undefined class 'SearchMode' • lib/features/search/presentation/bloc/search_event.freezed.dart:266:16 • undefined_class
+  error • The name 'SearchMode' isn't a type, so it can't be used in an 'as' expression • lib/features/search/presentation/bloc/search_event.freezed.dart:287:4 • cast_to_non_type
+  error • The name 'AttachmentData' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_event.freezed.dart:300:58 • non_type_as_type_argument
+  error • The name 'AttachmentData' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_event.freezed.dart:304:14 • non_type_as_type_argument
+  error • The name 'AttachmentData' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_event.freezed.dart:305:7 • non_type_as_type_argument
+  error • The name 'AttachmentData' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_event.freezed.dart:344:21 • non_type_as_type_argument
+  error • The name 'AttachmentData' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_event.freezed.dart:365:9 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_event.freezed.dart:542:100 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_event.freezed.dart:547:14 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_event.freezed.dart:548:7 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_event.freezed.dart:585:44 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_event.freezed.dart:607:9 • non_type_as_type_argument
+  error • Target of URI doesn't exist: '../domain/entities/message_branch_manager.dart' • lib/features/search/presentation/bloc/search_state.dart:2:8 • uri_does_not_exist
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.dart:11:19 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.dart:17:19 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.dart:25:19 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.dart:33:8 • non_type_as_type_argument
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/bloc/search_state.dart:35:28 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/bloc/search_state.dart:36:27 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/bloc/search_state.dart:36:31 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/bloc/search_state.dart:37:26 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/bloc/search_state.dart:37:30 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/bloc/search_state.dart:42:18 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/bloc/search_state.dart:42:22 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/bloc/search_state.dart:43:31 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/bloc/search_state.dart:43:35 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/bloc/search_state.dart:44:16 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/bloc/search_state.dart:44:20 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/bloc/search_state.dart:44:25 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/bloc/search_state.dart:49:22 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/bloc/search_state.dart:50:17 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/bloc/search_state.dart:50:25 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/bloc/search_state.dart:51:16 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/bloc/search_state.dart:51:24 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/bloc/search_state.dart:56:18 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/bloc/search_state.dart:57:17 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/bloc/search_state.dart:57:21 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/bloc/search_state.dart:58:16 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/bloc/search_state.dart:58:20 • unnecessary_underscores
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.freezed.dart:131:115 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.freezed.dart:131:240 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.freezed.dart:131:401 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.freezed.dart:155:127 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.freezed.dart:155:260 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.freezed.dart:155:429 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.freezed.dart:178:119 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.freezed.dart:178:245 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.freezed.dart:178:407 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.freezed.dart:228:40 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.freezed.dart:231:14 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.freezed.dart:232:7 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.freezed.dart:271:7 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.freezed.dart:291:9 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.freezed.dart:304:39 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.freezed.dart:307:14 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.freezed.dart:308:7 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.freezed.dart:348:7 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.freezed.dart:368:9 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.freezed.dart:382:61 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.freezed.dart:386:14 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.freezed.dart:387:7 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.freezed.dart:426:23 • non_type_as_type_argument
+  error • The name 'MessageBranchManager' isn't a type, so it can't be used as a type argument • lib/features/search/presentation/bloc/search_state.freezed.dart:447:9 • non_type_as_type_argument
+   info • Don't invoke 'print' in production code • lib/features/search/presentation/pages/search_results_page.dart:62:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/presentation/pages/search_results_page.dart:79:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/presentation/pages/search_results_page.dart:89:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/presentation/pages/search_results_page.dart:110:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/presentation/pages/search_results_page.dart:115:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/presentation/pages/search_results_page.dart:129:7 • avoid_print
+   info • 'Share' is deprecated and shouldn't be used. Use SharePlus instead • lib/features/search/presentation/pages/search_results_page.dart:238:11 • deprecated_member_use
+   info • 'shareXFiles' is deprecated and shouldn't be used. Use SharePlus.instance.share() instead • lib/features/search/presentation/pages/search_results_page.dart:238:17 • deprecated_member_use
+   info • 'Share' is deprecated and shouldn't be used. Use SharePlus instead • lib/features/search/presentation/pages/search_results_page.dart:253:11 • deprecated_member_use
+   info • 'shareXFiles' is deprecated and shouldn't be used. Use SharePlus.instance.share() instead • lib/features/search/presentation/pages/search_results_page.dart:253:17 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/search/presentation/pages/search_results_page.dart:344:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/search/presentation/pages/search_results_page.dart:345:47 • deprecated_member_use
+   info • Use a 'SizedBox' to add whitespace to a layout • lib/features/search/presentation/pages/search_results_page.dart:352:26 • sized_box_for_whitespace
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/search/presentation/pages/search_results_page.dart:370:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/search/presentation/pages/search_results_page.dart:374:48 • deprecated_member_use
+warning • Unused import: 'package:flutter_animate/flutter_animate.dart' • lib/features/search/presentation/widgets/citation_chip.dart:4:8 • unused_import
+   info • Statements in an if should be enclosed in a block • lib/features/search/presentation/widgets/citation_chip.dart:198:7 • curly_braces_in_flow_control_structures
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/widgets/citation_chip.dart:253:39 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/widgets/citation_chip.dart:297:52 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/widgets/citation_chip.dart:297:56 • unnecessary_underscores
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/search/presentation/widgets/follow_up_search_box.dart:109:61 • deprecated_member_use
+   info • 'RawKeyboardListener' is deprecated and shouldn't be used. Use KeyboardListener instead. This feature was deprecated after v3.18.0-2.0.pre • lib/features/search/presentation/widgets/follow_up_search_box.dart:159:22 • deprecated_member_use
+   info • 'RawKeyEvent' is deprecated and shouldn't be used. Use KeyEvent instead. This feature was deprecated after v3.18.0-2.0.pre • lib/features/search/presentation/widgets/follow_up_search_box.dart:161:25 • deprecated_member_use
+   info • 'RawKeyDownEvent' is deprecated and shouldn't be used. Use KeyDownEvent instead. This feature was deprecated after v3.18.0-2.0.pre • lib/features/search/presentation/widgets/follow_up_search_box.dart:162:32 • deprecated_member_use
+   info • 'isShiftPressed' is deprecated and shouldn't be used. Use HardwareKeyboard.instance.isShiftPressed instead. This feature was deprecated after v3.18.0-2.0.pre • lib/features/search/presentation/widgets/follow_up_search_box.dart:164:30 • deprecated_member_use
+   info • 'isControlPressed' is deprecated and shouldn't be used. Use HardwareKeyboard.instance.isControlPressed instead. This feature was deprecated after v3.18.0-2.0.pre • lib/features/search/presentation/widgets/follow_up_search_box.dart:165:30 • deprecated_member_use
+   info • 'isAltPressed' is deprecated and shouldn't be used. Use HardwareKeyboard.instance.isAltPressed instead. This feature was deprecated after v3.18.0-2.0.pre • lib/features/search/presentation/widgets/follow_up_search_box.dart:166:30 • deprecated_member_use
+   info • 'isMetaPressed' is deprecated and shouldn't be used. Use HardwareKeyboard.instance.isMetaPressed instead. This feature was deprecated after v3.18.0-2.0.pre • lib/features/search/presentation/widgets/follow_up_search_box.dart:167:30 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/search/presentation/widgets/follow_up_search_box.dart:178:60 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/search/presentation/widgets/follow_up_search_box.dart:212:87 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/search/presentation/widgets/follow_up_search_box.dart:212:136 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/search/presentation/widgets/follow_up_search_box.dart:230:87 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/search/presentation/widgets/follow_up_search_box.dart:230:136 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/search/presentation/widgets/follow_up_search_box.dart:243:56 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/search/presentation/widgets/message_box.dart:160:53 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/search/presentation/widgets/message_box.dart:163:37 • deprecated_member_use
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/widgets/message_box.dart:241:31 • unnecessary_underscores
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/search/presentation/widgets/message_box.dart:258:35 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/search/presentation/widgets/message_box.dart:263:40 • deprecated_member_use
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/widgets/message_box.dart:394:42 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/widgets/message_box.dart:394:46 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/widgets/message_box.dart:464:32 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/widgets/message_box.dart:465:32 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/widgets/message_box.dart:465:36 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/widgets/message_box.dart:509:38 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/widgets/message_box.dart:509:42 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/widgets/message_box.dart:692:35 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/widgets/message_box.dart:705:40 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/widgets/message_box.dart:707:40 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/widgets/message_box.dart:707:44 • unnecessary_underscores
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/search/presentation/widgets/message_box.dart:733:34 • deprecated_member_use
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/widgets/message_box.dart:766:43 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/widgets/message_box.dart:791:56 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/widgets/message_box.dart:791:60 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/widgets/message_box.dart:852:37 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/widgets/message_box.dart:853:32 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/widgets/message_box.dart:865:37 • unnecessary_underscores
+   info • Unnecessary use of multiple underscores • lib/features/search/presentation/widgets/message_box.dart:866:32 • unnecessary_underscores
+   info • Statements in an if should be enclosed in a block • lib/features/search/presentation/widgets/reasoning_widget.dart:289:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/features/search/presentation/widgets/reasoning_widget.dart:291:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/features/search/presentation/widgets/reasoning_widget.dart:293:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/features/search/presentation/widgets/reasoning_widget.dart:302:7 • curly_braces_in_flow_control_structures
+   info • The private field _textFieldFocusNode could be 'final' • lib/features/search/presentation/widgets/search_box.dart:49:13 • prefer_final_fields
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/search/presentation/widgets/search_box.dart:735:66 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/search/presentation/widgets/search_box.dart:756:66 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/search/presentation/widgets/search_box.dart:777:66 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/search/presentation/widgets/search_box.dart:800:69 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/search/presentation/widgets/search_box.dart:825:69 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/search/presentation/widgets/search_box_mode_tooltip.dart:129:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/search/presentation/widgets/search_box_mode_tooltip.dart:212:68 • deprecated_member_use
+  error • Target of URI doesn't exist: '../../theme/search_theme.dart' • lib/features/search/presentation/widgets/tools/crypto_widget.dart:3:8 • uri_does_not_exist
+  error • Undefined name 'SearchTheme' • lib/features/search/presentation/widgets/tools/crypto_widget.dart:12:26 • undefined_identifier
+  error • Undefined class 'SearchColors' • lib/features/search/presentation/widgets/tools/crypto_widget.dart:119:21 • undefined_class
+  error • Target of URI doesn't exist: '../../theme/search_theme.dart' • lib/features/search/presentation/widgets/tools/dictionary_widget.dart:2:8 • uri_does_not_exist
+  error • Undefined name 'SearchTheme' • lib/features/search/presentation/widgets/tools/dictionary_widget.dart:11:26 • undefined_identifier
+  error • Target of URI doesn't exist: '../../theme/search_theme.dart' • lib/features/search/presentation/widgets/tools/stock_widget.dart:2:8 • uri_does_not_exist
+  error • Undefined name 'SearchTheme' • lib/features/search/presentation/widgets/tools/stock_widget.dart:11:26 • undefined_identifier
+  error • Undefined class 'SearchColors' • lib/features/search/presentation/widgets/tools/stock_widget.dart:102:24 • undefined_class
+   info • Statements in an if should be enclosed in a block • lib/features/search/presentation/widgets/tools/stock_widget.dart:129:7 • curly_braces_in_flow_control_structures
+  error • Undefined class 'SearchColors' • lib/features/search/presentation/widgets/tools/stock_widget.dart:136:5 • undefined_class
+  error • Target of URI doesn't exist: '../../theme/search_theme.dart' • lib/features/search/presentation/widgets/tools/weather_widget.dart:2:8 • uri_does_not_exist
+  error • Undefined name 'SearchTheme' • lib/features/search/presentation/widgets/tools/weather_widget.dart:11:26 • undefined_identifier
+  error • Undefined class 'SearchColors' • lib/features/search/presentation/widgets/tools/weather_widget.dart:74:5 • undefined_class
+  error • Undefined class 'SearchColors' • lib/features/search/presentation/widgets/tools/weather_widget.dart:146:5 • undefined_class
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/citation/citation_manager.dart:20:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/citation/citation_manager.dart:32:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/citation/citation_manager.dart:36:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/citation/citation_manager.dart:41:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/citation/citation_manager.dart:57:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/citation/citation_manager.dart:61:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/citation/citation_manager.dart:66:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/citation/citation_manager.dart:74:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/citation/citation_manager.dart:101:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/citation/citation_manager.dart:108:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/citation/citation_manager.dart:127:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/citation/citation_manager.dart:130:5 • avoid_print
+   info • Use interpolation to compose strings and values • lib/features/search/rag/services/citation/citation_manager.dart:147:13 • prefer_interpolation_to_compose_strings
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/citation/citation_manager.dart:232:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/citation/citation_manager.dart:234:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/citation/citation_manager.dart:242:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/citation/citation_manager.dart:247:9 • avoid_print
+   info • Use interpolation to compose strings and values • lib/features/search/rag/services/citation/citation_manager.dart:248:73 • prefer_interpolation_to_compose_strings
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/citation/citation_manager.dart:254:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/citation/citation_manager.dart:260:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/citation/citation_manager.dart:268:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/citation/citation_manager.dart:294:11 • avoid_print
+   info • Use interpolation to compose strings and values • lib/features/search/rag/services/citation/citation_manager.dart:295:101 • prefer_interpolation_to_compose_strings
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/citation/citation_manager.dart:301:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/citation/citation_manager.dart:307:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/citation/citation_manager.dart:310:5 • avoid_print
+   info • The imported package 'image' isn't a dependency of the importing package • lib/features/search/rag/services/data_ingestion/attachment_processor.dart:3:8 • depend_on_referenced_packages
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/data_ingestion/attachment_processor.dart:20:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/data_ingestion/attachment_processor.dart:52:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/data_ingestion/pdf_extractor_service.dart:18:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/data_ingestion/pdf_extractor_service.dart:35:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/data_ingestion/pdf_extractor_service.dart:55:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/data_ingestion/pdf_extractor_service.dart:56:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/data_ingestion/rag_scraper_adapter.dart:33:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/data_ingestion/rag_scraper_adapter.dart:53:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/data_ingestion/rag_scraper_adapter.dart:74:5 • avoid_print
+   info • Statements in an if should be enclosed in a block • lib/features/search/rag/services/data_ingestion/rag_scraper_adapter.dart:242:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/features/search/rag/services/data_ingestion/rag_scraper_adapter.dart:244:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/features/search/rag/services/data_ingestion/rag_scraper_adapter.dart:281:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/features/search/rag/services/data_ingestion/rag_scraper_adapter.dart:283:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/features/search/rag/services/data_ingestion/rag_scraper_adapter.dart:322:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/features/search/rag/services/data_ingestion/rag_scraper_adapter.dart:326:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/features/search/rag/services/data_ingestion/rag_scraper_adapter.dart:328:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/features/search/rag/services/data_ingestion/rag_scraper_adapter.dart:375:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/features/search/rag/services/data_ingestion/rag_scraper_adapter.dart:377:7 • curly_braces_in_flow_control_structures
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/context_fusion.dart:91:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/context_fusion.dart:101:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/context_fusion.dart:102:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/context_fusion.dart:103:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/context_fusion.dart:112:9 • avoid_print
+   info • Unnecessary braces in a string interpolation • lib/features/search/rag/services/document_processing/context_fusion.dart:112:46 • unnecessary_brace_in_string_interps
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/context_fusion.dart:119:9 • avoid_print
+   info • Unnecessary braces in a string interpolation • lib/features/search/rag/services/document_processing/context_fusion.dart:119:48 • unnecessary_brace_in_string_interps
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/context_fusion.dart:140:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/context_fusion.dart:148:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/context_fusion.dart:174:5 • avoid_print
+   info • Unnecessary braces in a string interpolation • lib/features/search/rag/services/document_processing/context_fusion.dart:174:45 • unnecessary_brace_in_string_interps
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/context_fusion.dart:176:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/context_fusion.dart:179:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/context_fusion.dart:245:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/context_fusion.dart:440:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/context_fusion.dart:638:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/document_ranker.dart:39:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/document_ranker.dart:43:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/document_ranker.dart:48:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/document_ranker.dart:51:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/document_ranker.dart:55:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/document_ranker.dart:64:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/document_ranker.dart:86:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/document_ranker.dart:89:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/document_ranker.dart:107:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/document_ranker.dart:108:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/document_ranker.dart:115:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/document_ranker.dart:120:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/document_ranker.dart:126:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/document_ranker.dart:733:7 • avoid_print
+   info • Use interpolation to compose strings and values • lib/features/search/rag/services/document_processing/document_ranker.dart:734:65 • prefer_interpolation_to_compose_strings
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/document_ranker.dart:741:7 • avoid_print
+   info • Use interpolation to compose strings and values • lib/features/search/rag/services/document_processing/document_ranker.dart:742:76 • prefer_interpolation_to_compose_strings
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/document_ranker.dart:749:7 • avoid_print
+   info • Use interpolation to compose strings and values • lib/features/search/rag/services/document_processing/document_ranker.dart:750:74 • prefer_interpolation_to_compose_strings
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/document_ranker.dart:757:7 • avoid_print
+   info • Use interpolation to compose strings and values • lib/features/search/rag/services/document_processing/document_ranker.dart:758:67 • prefer_interpolation_to_compose_strings
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/document_ranker.dart:765:7 • avoid_print
+   info • Unnecessary braces in a string interpolation • lib/features/search/rag/services/document_processing/document_ranker.dart:765:41 • unnecessary_brace_in_string_interps
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/document_ranker.dart:771:7 • avoid_print
+   info • Use interpolation to compose strings and values • lib/features/search/rag/services/document_processing/document_ranker.dart:772:72 • prefer_interpolation_to_compose_strings
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/media_ranker.dart:27:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/media_ranker.dart:31:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/media_ranker.dart:37:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/media_ranker.dart:56:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/media_ranker.dart:59:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/media_ranker.dart:70:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/media_ranker.dart:74:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/media_ranker.dart:80:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/media_ranker.dart:99:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/media_ranker.dart:102:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/media_ranker.dart:119:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/media_ranker.dart:123:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/media_ranker.dart:126:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/media_ranker.dart:148:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/media_ranker.dart:153:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/media_ranker.dart:164:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/media_ranker.dart:170:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/media_ranker.dart:186:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/media_ranker.dart:190:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/media_ranker.dart:193:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/media_ranker.dart:215:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/media_ranker.dart:220:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/media_ranker.dart:231:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/document_processing/media_ranker.dart:237:5 • avoid_print
+   info • Statements in an if should be enclosed in a block • lib/features/search/rag/services/document_processing/media_ranker.dart:694:7 • curly_braces_in_flow_control_structures
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/orchestration/agent_orchestrator.dart:45:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/orchestration/agent_orchestrator.dart:80:9 • avoid_print
+   info • Statements in a for should be enclosed in a block • lib/features/search/rag/services/orchestration/agent_orchestrator.dart:161:32 • curly_braces_in_flow_control_structures
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/orchestration/agent_orchestrator.dart:187:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/orchestration/rag_orchestrator.dart:124:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/orchestration/rag_orchestrator.dart:135:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/orchestration/rag_orchestrator.dart:140:7 • avoid_print
+   info • Statements in an if should be enclosed in a block • lib/features/search/rag/services/orchestration/rag_orchestrator.dart:347:17 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/features/search/rag/services/orchestration/rag_orchestrator.dart:349:17 • curly_braces_in_flow_control_structures
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/orchestration/rag_orchestrator.dart:513:13 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/orchestration/rag_orchestrator.dart:690:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/orchestration/rag_orchestrator.dart:758:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/orchestration/rag_orchestrator.dart:832:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/orchestration/rag_orchestrator.dart:852:7 • avoid_print
+warning • This default clause is covered by the previous cases • lib/features/search/rag/services/query_processing/prompt_engineer.dart:68:7 • unreachable_switch_default
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:153:7 • avoid_print
+   info • Unnecessary braces in a string interpolation • lib/features/search/rag/services/query_processing/prompt_engineer.dart:171:26 • unnecessary_brace_in_string_interps
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:264:7 • avoid_print
+   info • Unnecessary braces in a string interpolation • lib/features/search/rag/services/query_processing/prompt_engineer.dart:282:26 • unnecessary_brace_in_string_interps
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:449:5 • avoid_print
+   info • Unnecessary braces in a string interpolation • lib/features/search/rag/services/query_processing/prompt_engineer.dart:465:24 • unnecessary_brace_in_string_interps
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:527:5 • avoid_print
+   info • Unnecessary braces in a string interpolation • lib/features/search/rag/services/query_processing/prompt_engineer.dart:543:24 • unnecessary_brace_in_string_interps
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:582:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:583:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:584:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:585:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:586:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:595:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:596:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:600:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:636:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:649:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:650:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:651:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:652:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:665:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:666:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:686:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:1054:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:1055:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:1615:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:1618:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:1696:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:1712:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:1718:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:2326:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:2395:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:2408:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:2411:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:2424:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:2427:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:2447:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:2450:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:2460:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:2470:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/prompt_engineer.dart:2474:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/query_analyzer.dart:6:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/query_analyzer.dart:34:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/query_analyzer.dart:35:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/query_analyzer.dart:36:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/query_analyzer.dart:37:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/query_analyzer.dart:40:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/query_processing/query_analyzer.dart:41:5 • avoid_print
+   info • Statements in an if should be enclosed in a block • lib/features/search/rag/services/query_processing/query_analyzer.dart:166:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/features/search/rag/services/query_processing/query_analyzer.dart:286:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/features/search/rag/services/query_processing/query_analyzer.dart:288:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/features/search/rag/services/query_processing/query_analyzer.dart:290:7 • curly_braces_in_flow_control_structures
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/vector_store/qdrant_vector_store.dart:154:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/vector_store/qdrant_vector_store.dart:174:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/rag/services/vector_store/qdrant_vector_store.dart:211:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/base/base_scraper.dart:40:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/base/base_scraper.dart:73:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/base/base_scraper.dart:93:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/base/base_scraper.dart:110:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/base/base_scraper.dart:122:15 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/base/base_scraper.dart:126:13 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/base/base_scraper.dart:159:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/base/base_scraper.dart:194:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/base/base_scraper.dart:198:11 • avoid_print
+   info • Dangling library doc comment • lib/features/search/scrapers/base/scraper_models.dart:2:1 • dangling_library_doc_comments
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/scraper_manager.dart:45:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/scraper_manager.dart:64:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/scraper_manager.dart:74:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/scraper_manager.dart:92:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/scraper_manager.dart:105:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/scraper_manager.dart:169:5 • avoid_print
+   info • The imported package 'html' isn't a dependency of the importing package • lib/features/search/scrapers/sites/generic/generic_web_scraper.dart:4:8 • depend_on_referenced_packages
+   info • The imported package 'html' isn't a dependency of the importing package • lib/features/search/scrapers/sites/generic/generic_web_scraper.dart:5:8 • depend_on_referenced_packages
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/sites/generic/generic_web_scraper.dart:39:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/sites/generic/generic_web_scraper.dart:47:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/sites/generic/generic_web_scraper.dart:57:11 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/sites/generic/generic_web_scraper.dart:133:7 • avoid_print
+   info • The imported package 'html' isn't a dependency of the importing package • lib/features/search/scrapers/sites/playstore/playstore_scraper.dart:1:8 • depend_on_referenced_packages
+   info • The imported package 'html' isn't a dependency of the importing package • lib/features/search/scrapers/sites/playstore/playstore_scraper.dart:2:8 • depend_on_referenced_packages
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/sites/playstore/playstore_scraper.dart:70:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/sites/playstore/playstore_scraper.dart:105:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/sites/playstore/playstore_scraper.dart:182:7 • avoid_print
+   info • The imported package 'html' isn't a dependency of the importing package • lib/features/search/scrapers/sites/scholar/scholar_scraper.dart:3:8 • depend_on_referenced_packages
+   info • The imported package 'html' isn't a dependency of the importing package • lib/features/search/scrapers/sites/scholar/scholar_scraper.dart:4:8 • depend_on_referenced_packages
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/sites/scholar/scholar_scraper.dart:63:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/sites/scholar/scholar_scraper.dart:79:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/sites/scholar/scholar_scraper.dart:139:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/sites/scholar/scholar_scraper.dart:206:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/sites/scholar/scholar_scraper.dart:270:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/sites/scholar/scholar_scraper.dart:352:5 • avoid_print
+   info • The imported package 'html' isn't a dependency of the importing package • lib/features/search/scrapers/sites/tiktok/tiktok_scraper.dart:1:8 • depend_on_referenced_packages
+   info • The imported package 'html' isn't a dependency of the importing package • lib/features/search/scrapers/sites/tiktok/tiktok_scraper.dart:2:8 • depend_on_referenced_packages
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/sites/tiktok/tiktok_scraper.dart:76:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/sites/tiktok/tiktok_scraper.dart:129:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/sites/tiktok/tiktok_scraper.dart:206:7 • avoid_print
+   info • The imported package 'html' isn't a dependency of the importing package • lib/features/search/scrapers/sites/youtube/youtube_scraper.dart:1:8 • depend_on_referenced_packages
+   info • The imported package 'html' isn't a dependency of the importing package • lib/features/search/scrapers/sites/youtube/youtube_scraper.dart:2:8 • depend_on_referenced_packages
+warning • Unused import: 'dart:convert' • lib/features/search/scrapers/sites/youtube/youtube_scraper.dart:3:8 • unused_import
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/sites/youtube/youtube_scraper.dart:103:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:8:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:9:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:10:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:33:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:34:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:35:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:36:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:37:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:38:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:39:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:40:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:41:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:42:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:43:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:44:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:45:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:75:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:87:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:88:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:91:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:92:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:97:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:98:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:108:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:109:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:110:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:114:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:115:7 • avoid_print
+warning • The operand can't be 'null', so the condition is always 'true' • lib/features/search/scrapers/test/scraper_test_cli.dart:119:20 • unnecessary_null_comparison
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:124:11 • avoid_print
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/search/scrapers/test/scraper_test_cli.dart:124:36 • invalid_null_aware_operator
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:128:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:137:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:138:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:139:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:140:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:157:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:160:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:161:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:169:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:170:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:174:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:175:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:176:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:177:5 • avoid_print
+warning • The operand can't be 'null', so the condition is always 'true' • lib/features/search/scrapers/test/scraper_test_cli.dart:181:18 • unnecessary_null_comparison
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:184:9 • avoid_print
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/search/scrapers/test/scraper_test_cli.dart:184:34 • invalid_null_aware_operator
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:187:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:188:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:192:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:193:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:195:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:201:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:202:3 • avoid_print
+warning • The operand can't be 'null', so the condition is always 'false' • lib/features/search/scrapers/test/scraper_test_cli.dart:206:19 • unnecessary_null_comparison
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:207:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:208:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:209:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:211:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:216:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:217:3 • avoid_print
+warning • The operand can't be 'null', so the condition is always 'true' • lib/features/search/scrapers/test/scraper_test_cli.dart:221:16 • unnecessary_null_comparison
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:224:7 • avoid_print
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/features/search/scrapers/test/scraper_test_cli.dart:224:32 • invalid_null_aware_operator
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:227:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:228:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:229:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:230:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:235:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:236:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:237:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:238:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:250:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:251:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:254:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:257:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:261:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:262:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:263:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:264:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:265:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:266:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:267:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:268:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:269:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:270:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:271:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:273:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:274:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:275:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:278:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:279:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:282:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:287:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:288:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:289:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:290:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:291:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:292:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:293:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:294:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:295:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:296:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:297:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:299:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:300:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:301:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:304:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:305:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:308:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:309:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:312:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:317:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:318:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:319:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:320:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:321:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:322:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:323:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:324:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:325:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:326:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:327:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:328:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:329:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:330:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:331:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:332:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:333:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:334:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:335:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:337:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:338:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:339:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:342:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:345:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:350:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:351:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:353:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:355:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:357:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:360:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:362:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:364:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:365:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:366:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:369:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:370:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:372:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:373:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:374:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:376:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:379:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:382:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:385:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:390:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:391:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:395:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:398:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:399:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:400:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:404:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:412:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:413:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:421:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:428:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:431:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:437:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:438:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:439:3 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/test/scraper_test_cli.dart:447:5 • avoid_print
+   info • Dangling library doc comment • lib/features/search/scrapers/utils/scraper_utils.dart:1:1 • dangling_library_doc_comments
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/utils/scraper_utils.dart:24:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/utils/scraper_utils.dart:99:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/search/scrapers/utils/scraper_utils.dart:212:5 • avoid_print
+warning • The left operand can't be null, so the right operand is never executed • lib/features/search/tools/read_page_tool.dart:49:55 • dead_null_aware_expression
+   info • 'Parser' is deprecated and shouldn't be used. Use [GrammarParser] or [ShuntingYardParser] • lib/features/search/tools/search_tools.dart:138:22 • deprecated_member_use
+   info • 'evaluate' is deprecated and shouldn't be used. Use [RealEvaluator], [IntervalEvaluator], or [VectorEvaluator] • lib/features/search/tools/search_tools.dart:140:33 • deprecated_member_use
+   info • Statements in an if should be enclosed in a block • lib/features/search/tools/unit_converter/unit_converter_tool.dart:62:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/features/search/tools/unit_converter/unit_converter_tool.dart:87:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/features/search/tools/unit_converter/unit_converter_tool.dart:89:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/features/search/tools/unit_converter/unit_converter_tool.dart:91:7 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/features/search/tools/unit_converter/unit_converter_tool.dart:93:7 • curly_braces_in_flow_control_structures
+warning • Unused import: 'package:equatable/equatable.dart' • lib/features/settings/domain/usecases/save_settings.dart:2:8 • unused_import
+warning • Unused import: 'package:equatable/equatable.dart' • lib/features/settings/domain/usecases/update_theme.dart:2:8 • unused_import
+warning • Unused import: 'package:searvo/core/usecases/usecase.dart' • lib/features/settings/presentation/cubit/settings_cubit.dart:2:8 • unused_import
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/screens/settings_screen.dart:206:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/screens/settings_screen.dart:259:44 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/screens/settings_screen.dart:284:45 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/screens/settings_screen.dart:315:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/screens/settings_screen.dart:370:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/screens/settings_screen.dart:380:51 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/screens/settings_screen.dart:534:45 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/screens/settings_screen.dart:543:52 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/screens/settings_screen.dart:702:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/screens/settings_screen.dart:711:48 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/screens/settings_screen.dart:719:62 • deprecated_member_use
+warning • The declaration '_showAboutDialog' isn't referenced • lib/features/settings/screens/settings_screen.dart:821:8 • unused_element
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/screens/settings_screen.dart:926:56 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/screens/settings_screen.dart:929:49 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/screens/settings_screen.dart:1046:56 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/screens/settings_screen.dart:1049:49 • deprecated_member_use
+warning • The declaration '_showResetSetupDialog' isn't referenced • lib/features/settings/screens/settings_screen.dart:1383:16 • unused_element
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/settings/screens/settings_screen.dart:1418:24 • use_build_context_synchronously
+   info • Don't invoke 'print' in production code • lib/features/settings/services/llm_settings_service.dart:245:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/settings/services/llm_settings_service.dart:284:9 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/settings/services/llm_settings_service.dart:307:7 • avoid_print
+   info • Use 'TypeName _' instead of a type literal • lib/features/settings/services/settings_service.dart:41:12 • type_literal_in_constant_pattern
+   info • Use 'TypeName _' instead of a type literal • lib/features/settings/services/settings_service.dart:43:12 • type_literal_in_constant_pattern
+   info • Use 'TypeName _' instead of a type literal • lib/features/settings/services/settings_service.dart:45:12 • type_literal_in_constant_pattern
+   info • Use 'TypeName _' instead of a type literal • lib/features/settings/services/settings_service.dart:47:12 • type_literal_in_constant_pattern
+   info • Use 'TypeName _' instead of a type literal • lib/features/settings/services/settings_service.dart:59:12 • type_literal_in_constant_pattern
+   info • Use 'TypeName _' instead of a type literal • lib/features/settings/services/settings_service.dart:61:12 • type_literal_in_constant_pattern
+   info • Use 'TypeName _' instead of a type literal • lib/features/settings/services/settings_service.dart:63:12 • type_literal_in_constant_pattern
+   info • Use 'TypeName _' instead of a type literal • lib/features/settings/services/settings_service.dart:65:12 • type_literal_in_constant_pattern
+warning • Unused import: 'package:searvo/core/theme/theme.dart' • lib/features/settings/widgets/api_key_field.dart:4:8 • unused_import
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/api_key_field.dart:88:44 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/api_key_field.dart:140:42 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/api_key_field.dart:186:39 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/api_key_field.dart:189:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/api_key_field.dart:232:36 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/api_key_field.dart:240:36 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/api_key_field.dart:248:36 • deprecated_member_use
+warning • Unused import: 'package:searvo/core/theme/theme.dart' • lib/features/settings/widgets/embedding_settings_panel.dart:2:8 • unused_import
+   info • 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre • lib/features/settings/widgets/embedding_settings_panel.dart:109:19 • deprecated_member_use
+   info • 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre • lib/features/settings/widgets/embedding_settings_panel.dart:110:19 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/embedding_settings_panel.dart:143:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/embedding_settings_panel.dart:146:49 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/embedding_settings_panel.dart:166:58 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/embedding_settings_panel.dart:184:52 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/embedding_settings_panel.dart:250:53 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/embedding_settings_panel.dart:317:53 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/embedding_settings_panel.dart:383:32 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/embedding_settings_panel.dart:385:51 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/embedding_settings_panel.dart:475:44 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/embedding_settings_panel.dart:483:48 • deprecated_member_use
+warning • Unused import: 'package:searvo/core/theme/theme.dart' • lib/features/settings/widgets/llm_provider_settings_panel.dart:2:8 • unused_import
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/llm_provider_settings_panel.dart:246:48 • deprecated_member_use
+   info • 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre • lib/features/settings/widgets/llm_provider_settings_panel.dart:296:19 • deprecated_member_use
+   info • 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre • lib/features/settings/widgets/llm_provider_settings_panel.dart:297:19 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/llm_provider_settings_panel.dart:331:47 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/llm_provider_settings_panel.dart:334:49 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/llm_provider_settings_panel.dart:354:58 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/llm_provider_settings_panel.dart:568:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/llm_provider_settings_panel.dart:594:44 • deprecated_member_use
+warning • Unused import: 'package:searvo/core/theme/theme.dart' • lib/features/settings/widgets/search_provider_settings_panel.dart:4:8 • unused_import
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/search_provider_settings_panel.dart:157:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/search_provider_settings_panel.dart:200:44 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/search_provider_settings_panel.dart:252:42 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/settings_card.dart:44:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/settings_card.dart:63:47 • deprecated_member_use
+   info • 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor or activeTrackColor instead. This feature was deprecated after v3.31.0-2.0.pre • lib/features/settings/widgets/settings_card.dart:202:11 • deprecated_member_use
+warning • Unused import: '../../../core/theme/theme.dart' • lib/features/settings/widgets/website_mappings_panel.dart:4:8 • unused_import
+warning • The declaration '_toggleSelectionMode' isn't referenced • lib/features/settings/widgets/website_mappings_panel.dart:41:8 • unused_element
+warning • The declaration '_toggleMappingSelection' isn't referenced • lib/features/settings/widgets/website_mappings_panel.dart:50:8 • unused_element
+warning • The declaration '_deleteSelectedMappings' isn't referenced • lib/features/settings/widgets/website_mappings_panel.dart:60:16 • unused_element
+warning • The declaration '_getFilteredMappings' isn't referenced • lib/features/settings/widgets/website_mappings_panel.dart:102:47 • unused_element
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/website_mappings_panel.dart:255:60 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/website_mappings_panel.dart:309:51 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/website_mappings_panel.dart:452:50 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/website_mappings_panel.dart:484:50 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/website_mappings_panel.dart:513:50 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/settings/widgets/website_mappings_panel.dart:544:50 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/voice/screens/voice_diagnostics_screen.dart:376:52 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/voice/screens/voice_diagnostics_screen.dart:378:54 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/voice/screens/voice_diagnostics_screen.dart:379:55 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/voice/screens/voice_diagnostics_screen.dart:383:54 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/voice/screens/voice_diagnostics_screen.dart:385:56 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/voice/screens/voice_diagnostics_screen.dart:386:57 • deprecated_member_use
+   info • 'partialResults' is deprecated and shouldn't be used. Use SpeechListenOptions.partialResults instead • lib/features/voice/services/voice_service.dart:287:9 • deprecated_member_use
+   info • 'cancelOnError' is deprecated and shouldn't be used. Use SpeechListenOptions.cancelOnError instead • lib/features/voice/services/voice_service.dart:288:9 • deprecated_member_use
+   info • 'listenMode' is deprecated and shouldn't be used. Use SpeechListenOptions.listenMode instead • lib/features/voice/services/voice_service.dart:289:9 • deprecated_member_use
+   info • Don't invoke 'print' in production code • lib/features/voice/services/voice_service.dart:450:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/voice/services/voice_service.dart:452:7 • avoid_print
+   info • Don't invoke 'print' in production code • lib/features/voice/services/voice_service.dart:454:5 • avoid_print
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/voice/widgets/voice_input_helpers.dart:131:66 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/voice/widgets/voice_input_helpers.dart:134:42 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/voice/widgets/voice_input_helpers.dart:279:37 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps • lib/features/voice/widgets/voice_input_helpers.dart:300:34 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/voice/widgets/voice_input_helpers.dart:354:35 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/voice/widgets/voice_input_helpers.dart:357:37 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/voice/widgets/voice_input_widget.dart:182:49 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/voice/widgets/voice_troubleshooting.dart:153:38 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/voice/widgets/voice_troubleshooting.dart:155:40 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/voice/widgets/voice_troubleshooting.dart:156:41 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/voice/widgets/voice_troubleshooting.dart:160:40 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/voice/widgets/voice_troubleshooting.dart:162:42 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/voice/widgets/voice_troubleshooting.dart:163:43 • deprecated_member_use
+   info • Don't invoke 'print' in production code • lib/main.dart:37:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/main.dart:39:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/main.dart:46:5 • avoid_print
+   info • Don't invoke 'print' in production code • lib/main.dart:70:5 • avoid_print
+warning • Unused import: 'package:searvo/features/search/domain/services/search_service.dart' • test/architecture_verification_test.dart:2:8 • unused_import
+   info • The private field _responseToReturn could be 'final' • test/features/llm/services/providers/llm_provider_manager_test.dart:10:11 • prefer_final_fields
+   info • The private field _exceptionToThrow could be 'final' • test/features/llm/services/providers/llm_provider_manager_test.dart:11:14 • prefer_final_fields
+warning • Unused import: 'package:mockito/mockito.dart' • test/features/search/rag/bloc/rag_cubit_test.dart:3:8 • unused_import
+   info • Don't invoke 'print' in production code • test/features/search/rag/follow_up_questions_test.dart:57:7 • avoid_print
+   info • Don't invoke 'print' in production code • test/features/search/rag/follow_up_questions_test.dart:59:9 • avoid_print
+   info • Don't invoke 'print' in production code • test/features/search/rag/follow_up_questions_test.dart:114:7 • avoid_print
+   info • Don't invoke 'print' in production code • test/features/search/rag/follow_up_questions_test.dart:116:9 • avoid_print
+   info • Don't invoke 'print' in production code • test/features/search/rag/follow_up_questions_test.dart:146:7 • avoid_print
+   info • Don't invoke 'print' in production code • test/features/search/rag/follow_up_questions_test.dart:148:9 • avoid_print
+   info • Don't invoke 'print' in production code • test/features/search/rag/follow_up_questions_test.dart:176:7 • avoid_print
+   info • Don't invoke 'print' in production code • test/features/search/rag/follow_up_questions_test.dart:178:9 • avoid_print
+   info • Don't invoke 'print' in production code • test/features/search/rag/follow_up_questions_test.dart:181:7 • avoid_print
+   info • Don't invoke 'print' in production code • test/features/search/rag/follow_up_questions_test.dart:183:9 • avoid_print
+   info • Don't invoke 'print' in production code • test/features/search/rag/follow_up_questions_test.dart:202:7 • avoid_print
+   info • Don't invoke 'print' in production code • test/features/search/rag/follow_up_questions_test.dart:204:9 • avoid_print
+   info • The imported package 'test' isn't a dependency of the importing package • test/features/search/rag/orchestration/prompt_engineer_test.dart:1:8 • depend_on_referenced_packages
+   info • The imported package 'test' isn't a dependency of the importing package • test/features/search/services/intent/intent_classifier_test.dart:1:8 • depend_on_referenced_packages
+warning • The value of the local variable 'saveSettings' isn't used • test/features/settings/domain/usecases/settings_usecases_test.dart:458:13 • unused_local_variable
+warning • The value of the local variable 'currentState' isn't used • test/features/voice/services/voice_service_test.dart:153:13 • unused_local_variable
+

@@ -4,7 +4,7 @@ import 'package:mockito/annotations.dart';
 import 'package:searvo/features/llm/services/providers/llm_provider_manager.dart';
 import 'package:searvo/features/search/rag/services/orchestration/agent_orchestrator.dart';
 import 'package:searvo/features/search/rag/services/query_processing/prompt_engineer.dart';
-import 'package:searvo/features/search/tools/search_tools.dart';
+import 'package:searvo/features/search/domain/tools/search_tools.dart';
 import 'package:searvo/features/search/rag/models/rag_models.dart';
 
 // Generate Mocks

@@ -5,7 +5,7 @@ import 'package:searvo/features/search/data/datasources/searxng_remote_data_sour
 import 'package:searvo/features/search/data/datasources/search_local_data_source.dart';
 import 'package:searvo/features/search/domain/services/intent_classifier.dart';
 import 'package:searvo/features/search/domain/entities/search_intent.dart';
-import 'package:searvo/features/search/tools/search_tools.dart';
+import 'package:searvo/features/search/domain/tools/search_tools.dart';
 import '../../../domain/entities/message_generation_state.dart';
 import '../../../domain/entities/source_item.dart';
 import '../../../domain/entities/attachment_metadata.dart';

@@ -2,16 +2,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
-import 'package:searvo/features/search/bloc/search_bloc.dart';
-import 'package:searvo/features/search/bloc/search_event.dart';
-import 'package:searvo/features/search/bloc/search_state.dart';
+import 'package:searvo/features/search/presentation/bloc/search_bloc.dart';
+import 'package:searvo/features/search/presentation/bloc/search_event.dart';
+import 'package:searvo/features/search/presentation/bloc/search_state.dart';
 import 'package:searvo/features/search/domain/entities/message_branch_manager.dart';
 import 'package:searvo/features/search/domain/entities/message_branch.dart';
 import 'package:searvo/features/search/domain/entities/message_data.dart';
 import 'package:searvo/features/search/domain/entities/search_mode.dart';
 import 'package:searvo/features/search/domain/services/search_service.dart';
 import 'package:searvo/features/search/presentation/bloc/conversation_manager.dart';
-import 'package:searvo/features/search/rag/models/rag_models.dart';
+
 import 'package:searvo/features/history/services/conversation_database_service.dart';
 import 'package:searvo/features/history/models/conversation_model.dart';
 
