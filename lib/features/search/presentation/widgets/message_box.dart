@@ -7,6 +7,7 @@ import 'package:searvo/core/theme/theme.dart';
 import 'package:searvo/features/search/theme/search_theme.dart';
 import 'package:searvo/features/search/domain/entities/message_branch_manager.dart';
 import 'package:searvo/features/search/domain/entities/message_data.dart';
+import 'package:searvo/features/search/domain/entities/source_item.dart';
 
 import 'package:searvo/features/voice/services/voice_service.dart';
 import 'package:searvo/common/widgets/streaming_text_widget.dart';
@@ -367,70 +368,164 @@ class _MessageBoxState extends State<MessageBox> with TickerProviderStateMixin {
       );
     }
     return ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
-          itemCount: _currentMessage.sources.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final source = _currentMessage.sources[index];
-            return LinkPreview(
-              url: source.url,
-              onTap: () => _handleUrlTap(source.url),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: colors.surface,
-                  border: Border.all(color: colors.border),
-                  borderRadius: BorderRadius.circular(12),
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      itemCount: _currentMessage.sources.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final source = _currentMessage.sources[index];
+        return _buildSourceCard(colors, source, index);
+      },
+    );
+  }
+
+  Widget _buildSourceCard(SearchColors colors, SourceItem source, int index) {
+    return LinkPreview(
+      url: source.url,
+      onTap: () => _handleUrlTap(source.url),
+      child: Container(
+        height: 88,
+        decoration: BoxDecoration(
+          color: colors.surface,
+          border: Border.all(color: colors.border.withOpacity(0.5)),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Row(
+          children: [
+            // Screenshot Thumbnail
+            SizedBox(
+              width: 110,
+              height: double.infinity,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  CachedNetworkImage(
+                    imageUrl: _getScreenshotUrl(source.url),
+                    fit: BoxFit.cover,
+                    placeholder: (_, __) =>
+                        Container(color: colors.inputBackground),
+                    errorWidget: (_, __, ___) => Container(
+                      color: colors.inputBackground,
+                      child: Icon(Icons.public, color: colors.caption),
+                    ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        right: BorderSide(
+                          color: colors.border.withOpacity(0.5),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Content
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
                 ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    if (source.favicon != null)
-                      CachedNetworkImage(
-                        imageUrl: source.favicon!,
-                        width: 24,
-                        height: 24,
-                        errorWidget: (_, __, ___) =>
-                            const Icon(Icons.public, size: 20),
-                      )
-                    else
-                      Icon(Icons.public, size: 20, color: colors.caption),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            source.title,
-                            style: TextStyle(
-                              color: colors.text,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
+                    Text(
+                      source.title,
+                      style: TextStyle(
+                        color: colors.text,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        height: 1.25,
+                        letterSpacing: -0.2,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        _buildFavicon(colors, source),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
                             source.domain,
                             style: TextStyle(
                               color: colors.caption,
                               fontSize: 12,
+                              fontWeight: FontWeight.w500,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    Icon(Icons.arrow_outward, size: 16, color: colors.caption),
                   ],
                 ),
               ),
-            );
-          },
-        )
-        .animate()
-        .fadeIn(duration: 400.ms, delay: 100.ms)
-        .slideY(begin: 0.1, end: 0);
+            ),
+            // Action Icon
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: colors.background,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.arrow_outward_rounded,
+                  size: 16,
+                  color: colors.caption,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ).animate(delay: (index * 50).ms).fadeIn().slideX(begin: 0.05, end: 0);
+  }
+
+  Widget _buildFavicon(SearchColors colors, SourceItem source) {
+    if (source.favicon != null && source.favicon!.isNotEmpty) {
+      return CachedNetworkImage(
+        imageUrl: source.favicon!,
+        width: 14,
+        height: 14,
+        fit: BoxFit.contain,
+        errorWidget: (context, url, error) =>
+            _buildGoogleFavicon(colors, source.domain),
+      );
+    }
+    return _buildGoogleFavicon(colors, source.domain);
+  }
+
+  Widget _buildGoogleFavicon(SearchColors colors, String domain) {
+    return CachedNetworkImage(
+      imageUrl: 'https://www.google.com/s2/favicons?domain=$domain&sz=64',
+      width: 14,
+      height: 14,
+      fit: BoxFit.contain,
+      errorWidget: (context, url, error) =>
+          Icon(Icons.public, size: 14, color: colors.caption),
+    );
+  }
+
+  String _getScreenshotUrl(String url) {
+    final encodedUrl = Uri.encodeComponent(url);
+    return 'https://api.microlink.io/?url=$encodedUrl&screenshot=true&meta=false&embed=screenshot.url';
   }
 
   Widget _buildImagesTab(SearchColors colors) {
@@ -755,7 +850,7 @@ class _MessageBoxState extends State<MessageBox> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 110,
+            height: 180, // Increased height for screenshot
             child:
                 _currentMessage.sources.isEmpty && _currentMessage.isGenerating
                 ? _buildSourcesShimmer(colors, isVertical: false)
@@ -768,65 +863,109 @@ class _MessageBoxState extends State<MessageBox> with TickerProviderStateMixin {
                       final source = _currentMessage.sources[index];
                       return LinkPreview(
                         url: source.url,
-                        width: 220,
+                        width: 240, // Increased width
                         onTap: () => _handleUrlTap(source.url),
                         child: Container(
-                          width: 220,
-                          padding: const EdgeInsets.all(12),
+                          width: 240,
                           decoration: BoxDecoration(
                             color: colors.surface,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: colors.border),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: colors.border.withOpacity(0.5),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.04),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
+                          clipBehavior: Clip.antiAlias,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                children: [
-                                  if (source.favicon != null)
+                              // Screenshot
+                              Expanded(
+                                flex: 3,
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
                                     CachedNetworkImage(
-                                      imageUrl: source.favicon!,
-                                      width: 16,
-                                      height: 16,
-                                      errorWidget: (_, __, ___) => Icon(
-                                        Icons.public,
-                                        size: 16,
-                                        color: colors.caption,
+                                      imageUrl: _getScreenshotUrl(source.url),
+                                      fit: BoxFit.cover,
+                                      placeholder: (_, __) => Container(
+                                        color: colors.inputBackground,
                                       ),
-                                    )
-                                  else
-                                    Icon(
-                                      Icons.public,
-                                      size: 16,
-                                      color: colors.caption,
-                                    ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      source.domain,
-                                      style: TextStyle(
-                                        color: colors.caption,
-                                        fontSize: 11,
+                                      errorWidget: (_, __, ___) => Container(
+                                        color: colors.inputBackground,
+                                        child: Icon(
+                                          Icons.public,
+                                          color: colors.caption,
+                                        ),
                                       ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                  ),
-                                ],
-                              ),
-                              const Spacer(),
-                              Text(
-                                source.title,
-                                style: TextStyle(
-                                  color: colors.text,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  height: 1.3,
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        border: Border(
+                                          bottom: BorderSide(
+                                            color: colors.border.withOpacity(
+                                              0.5,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(height: 4),
+                              // Content
+                              Expanded(
+                                flex: 2,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        source.title,
+                                        style: TextStyle(
+                                          color: colors.text,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          height: 1.25,
+                                          letterSpacing: -0.2,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const Spacer(),
+                                      Row(
+                                        children: [
+                                          _buildFavicon(colors, source),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              source.domain,
+                                              style: TextStyle(
+                                                color: colors.caption,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -847,14 +986,14 @@ class _MessageBoxState extends State<MessageBox> with TickerProviderStateMixin {
           ? ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               itemCount: 3,
               separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (_, __) => Container(
-                height: 72,
+                height: 88,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                 ),
               ),
             )
