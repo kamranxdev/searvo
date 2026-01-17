@@ -7,6 +7,11 @@ enum QueryIntent {
   comparison,
   news,
   research,
+  shopping,
+  technical,
+  creative,
+  media,
+  local,
 }
 
 /// Suggestion type for UI differentiation

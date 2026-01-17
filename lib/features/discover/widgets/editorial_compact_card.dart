@@ -8,10 +8,8 @@ import 'package:searvo/features/discover/theme/discover_theme.dart';
 class EditorialCompactCard extends StatefulWidget {
   final Article article;
 
-  const EditorialCompactCard({
-    Key? key,
-    required this.article,
-  }) : super(key: key);
+  const EditorialCompactCard({Key? key, required this.article})
+    : super(key: key);
 
   @override
   State<EditorialCompactCard> createState() => _EditorialCompactCardState();
@@ -28,31 +26,27 @@ class _EditorialCompactCardState extends State<EditorialCompactCard> {
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () => _openArticle(context),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: _isHovered
-                ? colors.cardBackground
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: _isHovered ? colors.divider : Colors.transparent,
-              width: 1,
-            ),
+      // Tap handling is now done by the parent widget for proper routing
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: _isHovered ? colors.cardBackground : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: _isHovered ? colors.divider : Colors.transparent,
+            width: 1,
           ),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final isNarrow = constraints.maxWidth < 500;
-              
-              if (isNarrow) {
-                return _buildVerticalLayout(context, colors);
-              }
-              return _buildHorizontalLayout(context, colors);
-            },
-          ),
+        ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isNarrow = constraints.maxWidth < 500;
+
+            if (isNarrow) {
+              return _buildVerticalLayout(context, colors);
+            }
+            return _buildHorizontalLayout(context, colors);
+          },
         ),
       ),
     );
@@ -114,11 +108,6 @@ class _EditorialCompactCardState extends State<EditorialCompactCard> {
       return url;
     }
   }
-
-  Future<void> _openArticle(BuildContext context) async {
-    final searchQuery = 'Summary: ${widget.article.url}';
-    Navigator.pushNamed(context, '/', arguments: {'query': searchQuery});
-  }
 }
 
 // ===========================================================================
@@ -129,10 +118,7 @@ class _CompactThumbnail extends StatelessWidget {
   final String imageUrl;
   final bool isHovered;
 
-  const _CompactThumbnail({
-    required this.imageUrl,
-    required this.isHovered,
-  });
+  const _CompactThumbnail({required this.imageUrl, required this.isHovered});
 
   @override
   Widget build(BuildContext context) {
@@ -163,9 +149,7 @@ class _CompactThumbnail extends StatelessWidget {
               child: CachedNetworkImage(
                 imageUrl: imageUrl,
                 fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  color: colors.divider,
-                ),
+                placeholder: (context, url) => Container(color: colors.divider),
                 errorWidget: (context, url, error) => Container(
                   color: colors.divider,
                   child: Icon(
@@ -191,10 +175,7 @@ class _MobileThumbnail extends StatelessWidget {
   final String imageUrl;
   final bool isHovered;
 
-  const _MobileThumbnail({
-    required this.imageUrl,
-    required this.isHovered,
-  });
+  const _MobileThumbnail({required this.imageUrl, required this.isHovered});
 
   @override
   Widget build(BuildContext context) {
@@ -260,9 +241,9 @@ class _CompactContent extends StatelessWidget {
         // Title
         AnimatedDefaultTextStyle(
           duration: const Duration(milliseconds: 200),
-          style: DiscoverTheme.cardHeadline(context).copyWith(
-            color: isHovered ? colors.accent : colors.headline,
-          ),
+          style: DiscoverTheme.cardHeadline(
+            context,
+          ).copyWith(color: isHovered ? colors.accent : colors.headline),
           child: Text(
             article.title,
             maxLines: 2,
@@ -273,10 +254,9 @@ class _CompactContent extends StatelessWidget {
         // Excerpt
         Text(
           article.content,
-          style: DiscoverTheme.bodyText(context).copyWith(
-            fontSize: 14,
-            height: 1.5,
-          ),
+          style: DiscoverTheme.bodyText(
+            context,
+          ).copyWith(fontSize: 14, height: 1.5),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),

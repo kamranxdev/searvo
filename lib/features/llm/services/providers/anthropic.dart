@@ -27,6 +27,9 @@ class Anthropic extends BaseLLMProvider {
   String get providerName => 'Anthropic';
 
   @override
+  BaseChatModel get model => _chatModel;
+
+  @override
   Future<void> initialize() async {
     if (_apiKey == null || _apiKey!.isEmpty) {
       throw Exception('Anthropic API key is required');

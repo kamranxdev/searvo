@@ -2,6 +2,7 @@ import 'package:langchain/langchain.dart' hide Document;
 import 'package:langchain_core/documents.dart' as lc;
 import 'package:searvo/features/llm/services/providers/llm_provider_manager.dart';
 import 'package:searvo/features/search/rag/models/rag_models.dart';
+import '../../domain/entities/message_data.dart';
 import 'wrappers/custom_embeddings_wrapper.dart';
 
 /// Central service for LangChain-based RAG operations
@@ -91,43 +92,133 @@ class LangChainService {
     return {'docs': docs};
   }
 
-  /// Generate an answer using RAG context
+  /// Generate an answer using RAG context and optional conversation history
   Stream<String> generateAnswer(
     String query,
-    List<lc.Document> contextDocs,
-  ) async* {
+    List<lc.Document> contextDocs, {
+    List<MessageData>? previousMessages,
+  }) async* {
     if (contextDocs.isEmpty) {
       yield "I couldn't find any relevant information to answer your question.";
       return;
     }
 
+    final provider = _llmManager.activeProvider;
+    if (provider == null) {
+      throw Exception('No active provider set for RAG generation');
+    }
+
+    // 1. Map documents to unique source IDs to allow precise citation
+    final uniqueSources = <String, int>{}; // URL -> Source ID
+    final docSourceMap = <lc.Document, int>{};
+
+    int sourceCounter = 1;
+    for (final doc in contextDocs) {
+      final url =
+          doc.metadata['url'] as String? ??
+          doc.metadata['source'] as String? ??
+          'unknown';
+      if (!uniqueSources.containsKey(url)) {
+        uniqueSources[url] = sourceCounter++;
+      }
+      docSourceMap[doc] = uniqueSources[url]!;
+    }
+
     final contextText = contextDocs
-        .map(
-          (d) =>
-              "${d.pageContent}\nSource: ${d.metadata['title'] ?? 'Unknown'}",
-        )
+        .map((d) {
+          final id = docSourceMap[d];
+          final title = d.metadata['title'] ?? 'Unknown';
+          return "Source [$id]: $title\n${d.pageContent}";
+        })
         .join('\n\n');
 
-    // We construct a specific prompt for RAG
-    final prompt =
-        """
-You are a helpful AI research assistant. Use the following pieces of context to answer the user's question.
-If the answer is not in the context, say that you don't know based on the available information.
-Keep your answer concise, accurate, and professional.
-Cite your sources implicitly by verifying the information against the context provided.
+    String historyText = '';
+    if (previousMessages != null && previousMessages.isNotEmpty) {
+      historyText = previousMessages
+          .map((m) {
+            return "User: ${m.query}\nAssistant: ${m.answer}";
+          })
+          .join('\n\n');
+    }
+
+    final promptTemplate = PromptTemplate.fromTemplate('''
+You are an expert research assistant providing comprehensive, accurate answers with perfect source attribution.
+
+CRITICAL ANTI-HALLUCINATION RULES:
+- ONLY state facts that are DIRECTLY supported by the provided sources
+- NEVER invent statistics, dates, names, quotes, or facts not in sources
+- If sources conflict, explicitly acknowledge: "Sources differ on this point..."
+- If information is uncertain, use hedging: "According to [source]..."
+- If a question cannot be fully answered from sources, state: "Based on available sources, I can confirm X, but cannot verify Y"
+- Prefer admitting uncertainty over making unsupported claims
+
+RESPONSE PHILOSOPHY:
+Write like an expert explaining a topic to an intelligent audience. Synthesize information into a coherent narrative that reads naturally while being thoroughly sourced.
+
+WRITING STYLE:
+- Start directly with the answer - no preamble
+- Write in clear, flowing paragraphs
+- Use active voice and confident language ONLY for verified facts
+- Integrate information from multiple sources seamlessly
+- Make the writing engaging and insightful
+
+CITATION RULES:
+- EVERY factual claim MUST have a citation [1] or [1][2] using the IDs from the Context.
+- Cite immediately after the claim: "Tesla was founded in 2003.[1]"
+- Use multiple citations for corroborated facts: "This is widely reported.[1][3][5]" (NO COMMAS)
+- Never cite a source for information it doesn't contain
+- If making a general statement, ensure at least one source supports it
+
+STRUCTURE:
+1. Open with a direct, substantive answer (2-3 sentences)
+2. Expand with context and details (3-5 paragraphs)
+3. Each paragraph should flow logically
+4. End with forward-looking insight when relevant
+
+AVOID:
+- Starting with "Based on the search results"
+- Making claims without citations
+- Inventing specific numbers, dates, or statistics
+- Stating opinions as facts
+- Bullet points (use flowing prose)
+- Generic conclusions
 
 Context:
-$contextText
+{context}
 
-Question: $query
+Conversation History:
+{history}
+
+Question: {question}
 
 Answer:
-""";
+''');
 
-    // Use the LLM Manager to stream the response
-    // Ideally this should be a LangChain 'Runnable' chain, but
-    // wrapping LLMProviderManager as a ChatModel is complex.
-    // This hybrid approach uses LangChain for Retrieval and LLMManager for Generation.
-    yield* _llmManager.generateResponseStream(prompt);
+    final chain = promptTemplate | provider.model | StringOutputParser();
+
+    try {
+      final stream = chain.stream({
+        'context': contextText,
+        'history': historyText,
+        'question': query,
+      });
+      yield* stream.cast<String>();
+    } catch (e) {
+      throw Exception('Failed to generate RAG response: $e');
+    }
+  }
+
+  /// Generate a fallback prompt when no sources are found
+  String createFallbackPrompt(String query) {
+    return '''QUESTION: $query
+
+CONTEXT: No relevant search results were found.
+
+INSTRUCTIONS:
+Provide a helpful response that:
+1. Acknowledges the lack of current search results
+2. Offers relevant general knowledge if applicable
+3. Suggests how to refine the search
+4. Be honest about limitations while remaining helpful''';
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:langchain/langchain.dart';
 import 'package:searvo/features/llm/services/providers/base_llm_provider.dart';
 
 /// Mock implementation of BaseLLMProvider for testing
@@ -10,6 +11,7 @@ class MockLLMProvider implements BaseLLMProvider {
   Exception? _exceptionToThrow;
   List<String> receivedMessages = [];
   List<Map<String, dynamic>> receivedHistory = [];
+  final FakeChatModel _fakeModel = FakeChatModel(responses: ['Mock response']);
 
   MockLLMProvider({
     required String providerName,
@@ -23,6 +25,9 @@ class MockLLMProvider implements BaseLLMProvider {
 
   @override
   String get providerName => _providerName;
+
+  @override
+  BaseChatModel get model => _fakeModel;
 
   @override
   bool get isConfigured => _isConfigured;

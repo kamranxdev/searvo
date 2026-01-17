@@ -40,6 +40,9 @@ class Ollama extends BaseLLMProvider {
   String get providerName => 'Ollama';
 
   @override
+  BaseChatModel get model => _chatModel;
+
+  @override
   Future<void> initialize() async {
     if (!_isExplicitlyConfigured) {
       throw Exception(

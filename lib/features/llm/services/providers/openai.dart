@@ -23,6 +23,9 @@ class OpenAI extends BaseLLMProvider {
   String get providerName => 'OpenAI';
 
   @override
+  BaseChatModel get model => _chatModel;
+
+  @override
   Future<void> initialize() async {
     if (_apiKey == null || _apiKey!.isEmpty) {
       throw Exception('OpenAI API key is required');

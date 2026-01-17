@@ -30,47 +30,45 @@ class _EditorialHeroCardState extends State<EditorialHeroCard> {
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () => _openArticle(context),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-          height: heroHeight,
-          transform: _isHovered
-              ? (Matrix4.identity()..scale(1.005))
-              : Matrix4.identity(),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(_isHovered ? 0.2 : 0.1),
-                blurRadius: _isHovered ? 32 : 16,
-                offset: Offset(0, _isHovered ? 12 : 8),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Background Image
-                _HeroImage(
-                  imageUrl: _cleanThumbnailUrl(widget.article.thumbnail),
-                  isHovered: _isHovered,
-                ),
-                // Gradient Overlay
-                _GradientOverlay(isHovered: _isHovered),
-                // Content
-                _HeroContent(
-                  article: widget.article,
-                  isCompact: widget.isCompact,
-                  isHovered: _isHovered,
-                ),
-                // Hover Indicator
-                if (_isHovered) _ReadIndicator(),
-              ],
+      // Tap handling is now done by the parent widget for proper routing
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+        height: heroHeight,
+        transform: _isHovered
+            ? (Matrix4.identity()..scale(1.005))
+            : Matrix4.identity(),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(_isHovered ? 0.2 : 0.1),
+              blurRadius: _isHovered ? 32 : 16,
+              offset: Offset(0, _isHovered ? 12 : 8),
             ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Background Image
+              _HeroImage(
+                imageUrl: _cleanThumbnailUrl(widget.article.thumbnail),
+                isHovered: _isHovered,
+              ),
+              // Gradient Overlay
+              _GradientOverlay(isHovered: _isHovered),
+              // Content
+              _HeroContent(
+                article: widget.article,
+                isCompact: widget.isCompact,
+                isHovered: _isHovered,
+              ),
+              // Hover Indicator
+              if (_isHovered) _ReadIndicator(),
+            ],
           ),
         ),
       ),
@@ -89,11 +87,6 @@ class _EditorialHeroCardState extends State<EditorialHeroCard> {
       return url;
     }
   }
-
-  Future<void> _openArticle(BuildContext context) async {
-    final searchQuery = 'Summary: ${widget.article.url}';
-    Navigator.pushNamed(context, '/', arguments: {'query': searchQuery});
-  }
 }
 
 // ===========================================================================
@@ -104,10 +97,7 @@ class _HeroImage extends StatelessWidget {
   final String imageUrl;
   final bool isHovered;
 
-  const _HeroImage({
-    required this.imageUrl,
-    required this.isHovered,
-  });
+  const _HeroImage({required this.imageUrl, required this.isHovered});
 
   @override
   Widget build(BuildContext context) {
@@ -221,9 +211,9 @@ class _HeroContent extends StatelessWidget {
           // Title
           AnimatedDefaultTextStyle(
             duration: const Duration(milliseconds: 200),
-            style: DiscoverTheme.heroHeadlineLight(context).copyWith(
-              fontSize: isCompact ? 28 : 36,
-            ),
+            style: DiscoverTheme.heroHeadlineLight(
+              context,
+            ).copyWith(fontSize: isCompact ? 28 : 36),
             child: Text(
               article.title,
               maxLines: isCompact ? 2 : 3,
@@ -310,11 +300,7 @@ class _ReadIndicator extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Icon(
-              Icons.arrow_forward,
-              size: 14,
-              color: Colors.black87,
-            ),
+            Icon(Icons.arrow_forward, size: 14, color: Colors.black87),
           ],
         ),
       ),

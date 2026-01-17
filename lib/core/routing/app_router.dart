@@ -4,6 +4,7 @@ import 'package:searvo/features/onboarding/onboarding.dart';
 import 'package:searvo/features/search/domain/entities/search_mode.dart';
 import 'package:searvo/features/settings/screens/privacy_policy_screen.dart';
 import 'package:searvo/common/navigation/root_navigation_screen.dart';
+import 'package:searvo/features/discover/screens/article_detail_screen.dart';
 
 /// Centralized routing configuration using Go Router
 /// Supports all platforms including web, mobile, desktop, and deep linking
@@ -19,6 +20,7 @@ class AppRouter {
   static const String privacyPolicy = '/privacy-policy';
   static const String conversationHistory = '/history'; // Conversation history
   static const String discover = '/discover'; // Discover news articles
+  static const String articleDetail = '/article-detail'; // Article detail
   static const String assistant = '/assistant'; // AI Orchestrator Assistant
 
   // Navigation indices for bottom nav and sidebar
@@ -173,6 +175,26 @@ class AppRouter {
           key: state.pageKey,
           child: const RootNavigationScreen(currentIndex: discoverIndex),
         ),
+      ),
+
+      // Article Detail Route
+      GoRoute(
+        path: articleDetail,
+        name: 'articleDetail',
+        pageBuilder: (context, state) {
+          final article = state.extra as dynamic; // Article type is internal
+          // If no article passed (e.g. direct link), redirect to discover
+          if (article == null) {
+            return MaterialPage<void>(
+              key: state.pageKey,
+              child: const RootNavigationScreen(currentIndex: discoverIndex),
+            );
+          }
+          return MaterialPage<void>(
+            key: state.pageKey,
+            child: ArticleDetailScreen(article: article),
+          );
+        },
       ),
 
       // Conversation History Route

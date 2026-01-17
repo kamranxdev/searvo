@@ -6,11 +6,11 @@ import 'package:searvo/features/search/data/datasources/rag_data_source.dart';
 import 'package:searvo/features/search/data/datasources/intelligent_search_data_source.dart';
 import 'package:searvo/features/search/presentation/bloc/conversation_manager.dart';
 import 'package:searvo/features/search/data/datasources/searxng_remote_data_source.dart';
+import 'package:searvo/features/discover/presentation/cubit/article_detail_cubit.dart';
 import 'package:searvo/features/search/rag/services/document_processing/document_ranker.dart';
 import 'package:searvo/features/search/rag/services/document_processing/context_fusion.dart';
 import 'package:searvo/features/search/rag/services/citation/citation_manager.dart';
 import 'package:searvo/features/llm/services/providers/llm_provider_manager.dart';
-import 'package:searvo/features/search/rag/services/query_processing/prompt_engineer.dart';
 import 'package:searvo/features/search/rag/services/data_ingestion/attachment_processor.dart';
 import 'package:searvo/features/search/rag/services/query_processing/query_analyzer.dart';
 import 'package:searvo/features/search/rag/services/data_ingestion/rag_scraper_adapter.dart';
@@ -45,7 +45,6 @@ Future<void> initSearchDependencies() async {
   sl.registerLazySingleton(() => DocumentRanker());
   sl.registerLazySingleton(() => ContextFusion());
   sl.registerLazySingleton(() => CitationManager());
-  sl.registerLazySingleton(() => PromptEngineer());
   sl.registerLazySingleton(() => AttachmentProcessor());
   sl.registerLazySingleton(() => QueryAnalyzer());
   sl.registerLazySingleton(() => RAGScraperAdapter());
@@ -61,7 +60,7 @@ Future<void> initSearchDependencies() async {
   sl.registerLazySingleton(
     () => RAGDataSource(
       llmManager: sl(),
-      promptEngineer: sl<PromptEngineer>(),
+      queryAnalyzer: sl<QueryAnalyzer>(),
       scraperAdapter: sl<RAGScraperAdapter>(),
       langChainService: sl(),
       vectorStore: sl(),
@@ -99,4 +98,8 @@ Future<void> initSearchDependencies() async {
   );
 
   sl.registerFactory(() => RAGCubit(ragDataSource: sl()));
+
+  sl.registerFactory(
+    () => ArticleDetailCubit(searxngService: sl(), langChainService: sl()),
+  );
 }

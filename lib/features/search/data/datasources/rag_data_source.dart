@@ -14,34 +14,37 @@ import 'package:langchain_core/documents.dart' as lc;
 import '../../domain/entities/message_data.dart';
 import '../../domain/entities/message_generation_state.dart';
 import '../../domain/entities/source_item.dart';
-import '../../rag/services/query_processing/prompt_engineer.dart';
+
+import '../../rag/services/verification/source_verifier.dart';
+import '../../rag/services/verification/confidence_scorer.dart';
+import '../../rag/services/query_processing/query_analyzer.dart';
 
 /// Advanced RAG orchestrator with attachment support, conversation history, and intelligent web scraping
 class RAGDataSource {
   final SearXNGRemoteDataSource _searxngService;
   final LLMProviderManager _llmManager;
-  final PromptEngineer _promptEngineer;
+  final QueryAnalyzer _queryAnalyzer;
   final RAGScraperAdapter _scraperAdapter;
-
-  // ignore: unused_field
   final LangChainService _langChainService;
-
-  // ignore: unused_field
   final QdrantVectorStore _vectorStore;
   final Map<String, dynamic> _performanceMetrics = {};
+
+  // Verification services (no LLM calls)
+  final SourceVerifier _sourceVerifier = SourceVerifier();
+  final ConfidenceScorer _confidenceScorer = ConfidenceScorer();
 
   late final List<AgentTool> _tools;
 
   RAGDataSource({
     SearXNGRemoteDataSource? searxngService,
     LLMProviderManager? llmManager,
-    PromptEngineer? promptEngineer,
+    QueryAnalyzer? queryAnalyzer,
     RAGScraperAdapter? scraperAdapter,
     LangChainService? langChainService,
     QdrantVectorStore? vectorStore,
   }) : _searxngService = searxngService ?? SearXNGRemoteDataSource(),
        _llmManager = llmManager ?? LLMProviderManager(),
-       _promptEngineer = promptEngineer ?? PromptEngineer(),
+       _queryAnalyzer = queryAnalyzer ?? QueryAnalyzer(),
        _scraperAdapter = scraperAdapter ?? RAGScraperAdapter(),
        _vectorStore =
            vectorStore ??
@@ -170,101 +173,192 @@ class RAGDataSource {
     // Or we use LangChainService if we add 'addDocuments' there.
     // For now, access via vectorStore directly (it's public).
 
-    // Note: We should probably clear old context or use a unique collection/session.
-    // For this refactor, just add.
-    await _vectorStore.addDocuments(documents: lcDocuments);
+    // Add to Vector Store (Indexing) with Fallback
+    bool isVectorStoreAvailable = true;
+    try {
+      // Note: We should probably clear old context or use a unique collection/session.
+      // For this refactor, just add.
+      await _vectorStore.addDocuments(documents: lcDocuments);
 
-    updateStep(
-      processingStep.id,
-      status: SearchStepStatus.completed,
-      description: "Indexed ${lcDocuments.length} documents",
-    );
+      updateStep(
+        processingStep.id,
+        status: SearchStepStatus.completed,
+        description: "Indexed ${lcDocuments.length} documents",
+      );
+    } catch (e) {
+      print('Vector Store unavailable: $e');
+      isVectorStoreAvailable = false;
+      updateStep(
+        processingStep.id,
+        status: SearchStepStatus.completed,
+        description: "Knowledge Base offline - using fresh results",
+      );
+    }
 
     // 3. Retrieval & Generation
     final thinkingStep = createStep("Generating answer");
     yield RAGUpdate(status: RAGStatus.thinking, steps: List.from(steps));
 
-    // Use LangChain to query
-    // Use LangChain to query
-    final chainResult = await _langChainService.query(
-      query,
-      vectorStore: _vectorStore,
-      k: maxRelevantDocuments,
-    );
-
-    final retrievedDocs = chainResult['docs'] as List<lc.Document>;
+    List<lc.Document> retrievedDocs;
+    if (isVectorStoreAvailable) {
+      try {
+        // Use LangChain to query
+        final chainResult = await _langChainService.query(
+          query,
+          vectorStore: _vectorStore,
+          k: maxRelevantDocuments,
+        );
+        retrievedDocs = chainResult['docs'] as List<lc.Document>;
+      } catch (e) {
+        print('Vector Store query failed: $e');
+        // Fallback to top documents if query fails
+        retrievedDocs = lcDocuments.take(maxRelevantDocuments).toList();
+      }
+    } else {
+      // Direct usage of documents if Vector Store is down
+      retrievedDocs = lcDocuments.take(maxRelevantDocuments).toList();
+    }
 
     final StringBuffer fullAnswer = StringBuffer();
-    // Use LangChainService to generate the answer stream
-    await for (final token in _langChainService.generateAnswer(
-      query,
-      retrievedDocs,
-    )) {
-      fullAnswer.write(token);
-      yield RAGUpdate(
-        status: RAGStatus.streaming,
-        token: token,
-        steps: List.from(steps),
-      );
+
+    // Generate Answer with Retry Logic for Rate Limits
+    int retryCount = 0;
+    const maxRetries = 3;
+    bool generationSuccess = false;
+
+    while (!generationSuccess && retryCount <= maxRetries) {
+      try {
+        // Use LangChainService to generate the answer stream
+        await for (final token in _langChainService.generateAnswer(
+          query,
+          retrievedDocs,
+          previousMessages: previousMessages,
+        )) {
+          fullAnswer.write(token);
+          yield RAGUpdate(
+            status: RAGStatus.streaming,
+            token: token,
+            steps: List.from(steps),
+          );
+        }
+        generationSuccess = true;
+      } catch (e) {
+        final errorStr = e.toString();
+        // Check for Rate Limit (429) or Quota Exceeded
+        if (errorStr.contains('429') ||
+            errorStr.toLowerCase().contains('quota') ||
+            errorStr.toLowerCase().contains('rate limit')) {
+          retryCount++;
+          if (retryCount <= maxRetries) {
+            updateStep(
+              thinkingStep.id,
+              description: "Rate limit hit. Retrying in ${2 * retryCount}s...",
+            );
+            yield RAGUpdate(
+              status: RAGStatus.thinking,
+              steps: List.from(steps),
+            );
+
+            await Future.delayed(Duration(seconds: 2 * retryCount));
+            // Create a fresh buffer for the retry?
+            // Usually we want to clear partial answer if it failed midway,
+            // but RateLimit usually fails at the start.
+            if (fullAnswer.isNotEmpty) {
+              // If we already had content and it failed mid-stream,
+              // we technically might be duplicating or losing context.
+              // For now, simpler to clear and restart or keep appending?
+              // Rate limit unlikely checks in mid-stream, usually at start.
+              fullAnswer.clear();
+            }
+            continue;
+          }
+        }
+
+        // If not rate limit or retries exhausted
+        print('Generation failed: $e');
+        updateStep(
+          thinkingStep.id,
+          status: SearchStepStatus.failed,
+          description: "Generation failed: $e",
+        );
+
+        // Yield a friendly error helper if we haven't yielded anything yet
+        if (fullAnswer.isEmpty) {
+          fullAnswer.write(
+            "I apologize, but I'm currently experiencing high traffic or connection issues. Here is what I found from the search results:\n\n",
+          );
+          // Append simple summary of sources
+          for (var doc in retrievedDocs.take(3)) {
+            fullAnswer.write(
+              "- ${doc.metadata['title']}: ${doc.pageContent.substring(0, 100)}...\n",
+            );
+          }
+          generationSuccess = true; // Treat fallback as success
+        } else {
+          // We already streamed some content, just stop.
+          generationSuccess = true;
+        }
+      }
+    }
+
+    if (!generationSuccess && fullAnswer.isEmpty) {
+      // Should have been handled in catch block fallback, but just in case
+      fullAnswer.write("Unable to generate response due to repeated errors.");
     }
 
     updateStep(thinkingStep.id, status: SearchStepStatus.completed);
+
+    // Verify response quality (no LLM calls - pure algorithmic)
+    final answerText = fullAnswer.toString();
+    final verification = _sourceVerifier.verifyResponse(
+      answerText,
+      allRawDocuments,
+    );
+    final confidence = _confidenceScorer.calculateScore(
+      answerText,
+      allRawDocuments,
+    );
+
+    print(
+      '📊 Response verification: ${verification.confidenceLevel} (${(verification.overallScore * 100).toStringAsFixed(1)}%)',
+    );
+    print(
+      '📊 Confidence score: ${confidence.level} (${confidence.percentage}%)',
+    );
+    if (verification.unverifiedEntities.isNotEmpty) {
+      print(
+        '⚠️ Unverified entities: ${verification.unverifiedEntities.take(3).join(", ")}',
+      );
+    }
+
+    // Convert raw documents to SourceItems for the final result
+    final sourceItems = allRawDocuments
+        .map(
+          (doc) => SourceItem(
+            title: doc.title,
+            url: doc.url,
+            description: doc.snippet,
+            thumbnail: doc.metadata['thumbnail'] ?? '',
+            domain: doc.source,
+            source: doc.source,
+            publishedDate: doc.publishedDate,
+          ),
+        )
+        .toList();
 
     yield RAGUpdate(
       status: RAGStatus.completed,
       finalResult: MessageData(
         query: query,
-        answer: fullAnswer.toString(),
+        answer: answerText,
         steps: steps,
+        sources: sourceItems,
+        confidenceScore: confidence.percentage,
+        confidenceLevel: confidence.level,
       ),
       steps: List.from(steps),
+      documents: allRawDocuments,
     );
-  }
-
-  /// Generate RAG response (Legacy Wrapper)
-  Future<MessageData> generateRAGResponse(
-    String query, {
-    int maxSearchResults = 20,
-    int maxRelevantDocuments = 10,
-    int? maxContextLength,
-    bool enableQueryEnhancement = true,
-    bool enableAdaptivePrompting = true,
-    List<dynamic>? attachments,
-    SearchMode searchMode = SearchMode.search,
-    Function(MessageData)? onSearchComplete,
-    bool isNewConversation = false,
-  }) async {
-    MessageData? lastData;
-    await for (final update in generateRAGStream(
-      query,
-      maxSearchResults: maxSearchResults,
-      maxRelevantDocuments: maxRelevantDocuments,
-      maxContextLength: maxContextLength,
-      enableQueryEnhancement: enableQueryEnhancement,
-      enableAdaptivePrompting: enableAdaptivePrompting,
-      attachments: attachments,
-      searchMode: searchMode,
-      isNewConversation: isNewConversation,
-    )) {
-      if (update.finalResult != null) {
-        lastData = update.finalResult;
-      }
-      // Handle partial updates like images/videos if needed
-      if (update.status == RAGStatus.ranking &&
-          update.documents != null &&
-          onSearchComplete != null) {
-        onSearchComplete(
-          MessageData(
-            query: query,
-            answer: '',
-            images: update.images ?? const [],
-            videos: update.videos ?? const [],
-            generationState: MessageGenerationState.generating,
-          ),
-        );
-      }
-    }
-    return lastData ?? await _generateFallbackResponse(query);
   }
 
   /// Generate response with conversation history - FIXED VERSION
@@ -334,7 +428,7 @@ class RAGDataSource {
   /// Generate fallback response
   Future<MessageData> _generateFallbackResponse(String query) async {
     try {
-      final fallbackPrompt = _promptEngineer.createFallbackPrompt(query);
+      final fallbackPrompt = _langChainService.createFallbackPrompt(query);
       final response = await _llmManager.generateResponse(fallbackPrompt);
 
       final relatedQuestions = [
@@ -366,11 +460,11 @@ class RAGDataSource {
   }
 
   Map<String, dynamic> validateQuery(String query) {
-    return _promptEngineer.validateQuery(query);
+    return _queryAnalyzer.validateQuery(query);
   }
 
   String enhanceQuery(String query) {
-    return _promptEngineer.enhanceQuery(query);
+    return _queryAnalyzer.enhanceQuery(query);
   }
 
   bool get isReady =>
@@ -411,7 +505,7 @@ class RAGDataSource {
   }
 
   Map<String, dynamic> analyzeQueryComplexity(String query) {
-    final validation = _promptEngineer.validateQuery(query);
+    final validation = _queryAnalyzer.validateQuery(query);
     final wordCount = query.split(RegExp(r'\s+')).length;
 
     String complexity;

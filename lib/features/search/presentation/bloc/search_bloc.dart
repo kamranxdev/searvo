@@ -223,6 +223,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       );
 
       _conversationManager.updateCurrentMessage(completedMessage);
+      _conversationManager.setProcessing(false);
 
       emit(
         SearchState.loaded(
@@ -253,8 +254,25 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     List<AttachmentData>? attachments,
     Emitter<SearchState> emit,
   ) async {
+    print('🔔 SearchBloc._onAddNewMessage called');
+    print('   query: "$query", attachments: ${attachments?.length ?? 0}');
+    print(
+      '   current isProcessing: ${_conversationManager.state.isProcessing}',
+    );
+    print(
+      '   current messageBranches count: ${_conversationManager.state.messageBranches.length}',
+    );
+
     final branchManager = _conversationManager.addNewMessage(query);
-    if (branchManager == null) return;
+    if (branchManager == null) {
+      print(
+        '   ❌ addNewMessage returned null (blocked by isProcessing or empty state)',
+      );
+      return;
+    }
+    print(
+      '   ✅ New branchManager created, branches now: ${_conversationManager.state.messageBranches.length}',
+    );
 
     emit(
       SearchState.loading(
@@ -343,6 +361,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
                   : null,
               sources:
                   sourceItems ?? currentManagerBranch.currentMessage.sources,
+              steps: update.steps ?? currentManagerBranch.currentMessage.steps,
             );
 
             _conversationManager.updateCurrentMessage(currentMessage);
@@ -365,6 +384,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       );
 
       _conversationManager.updateCurrentMessage(completedMessage);
+      _conversationManager.setProcessing(false);
 
       emit(
         SearchState.loaded(

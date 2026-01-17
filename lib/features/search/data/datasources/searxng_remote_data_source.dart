@@ -209,12 +209,22 @@ class SearXNGRemoteDataSource {
           .timeout(Duration(seconds: 5));
 
       if (response.statusCode == 200) {
-        final List<dynamic> suggestions = json.decode(response.body);
-        return suggestions.cast<String>();
+        final decoded = json.decode(response.body);
+
+        // Handle OpenSearch format: ["query", ["suggestion1", "suggestion2", ...]]
+        if (decoded is List && decoded.length >= 2 && decoded[1] is List) {
+          final suggestionsList = decoded[1] as List;
+          return suggestionsList.map((e) => e.toString()).toList();
+        }
+        // Handle flat list format (fallback): ["suggestion1", "suggestion2"]
+        else if (decoded is List) {
+          return decoded.map((e) => e.toString()).toList();
+        }
       }
 
       return [];
     } catch (e) {
+      print('Error fetching suggestions: $e');
       return [];
     }
   }

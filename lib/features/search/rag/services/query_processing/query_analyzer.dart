@@ -54,9 +54,81 @@ class QueryAnalyzer {
   }
 
   /// Enhance query refines the query for better search results
-  String enhanceQuery(String query) {
-    // Basic cleanup for now. In future, use LLM to rewrite.
-    return query.trim();
+  String enhanceQuery(String originalQuery) {
+    var enhanced = originalQuery.trim();
+    final lowerQuery = enhanced.toLowerCase();
+
+    if (lowerQuery.startsWith('what is ') ||
+        lowerQuery.startsWith('what are ')) {
+      final subject = enhanced.substring(
+        lowerQuery.startsWith('what is ') ? 8 : 9,
+      );
+      enhanced =
+          'Explain $subject including key features, use cases, and recent developments';
+    } else if (lowerQuery.startsWith('tell me about ')) {
+      final subject = enhanced.substring(14);
+      enhanced =
+          'What are the most important aspects of $subject with current context?';
+    } else if (enhanced.length < 20 && !enhanced.contains('?')) {
+      enhanced =
+          'Provide a comprehensive overview of $enhanced with relevant details';
+    }
+
+    return enhanced;
+  }
+
+  /// Validate query quality
+  Map<String, dynamic> validateQuery(String query) {
+    final issues = <String>[];
+    final warnings = <String>[];
+
+    if (query.length < 10) {
+      issues.add('Query too short - needs more context');
+    }
+
+    final vaguePhrases = ['everything about', 'all about', 'tell me about'];
+    if (vaguePhrases.any((phrase) => query.toLowerCase().startsWith(phrase))) {
+      warnings.add(
+        'Query is broad - more specific queries yield better results',
+      );
+    }
+
+    final questionMarks = query.split('?').length - 1;
+    if (questionMarks > 2) {
+      warnings.add('Multiple questions - consider splitting queries');
+    }
+
+    return {
+      'isValid': issues.isEmpty,
+      'issues': issues,
+      'warnings': warnings,
+      'quality': _calculateQueryQuality(query, issues, warnings),
+    };
+  }
+
+  /// Calculate query quality score (0-100)
+  int _calculateQueryQuality(
+    String query,
+    List<String> issues,
+    List<String> warnings,
+  ) {
+    int score = 100;
+
+    // Penalize issues
+    score -= issues.length * 20;
+    score -= warnings.length * 10;
+
+    // Penalize shortness
+    if (query.split(' ').length < 3) {
+      score -= 15;
+    }
+
+    // Penalize lack of specificity (no proper nouns or entities)
+    if (!RegExp(r'[A-Z]').hasMatch(query)) {
+      score -= 5;
+    }
+
+    return score.clamp(0, 100);
   }
 
   /// Analyze if query depends on conversation context (like Perplexity AI)

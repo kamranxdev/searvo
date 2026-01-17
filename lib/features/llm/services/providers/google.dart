@@ -23,6 +23,9 @@ class Google extends BaseLLMProvider {
   String get providerName => 'Google (Gemini)';
 
   @override
+  BaseChatModel get model => _chatModel;
+
+  @override
   Future<void> initialize() async {
     if (_apiKey == null || _apiKey!.isEmpty) {
       throw Exception('Google AI API key is required');

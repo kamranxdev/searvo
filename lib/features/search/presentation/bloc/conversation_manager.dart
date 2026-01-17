@@ -192,11 +192,17 @@ class ConversationManager {
   }
 
   MessageBranchManager? addNewMessage(String query) {
-    if (state.isProcessing) return null;
+    print('🔔 ConversationManager.addNewMessage called');
+    print('   query: "$query", isProcessing: ${state.isProcessing}');
+    if (state.isProcessing) {
+      print('   ❌ Blocked: isProcessing is true');
+      return null;
+    }
 
     final currentBranches = List<MessageBranchManager>.from(
       state.messageBranches,
     );
+    print('   Current branches count: ${currentBranches.length}');
 
     final generatingMessage = MessageData(
       query: query,
@@ -216,6 +222,9 @@ class ConversationManager {
     );
 
     currentBranches.add(newBranchManager);
+    print(
+      '   ✅ New branch added, total branches now: ${currentBranches.length}',
+    );
 
     _emit(state.copyWith(messageBranches: currentBranches, isProcessing: true));
 

@@ -8,10 +8,8 @@ import 'package:searvo/features/discover/theme/discover_theme.dart';
 class EditorialArticleCard extends StatefulWidget {
   final Article article;
 
-  const EditorialArticleCard({
-    Key? key,
-    required this.article,
-  }) : super(key: key);
+  const EditorialArticleCard({Key? key, required this.article})
+    : super(key: key);
 
   @override
   State<EditorialArticleCard> createState() => _EditorialArticleCardState();
@@ -28,46 +26,44 @@ class _EditorialArticleCardState extends State<EditorialArticleCard> {
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () => _openArticle(context),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Image Container
-            _ArticleImage(
-              imageUrl: _cleanThumbnailUrl(widget.article.thumbnail),
-              isHovered: _isHovered,
-            ),
-            const SizedBox(height: 20),
-            // Category
-            _ArticleCategory(),
-            const SizedBox(height: 12),
-            // Title
-            AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 200),
-              style: DiscoverTheme.sectionHeadline(context).copyWith(
-                color: _isHovered ? colors.accent : colors.headline,
-              ),
-              child: Text(
-                widget.article.title,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(height: 12),
-            // Excerpt
-            Text(
-              widget.article.content,
-              style: DiscoverTheme.bodyText(context),
-              maxLines: 4,
+      // Tap handling is now done by the parent widget for proper routing
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Image Container
+          _ArticleImage(
+            imageUrl: _cleanThumbnailUrl(widget.article.thumbnail),
+            isHovered: _isHovered,
+          ),
+          const SizedBox(height: 20),
+          // Category
+          _ArticleCategory(),
+          const SizedBox(height: 12),
+          // Title
+          AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 200),
+            style: DiscoverTheme.sectionHeadline(
+              context,
+            ).copyWith(color: _isHovered ? colors.accent : colors.headline),
+            child: Text(
+              widget.article.title,
+              maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 16),
-            // Read More Link
-            _ReadMoreLink(isHovered: _isHovered),
-          ],
-        ),
+          ),
+          const SizedBox(height: 12),
+          // Excerpt
+          Text(
+            widget.article.content,
+            style: DiscoverTheme.bodyText(context),
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 16),
+          // Read More Link
+          _ReadMoreLink(isHovered: _isHovered),
+        ],
       ),
     );
   }
@@ -84,11 +80,6 @@ class _EditorialArticleCardState extends State<EditorialArticleCard> {
       return url;
     }
   }
-
-  Future<void> _openArticle(BuildContext context) async {
-    final searchQuery = 'Summary: ${widget.article.url}';
-    Navigator.pushNamed(context, '/', arguments: {'query': searchQuery});
-  }
 }
 
 // ===========================================================================
@@ -99,10 +90,7 @@ class _ArticleImage extends StatelessWidget {
   final String imageUrl;
   final bool isHovered;
 
-  const _ArticleImage({
-    required this.imageUrl,
-    required this.isHovered,
-  });
+  const _ArticleImage({required this.imageUrl, required this.isHovered});
 
   @override
   Widget build(BuildContext context) {
@@ -186,10 +174,7 @@ class _ArticleCategory extends StatelessWidget {
           color: DiscoverTheme.colors(context).accent,
         ),
         const SizedBox(width: 12),
-        Text(
-          'STORY',
-          style: DiscoverTheme.categoryLabel(context),
-        ),
+        Text('STORY', style: DiscoverTheme.categoryLabel(context)),
       ],
     );
   }

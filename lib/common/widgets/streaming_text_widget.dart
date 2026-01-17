@@ -128,8 +128,9 @@ class _StreamingTextWidgetState extends State<StreamingTextWidget>
   String _cleanText(String text) {
     var cleaned = text;
 
-    // 1. Normalize and merge consecutive citations: [1] [2] -> [1, 2]
-    // First, remove spaces between citations: [1] [2] -> [1][2]
+    // 1. Normalize and merge consecutive citations: [1] [2] -> [1][2]
+    // We intentionally want SEPARATE citations like [1][2] for Perplexity style chips.
+    // However, we still want to remove extra spaces between them: [1] [2] -> [1][2]
     var prev = '';
     do {
       prev = cleaned;
@@ -139,30 +140,10 @@ class _StreamingTextWidgetState extends State<StreamingTextWidget>
       );
     } while (prev != cleaned);
 
-    // Then merge them: [1][2][3] -> [1, 2, 3]
-    bool changed = true;
-    while (changed) {
-      changed = false;
-      cleaned = cleaned.replaceAllMapped(
-        RegExp(r'(\[[\d,\s]+\])(\[[\d,\s]+\])'),
-        (match) {
-          changed = true;
-          final first = match.group(1)!.replaceAll('[', '').replaceAll(']', '');
-          final second = match
-              .group(2)!
-              .replaceAll('[', '')
-              .replaceAll(']', '');
-          return '[$first, $second]';
-        },
-      );
-    }
-
     // 2. Bind punctuation to citations (prevent [1] . from splitting)
-    // We use a Word Joiner (\u2060) to keep them together if needed,
-    // or just remove the space entirely.
-    // Also updated regex to handle merged citations like [1, 2]
+    // We use a Word Joiner (\u2060) to keep them together if needed.
     cleaned = cleaned.replaceAllMapped(
-      RegExp(r'(\[[\d,\s]+\])\s*([.,;:?])'),
+      RegExp(r'((?:\[[\d]+\])+)\s*([.,;:?])'),
       (match) => '${match.group(1)}\u2060${match.group(2)}',
     );
 

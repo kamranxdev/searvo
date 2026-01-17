@@ -15,7 +15,10 @@ class IntentOrchestrator {
        _llmManager = llmManager ?? LLMProviderManager();
 
   /// Generates a plan for the user query using available tools.
-  Future<OrchestratorPlan> plan(String userQuery) async {
+  Future<OrchestratorPlan> plan(
+    String userQuery, {
+    List<dynamic> previousMessages = const [],
+  }) async {
     final availableTools = await _toolRegistry.getAvailableTools();
 
     // Create tool descriptions for the prompt
@@ -39,12 +42,19 @@ Available Tools:
 ${jsonEncode(toolsJson)}
 
 Instructions:
-1. Analyze the user's intent.
-2. Select one or more tools to execute in sequence or parallel.
-3. If the user wants to search, use 'web_search'.
-4. If the user asks for an image, use 'image_generator'.
-5. If the request requires multiple steps, list them in order.
-6. Provide a brief reasoning for your plan.
+1. **Analyze Intent**: First, determine if the user wants to perform a specific action (e.g. check weather, get directions, see stock price).
+2. **Select Tools**:
+   - If the intent matches a specific tool (e.g. "Directions to..." -> 'map', "Weather in..." -> 'weather'), **YOU MUST** select that tool.
+   - For specific tool actions, 'web_search' is OPTIONAL. Only include it if you need extra context the tool might not provide.
+   - For general informational queries (e.g. "Who is...", "News about...", "Explain quantum physics"), **YOU MUST** include 'web_search'.
+3. **Sequence**: If multiple steps are needed, list them in order.
+4. **Reasoning**: Provide brief reasoning.
+
+Few-Shot Examples:
+- "Directions to Tokyo" -> [{"toolId": "map", "input": {"to": "Tokyo"}}] (No web_search needed)
+- "Weather in Paris" -> [{"toolId": "weather", "input": {"location": "Paris"}}]
+- "Who is the CEO of Google?" -> [{"toolId": "web_search", "input": {"query": "current CEO of Google"}}]
+- "Show me a map of Central Park and tell me its history" -> [{"toolId": "map", "input": {"to": "Central Park"}}, {"toolId": "web_search", "input": {"query": "history of Central Park"}}]
 
 Response Format:
 You must return ONLY a valid JSON object matching this structure:
@@ -61,7 +71,23 @@ You must return ONLY a valid JSON object matching this structure:
 Do not include markdown formatting (```json). Just the raw JSON string.
 ''';
 
-    final userPrompt = "User Query: $userQuery";
+    // Construct conversation context
+    final StringBuffer contextBuffer = StringBuffer();
+    if (previousMessages.isNotEmpty) {
+      contextBuffer.writeln("Conversation History:");
+      for (final msg in previousMessages) {
+        // Assuming msg is MessageData, but using dynamic to avoid circular imports if needed headers aren't ready
+        // Better to import MessageData if possible.
+        // For now, let's treat it as flexible.
+        try {
+          contextBuffer.writeln("User: ${msg.query}");
+          contextBuffer.writeln("Assistant: ${msg.answer}");
+        } catch (_) {}
+      }
+      contextBuffer.writeln("\nNow consider the new User Query:");
+    }
+
+    final userPrompt = "${contextBuffer.toString()}User Query: $userQuery";
 
     // Combine for a simple generation call if we don't have separate system prompt support in manager
     final fullPrompt = "$systemPrompt\n\n$userPrompt";

@@ -66,18 +66,33 @@ class AgentExecutor {
         print('AgentExecutor: Tool ${tool.id} returned: $result');
 
         // Process result based on tool type
+        // Process result based on tool type and updated fallback
+        // RAG SYNTHESIS MODE: All tool outputs are converted to sources for the LLM to process.
         if (tool.id == 'image_generator' &&
             result is Map &&
             result.containsKey('imageUrl')) {
           final newImages = List<String>.from(currentData.images)
             ..add(result['imageUrl']);
           currentData = currentData.copyWith(images: newImages);
-        } else if (tool.id == 'web_search' && result is Map) {
-          // Handle direct answer if present
-          if (result.containsKey('answer')) {
-            currentData = currentData.copyWith(answer: result['answer']);
+        } else if (tool.id == 'wikipedia') {
+          // Wikipedia specific handling
+          if (result is Map) {
+            // Add as source ONLY
+            if (result.containsKey('title')) {
+              final source = SourceItem(
+                title: result['title'] ?? 'Wikipedia',
+                url: result['url'] ?? '',
+                description: result['summary'] ?? '',
+                thumbnail: '',
+                source: 'Wikipedia',
+                domain: 'wikipedia.org',
+              );
+              final newSources = List<SourceItem>.from(currentData.sources)
+                ..add(source);
+              currentData = currentData.copyWith(sources: newSources);
+            }
           }
-
+        } else if (tool.id == 'web_search' && result is Map) {
           // Handle sources from 'sources' or 'documents' key
           var sourcesList = [];
           if (result['sources'] != null) {
@@ -130,12 +145,6 @@ class AgentExecutor {
                 .toList();
             currentData = currentData.copyWith(videos: videos);
           }
-        } else if (tool.id == 'calculator') {
-          if (result is Map && result.containsKey('result')) {
-            currentData = currentData.copyWith(
-              answer: 'The result is ${result['result']}',
-            );
-          }
         } else if ([
           'weather',
           'stock_price',
@@ -154,15 +163,165 @@ class AgentExecutor {
             )..add(toolWidget);
             currentData = currentData.copyWith(toolWidgets: newWidgets);
           }
-        } else {
-          // Generic fallback for other tools that might return a direct answer
-          if (result is Map && result.containsKey('answer')) {
-            currentData = currentData.copyWith(answer: result['answer']);
-          } else if (result is Map && result.containsKey('result')) {
-            // For generic tools returning 'result'
-            currentData = currentData.copyWith(
-              answer: result['result'].toString(),
+
+          // Convert content to source for RAG
+          final potentialAnswerKeys = [
+            'display',
+            'answer',
+            'result',
+            'definition',
+          ];
+          String? content;
+
+          // Special handling for Weather tool to generate a descriptive string
+          if (tool.id == 'weather' && result is Map) {
+            try {
+              final loc = result['location'] ?? {};
+              final curr = result['current'] ?? {};
+              final fc = result['forecast_today'] ?? {};
+              content =
+                  "Weather in ${loc['name']}, ${loc['country']}: "
+                  "${curr['condition']}, ${curr['temperature']}. "
+                  "Feels like ${curr['feels_like']}. Humidity: ${curr['humidity']}. "
+                  "Wind: ${curr['wind_speed']} ${curr['wind_direction']}. "
+                  "Forecast: High ${fc['max_temp']}, Low ${fc['min_temp']}, ${fc['condition']}.";
+            } catch (e) {
+              // Fallback if structure doesn't match
+              content = result.toString();
+            }
+          } else if (tool.id == 'map' && result is Map) {
+            try {
+              final route = result['route'] ?? {};
+              content =
+                  "Map: Directions to ${result['destination']}. "
+                  "Estimated time: ${route['duration']}, Distance: ${route['distance']}. "
+                  "Route: ${route['summary']}.";
+            } catch (e) {
+              content = "Here is the map for your request.";
+            }
+          }
+
+          if (content == null) {
+            for (final key in potentialAnswerKeys) {
+              if (result is Map &&
+                  result.containsKey(key) &&
+                  result[key] is String &&
+                  (result[key] as String).isNotEmpty) {
+                content = result[key];
+                break;
+              }
+            }
+          }
+
+          if (content != null) {
+            final source = SourceItem(
+              title: tool.name,
+              url: '',
+              description: content,
+              thumbnail: '',
+              source: tool.name,
+              domain: tool.name,
             );
+            final newSources = List<SourceItem>.from(currentData.sources)
+              ..add(source);
+            currentData = currentData.copyWith(sources: newSources);
+          }
+        } else {
+          // Generic fallback for ALL other tools
+          if (result is Map) {
+            // 1. Try to find a text content
+            final potentialKeys = [
+              'answer',
+              'result',
+              'summary',
+              'fact',
+              'display',
+              'text',
+              'content',
+              'analysis',
+              'definition',
+            ];
+            String? foundContent;
+            for (final key in potentialKeys) {
+              if (result.containsKey(key) &&
+                  result[key] is String &&
+                  (result[key] as String).isNotEmpty) {
+                foundContent = result[key];
+                break;
+              }
+            }
+
+            // 2. Add as SourceItem if content found OR if it looks like a source object
+            if (result.containsKey('title') && result.containsKey('url')) {
+              // Single source result
+              final source = SourceItem(
+                title: result['title'] ?? tool.name,
+                url: result['url'] ?? '',
+                description: foundContent ?? '',
+                thumbnail: '',
+                source: tool.name,
+                domain: Uri.tryParse(result['url'] ?? '')?.host ?? tool.name,
+              );
+              final newSources = List<SourceItem>.from(currentData.sources)
+                ..add(source);
+              currentData = currentData.copyWith(sources: newSources);
+            } else if (result.containsKey('documents') &&
+                result['documents'] is List) {
+              // List of documents (like read_page)
+              final docs = result['documents'] as List;
+              if (docs.isNotEmpty) {
+                final newSources = docs.map((d) {
+                  if (d is! Map) {
+                    try {
+                      return SourceItem(
+                        title: 'Document',
+                        url: '',
+                        source: tool.name,
+                        domain: tool.name,
+                        description: 'Document content',
+                        thumbnail: '',
+                      );
+                    } catch (e) {
+                      return SourceItem(
+                        title: 'Document',
+                        url: '',
+                        source: tool.name,
+                        domain: tool.name,
+                        description: '',
+                        thumbnail: '',
+                      );
+                    }
+                  }
+
+                  return SourceItem(
+                    title: d['title'] ?? d['url'] ?? 'Document',
+                    url: d['url'] ?? '',
+                    description:
+                        d['snippet'] ?? d['content']?.substring(0, 100) ?? '',
+                    thumbnail: d['thumbnail'] ?? '',
+                    source: tool.name,
+                    domain: Uri.tryParse(d['url'] ?? '')?.host ?? tool.name,
+                  );
+                }).toList();
+
+                final allSources = List<SourceItem>.from(currentData.sources)
+                  ..addAll(newSources);
+                currentData = currentData.copyWith(sources: allSources);
+              }
+            } else if (foundContent != null) {
+              // Fallback: Create a source from just the content (e.g. Calculator result)
+              final source = SourceItem(
+                title: tool.name,
+                url: '',
+                description: foundContent,
+                thumbnail: '',
+                source: tool.name,
+                domain: tool.name,
+              );
+              final newSources = List<SourceItem>.from(currentData.sources)
+                ..add(source);
+              currentData = currentData.copyWith(sources: newSources);
+            }
           }
         }
 

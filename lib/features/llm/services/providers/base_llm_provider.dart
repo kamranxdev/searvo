@@ -1,7 +1,12 @@
+import 'package:langchain/langchain.dart';
+
 /// Base interface for all LLM providers
 abstract class BaseLLMProvider {
   /// Provider name for identification
   String get providerName;
+
+  /// Get the underlying LangChain chat model
+  BaseChatModel get model;
 
   /// Initialize the provider with configuration
   Future<void> initialize();

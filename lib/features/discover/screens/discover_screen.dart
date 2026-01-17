@@ -7,7 +7,10 @@ import 'package:searvo/features/discover/presentation/cubit/discover_state.dart'
 import 'package:searvo/features/discover/theme/discover_theme.dart';
 import 'package:searvo/features/discover/widgets/editorial_hero_card.dart';
 import 'package:searvo/features/discover/widgets/editorial_article_card.dart';
+import 'package:searvo/core/routing/app_router.dart';
 import 'package:searvo/features/discover/widgets/editorial_compact_card.dart';
+import 'package:searvo/features/discover/widgets/editorial_divider.dart';
+import 'package:go_router/go_router.dart';
 
 class DiscoverScreen extends StatelessWidget {
   const DiscoverScreen({Key? key}) : super(key: key);
@@ -15,7 +18,8 @@ class DiscoverScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => sl<DiscoverCubit>()..loadArticles(DiscoverTopic.tech),
+      create: (context) =>
+          sl<DiscoverCubit>()..loadArticles(DiscoverTopic.tech),
       child: const _DiscoverScreenContent(),
     );
   }
@@ -80,10 +84,7 @@ class _DiscoverScreenContentState extends State<_DiscoverScreenContent> {
     final colors = DiscoverTheme.colors(context);
     return Column(
       children: [
-        _EditorialMasthead(
-          currentTopic: topic,
-          isScrolled: _isScrolled,
-        ),
+        _EditorialMasthead(currentTopic: topic, isScrolled: _isScrolled),
         Expanded(
           child: Center(
             child: Column(
@@ -98,10 +99,7 @@ class _DiscoverScreenContentState extends State<_DiscoverScreenContent> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  'CURATING STORIES',
-                  style: DiscoverTheme.caption(context),
-                ),
+                Text('CURATING STORIES', style: DiscoverTheme.caption(context)),
               ],
             ),
           ),
@@ -125,11 +123,7 @@ class _DiscoverScreenContentState extends State<_DiscoverScreenContent> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.wifi_off_rounded,
-                    size: 48,
-                    color: colors.caption,
-                  ),
+                  Icon(Icons.wifi_off_rounded, size: 48, color: colors.caption),
                   const SizedBox(height: 20),
                   Text(
                     'Unable to Load Stories',
@@ -160,10 +154,7 @@ class _DiscoverScreenContentState extends State<_DiscoverScreenContent> {
     final colors = DiscoverTheme.colors(context);
     return Column(
       children: [
-        _EditorialMasthead(
-          currentTopic: topic,
-          isScrolled: _isScrolled,
-        ),
+        _EditorialMasthead(currentTopic: topic, isScrolled: _isScrolled),
         Expanded(
           child: Center(
             child: Column(
@@ -209,7 +200,10 @@ class _DiscoverScreenContentState extends State<_DiscoverScreenContent> {
     );
   }
 
-  Widget _buildDesktopLayout(List<Article> articles, DiscoverTopic currentTopic) {
+  Widget _buildDesktopLayout(
+    List<Article> articles,
+    DiscoverTopic currentTopic,
+  ) {
     final colors = DiscoverTheme.colors(context);
 
     return RefreshIndicator(
@@ -227,26 +221,26 @@ class _DiscoverScreenContentState extends State<_DiscoverScreenContent> {
           // Hero Section
           if (articles.isNotEmpty)
             SliverToBoxAdapter(
-              child: _HeroSection(article: articles.first),
+              child: GestureDetector(
+                onTap: () => context.push(
+                  AppRouter.articleDetail,
+                  extra: articles.first,
+                ),
+                child: _HeroSection(article: articles.first),
+              ),
             ),
           // Editorial Divider
-          SliverToBoxAdapter(child: _EditorialDivider()),
+          SliverToBoxAdapter(child: EditorialDivider()),
           // Section Title
-          SliverToBoxAdapter(
-            child: _SectionTitle(title: 'Latest Stories'),
-          ),
+          SliverToBoxAdapter(child: _SectionTitle(title: 'Latest Stories')),
           // Featured Articles Grid
           SliverToBoxAdapter(
-            child: _FeaturedGrid(
-              articles: articles.skip(1).take(3).toList(),
-            ),
+            child: _FeaturedGrid(articles: articles.skip(1).take(3).toList()),
           ),
           // More Stories
           if (articles.length > 4) ...[
-            SliverToBoxAdapter(child: _EditorialDivider()),
-            SliverToBoxAdapter(
-              child: _SectionTitle(title: 'More to Explore'),
-            ),
+            SliverToBoxAdapter(child: EditorialDivider()),
+            SliverToBoxAdapter(child: _SectionTitle(title: 'More to Explore')),
             SliverToBoxAdapter(
               child: _CompactStoriesSection(
                 articles: articles.skip(4).toList(),
@@ -254,15 +248,16 @@ class _DiscoverScreenContentState extends State<_DiscoverScreenContent> {
             ),
           ],
           // Bottom Spacing
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 100),
-          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
     );
   }
 
-  Widget _buildTabletLayout(List<Article> articles, DiscoverTopic currentTopic) {
+  Widget _buildTabletLayout(
+    List<Article> articles,
+    DiscoverTopic currentTopic,
+  ) {
     final colors = DiscoverTheme.colors(context);
 
     return RefreshIndicator(
@@ -280,10 +275,16 @@ class _DiscoverScreenContentState extends State<_DiscoverScreenContent> {
           // Hero Section
           if (articles.isNotEmpty)
             SliverToBoxAdapter(
-              child: _HeroSection(article: articles.first, isCompact: true),
+              child: GestureDetector(
+                onTap: () => context.push(
+                  AppRouter.articleDetail,
+                  extra: articles.first,
+                ),
+                child: _HeroSection(article: articles.first, isCompact: true),
+              ),
             ),
           // Editorial Divider
-          SliverToBoxAdapter(child: _EditorialDivider()),
+          SliverToBoxAdapter(child: EditorialDivider()),
           // Articles Grid
           if (articles.length > 1)
             SliverPadding(
@@ -295,26 +296,30 @@ class _DiscoverScreenContentState extends State<_DiscoverScreenContent> {
                   mainAxisSpacing: 32,
                   childAspectRatio: 0.65,
                 ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final articleIndex = index + 1;
-                    if (articleIndex >= articles.length) return const SizedBox.shrink();
-                    return EditorialArticleCard(article: articles[articleIndex]);
-                  },
-                  childCount: articles.length - 1,
-                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final articleIndex = index + 1;
+                  if (articleIndex >= articles.length)
+                    return const SizedBox.shrink();
+                  final article = articles[articleIndex];
+                  return GestureDetector(
+                    onTap: () =>
+                        context.push(AppRouter.articleDetail, extra: article),
+                    child: EditorialArticleCard(article: article),
+                  );
+                }, childCount: articles.length - 1),
               ),
             ),
           // Bottom Spacing
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 100),
-          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
     );
   }
 
-  Widget _buildMobileLayout(List<Article> articles, DiscoverTopic currentTopic) {
+  Widget _buildMobileLayout(
+    List<Article> articles,
+    DiscoverTopic currentTopic,
+  ) {
     final colors = DiscoverTheme.colors(context);
 
     return RefreshIndicator(
@@ -335,35 +340,40 @@ class _DiscoverScreenContentState extends State<_DiscoverScreenContent> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                child: EditorialHeroCard(article: articles.first),
+                child: GestureDetector(
+                  onTap: () => context.push(
+                    AppRouter.articleDetail,
+                    extra: articles.first,
+                  ),
+                  child: EditorialHeroCard(article: articles.first),
+                ),
               ),
             ),
           // Section Divider
-          SliverToBoxAdapter(
-            child: _EditorialDivider(horizontalPadding: 16),
-          ),
+          SliverToBoxAdapter(child: EditorialDivider(horizontalPadding: 16)),
           // Article List
           if (articles.length > 1)
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final articleIndex = index + 1;
-                    if (articleIndex >= articles.length) return const SizedBox.shrink();
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 20),
-                      child: EditorialCompactCard(article: articles[articleIndex]),
-                    );
-                  },
-                  childCount: articles.length - 1,
-                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final articleIndex = index + 1;
+                  if (articleIndex >= articles.length)
+                    return const SizedBox.shrink();
+                  final article = articles[articleIndex];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 20),
+                    child: GestureDetector(
+                      onTap: () =>
+                          context.push(AppRouter.articleDetail, extra: article),
+                      child: EditorialCompactCard(article: article),
+                    ),
+                  );
+                }, childCount: articles.length - 1),
               ),
             ),
           // Bottom Spacing
-          const SliverToBoxAdapter(
-            child: SizedBox(height: 100),
-          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
     );
@@ -438,10 +448,7 @@ class _EditorialMasthead extends StatelessWidget {
               ),
               SizedBox(height: isMobile ? 16 : 24),
               // Topic Navigation
-              _TopicNavigation(
-                currentTopic: currentTopic,
-                isMobile: isMobile,
-              ),
+              _TopicNavigation(currentTopic: currentTopic, isMobile: isMobile),
             ],
           ),
         ),
@@ -495,7 +502,7 @@ class _RefreshButtonState extends State<_RefreshButton> {
   @override
   Widget build(BuildContext context) {
     final colors = widget.colors ?? DiscoverTheme.colors(context);
-    
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
@@ -505,7 +512,9 @@ class _RefreshButtonState extends State<_RefreshButton> {
           duration: const Duration(milliseconds: 150),
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: _isHovered ? colors.accent.withOpacity(0.1) : Colors.transparent,
+            color: _isHovered
+                ? colors.accent.withOpacity(0.1)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
@@ -527,10 +536,7 @@ class _TopicNavigation extends StatelessWidget {
   final DiscoverTopic currentTopic;
   final bool isMobile;
 
-  const _TopicNavigation({
-    required this.currentTopic,
-    this.isMobile = false,
-  });
+  const _TopicNavigation({required this.currentTopic, this.isMobile = false});
 
   @override
   Widget build(BuildContext context) {
@@ -613,10 +619,7 @@ class _HeroSection extends StatelessWidget {
   final Article article;
   final bool isCompact;
 
-  const _HeroSection({
-    required this.article,
-    this.isCompact = false,
-  });
+  const _HeroSection({required this.article, this.isCompact = false});
 
   @override
   Widget build(BuildContext context) {
@@ -624,10 +627,7 @@ class _HeroSection extends StatelessWidget {
       child: Container(
         constraints: const BoxConstraints(maxWidth: 1400),
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-        child: EditorialHeroCard(
-          article: article,
-          isCompact: isCompact,
-        ),
+        child: EditorialHeroCard(article: article, isCompact: isCompact),
       ),
     );
   }
@@ -688,7 +688,11 @@ class _FeaturedGrid extends StatelessWidget {
                 for (final article in articles)
                   SizedBox(
                     width: itemWidth,
-                    child: EditorialArticleCard(article: article),
+                    child: GestureDetector(
+                      onTap: () =>
+                          context.push(AppRouter.articleDetail, extra: article),
+                      child: EditorialArticleCard(article: article),
+                    ),
                   ),
               ],
             );
@@ -719,7 +723,11 @@ class _CompactStoriesSection extends StatelessWidget {
           children: [
             for (int i = 0; i < articles.length; i++) ...[
               if (i > 0) _CompactDivider(),
-              EditorialCompactCard(article: articles[i]),
+              GestureDetector(
+                onTap: () =>
+                    context.push(AppRouter.articleDetail, extra: articles[i]),
+                child: EditorialCompactCard(article: articles[i]),
+              ),
             ],
           ],
         ),
@@ -736,69 +744,6 @@ class _CompactDivider extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 20),
       height: 1,
       color: colors.divider.withOpacity(0.5),
-    );
-  }
-}
-
-// ===========================================================================
-// EDITORIAL DIVIDER
-// ===========================================================================
-
-class _EditorialDivider extends StatelessWidget {
-  final double horizontalPadding;
-
-  const _EditorialDivider({this.horizontalPadding = 32});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DiscoverTheme.colors(context);
-
-    return Center(
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 1400),
-        margin: EdgeInsets.symmetric(
-          horizontal: horizontalPadding,
-          vertical: 32,
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Container(
-                height: 1,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.transparent,
-                      colors.divider,
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Icon(
-                Icons.diamond_outlined,
-                size: 12,
-                color: colors.accent,
-              ),
-            ),
-            Expanded(
-              child: Container(
-                height: 1,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      colors.divider,
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -838,9 +783,10 @@ class _RetryButtonState extends State<_RetryButton> {
           ),
           child: Text(
             'TRY AGAIN',
-            style: DiscoverTheme.navItem(context, isActive: true).copyWith(
-              color: _isHovered ? Colors.white : colors.accent,
-            ),
+            style: DiscoverTheme.navItem(
+              context,
+              isActive: true,
+            ).copyWith(color: _isHovered ? Colors.white : colors.accent),
           ),
         ),
       ),

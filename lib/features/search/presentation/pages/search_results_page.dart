@@ -159,13 +159,18 @@ class _SearchResultsContentState extends State<SearchResultsContent> {
   }
 
   void _addNewMessage(String query, List<AttachmentData>? attachments) async {
+    print('🔔 SearchResultsPage._addNewMessage called');
+    print('   query: "$query", attachments: ${attachments?.length ?? 0}');
     final searchBloc = context.read<SearchBloc>();
     try {
+      print('   Dispatching SearchEvent.addNewMessage...');
       searchBloc.add(
         SearchEvent.addNewMessage(query: query, attachments: attachments),
       );
+      print('   ✅ Event dispatched');
       _scrollToBottom();
     } catch (e) {
+      print('   ❌ Error dispatching event: $e');
       _showErrorMessage('Failed to send message: $e');
     }
   }
@@ -183,10 +188,17 @@ class _SearchResultsContentState extends State<SearchResultsContent> {
   }
 
   void _onFollowUpSubmit(List<AttachmentData>? attachments) {
+    print('🔔 SearchResultsPage._onFollowUpSubmit called');
+    print(
+      '   text: "${_followUpController.text.trim()}", attachments: ${attachments?.length ?? 0}',
+    );
     if (_followUpController.text.trim().isNotEmpty) {
       final query = _followUpController.text.trim();
+      print('   Calling _addNewMessage with query: "$query"');
       _addNewMessage(query, attachments);
       _followUpController.clear();
+    } else {
+      print('   ⚠️ Submit blocked: empty text');
     }
   }
 

@@ -35,6 +35,7 @@ import '../../domain/tools/numbers/numbers_tool.dart';
 import '../../domain/tools/holiday/holiday_tool.dart';
 import '../../domain/tools/crypto/crypto_price_tool.dart';
 import '../../domain/tools/stock/stock_price_tool.dart';
+import '../../domain/tools/map/map_tool.dart';
 
 import '../../domain/entities/message_generation_state.dart';
 import '../../rag/domain/entities/rag_update.dart';
@@ -171,6 +172,7 @@ class IntelligentSearchDataSource {
       HolidayTool(),
       CryptoPriceTool(),
       StockPriceTool(),
+      MapTool(),
     ]);
 
     _intentOrchestrator = IntentOrchestrator(toolRegistry: _toolRegistry);
@@ -477,7 +479,8 @@ class IntelligentSearchDataSource {
           break;
       }
 
-      final response = await _ragDataSource.generateRAGResponse(
+      MessageData? finalResponse;
+      await for (final update in _ragDataSource.generateRAGStream(
         query,
         maxSearchResults: maxSearchResults,
         maxRelevantDocuments: effectiveMaxDocs,
@@ -486,8 +489,31 @@ class IntelligentSearchDataSource {
         enableAdaptivePrompting: enableAdaptivePrompting,
         attachments: attachments,
         searchMode: searchMode,
-        onSearchComplete: onSearchComplete,
-      );
+      )) {
+        if (update.finalResult != null) {
+          finalResponse = update.finalResult;
+        }
+        // Handle intermediate updates if needed
+        if (onSearchComplete != null &&
+            update.status == RAGStatus.ranking &&
+            update.documents != null) {
+          onSearchComplete(
+            MessageData(
+              query: query,
+              answer: '',
+              images: update.images ?? const [],
+              videos: update.videos ?? const [],
+              generationState: MessageGenerationState.generating,
+            ),
+          );
+        }
+      }
+
+      if (finalResponse == null) {
+        throw Exception('Failed to generate response from stream');
+      }
+
+      final response = finalResponse;
 
       _successfulSearches++;
       _lastSearchTime = DateTime.now();
@@ -516,17 +542,136 @@ class IntelligentSearchDataSource {
     int? maxContextLength,
     int maxHistoryMessages = 3,
     List<dynamic>? attachments,
-  }) {
-    return _ragDataSource.generateRAGStream(
-      query,
-      maxSearchResults: maxSearchResults,
-      maxRelevantDocuments: maxRelevantDocuments,
-      maxContextLength: maxContextLength,
-      maxHistoryMessages: maxHistoryMessages,
-      attachments: attachments,
-      searchMode: SearchMode.search, // Usually follow-ups are standard search
-      previousMessages: previousMessages,
+  }) async* {
+    print(
+      '🔄 IntelligentSearchDataSource: Follow-up stream called for "$query"',
     );
+    if (!_isInitialized) {
+      yield RAGUpdate(
+        status: RAGStatus.failed,
+        message: 'Service not initialized',
+      );
+      return;
+    }
+
+    try {
+      yield RAGUpdate(
+        status: RAGStatus.planning,
+        message: 'Analyzing follow-up request...',
+      );
+
+      // 1. Plan with History
+      print('IntelligentSearchDataSource: Requesting plan with history...');
+      final plan = await _intentOrchestrator.plan(
+        query,
+        previousMessages: previousMessages,
+      );
+      print(
+        'IntelligentSearchDataSource: Plan with history created: ${plan.reasoning}',
+      );
+
+      yield RAGUpdate(
+        status: RAGStatus.planning,
+        message: 'Plan: ${plan.reasoning}',
+      );
+
+      // 2. Execute
+      final stream = _agentExecutor.executePlan(query, plan);
+
+      await for (final messageData in stream) {
+        yield RAGUpdate(
+          status: messageData.isGenerating
+              ? RAGStatus.thinking
+              : RAGStatus.streaming,
+          finalResult: messageData,
+          steps: messageData.steps,
+        );
+
+        // Track final result for synthesis
+        if (messageData.generationState == MessageGenerationState.completed) {
+          // Synthesis if no answer but we have sources (tools executed)
+          if (messageData.answer.isEmpty && messageData.sources.isNotEmpty) {
+            print(
+              'IntelligentSearchDataSource: Agent finished with sources. Synthesizing with history...',
+            );
+
+            yield RAGUpdate(
+              status: RAGStatus.thinking,
+              message:
+                  'Reviewing ${messageData.sources.length} sources and history...',
+            );
+
+            final llmManager = LLMProviderManager();
+            final sourcesText = messageData.sources
+                .map((s) => "- ${s.title}: ${s.description}")
+                .join("\n");
+
+            // Construct history text
+            final historyBuffer = StringBuffer();
+            for (final msg in previousMessages.take(maxHistoryMessages)) {
+              historyBuffer.writeln("User: ${msg.query}");
+              historyBuffer.writeln("Assistant: ${msg.answer}");
+            }
+
+            final prompt =
+                "Context:\n$historyBuffer\n\nCurrent Query: $query\n\nBased on the following search results and the conversation context above, please answer the query.\n\nSearch Results:\n$sourcesText\n\nProvide a comprehensive and helpful answer.";
+
+            final buffer = StringBuffer();
+            await for (final token in llmManager.generateResponseStream(
+              prompt,
+            )) {
+              buffer.write(token);
+              final updatedData = messageData.copyWith(
+                answer: buffer.toString(),
+                generationState: MessageGenerationState.streaming,
+              );
+              yield RAGUpdate(
+                status: RAGStatus.streaming,
+                finalResult: updatedData,
+                steps: messageData.steps,
+                token: token,
+              );
+            }
+
+            final finalData = messageData.copyWith(
+              answer: buffer.toString(),
+              generationState: MessageGenerationState.completed,
+            );
+
+            yield RAGUpdate(
+              status: RAGStatus.completed,
+              finalResult: finalData,
+              steps: messageData.steps,
+            );
+            return;
+          }
+
+          yield RAGUpdate(
+            status: RAGStatus.completed,
+            finalResult: messageData,
+            steps: messageData.steps,
+          );
+        }
+      }
+    } catch (e) {
+      print('Orchestrator follow-up failed: $e. Falling back to direct RAG.');
+      yield RAGUpdate(
+        status: RAGStatus.failed,
+        message: 'Agent failed, falling back...',
+      );
+
+      // Fallback to legacy RAG call which handles history internally
+      yield* _ragDataSource.generateRAGStream(
+        query,
+        maxSearchResults: maxSearchResults,
+        maxRelevantDocuments: maxRelevantDocuments,
+        maxContextLength: maxContextLength,
+        maxHistoryMessages: maxHistoryMessages,
+        attachments: attachments,
+        searchMode: SearchMode.search,
+        previousMessages: previousMessages,
+      );
+    }
   }
 
   /// Generate follow-up response with history
@@ -755,12 +900,23 @@ class IntelligentSearchDataSource {
     final testStart = DateTime.now();
 
     try {
-      final response = await _ragDataSource.generateRAGResponse(
+      MessageData? finalResponse;
+      await for (final update in _ragDataSource.generateRAGStream(
         'Hello, can you confirm you are working?',
         maxSearchResults: 5,
         maxRelevantDocuments: 3,
         maxContextLength: 2000,
-      );
+      )) {
+        if (update.finalResult != null) {
+          finalResponse = update.finalResult;
+        }
+      }
+
+      if (finalResponse == null) {
+        throw Exception('Stream produced no result');
+      }
+
+      final response = finalResponse;
 
       final duration = DateTime.now().difference(testStart);
 

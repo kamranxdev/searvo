@@ -25,6 +25,10 @@ class MessageData {
   final List<SearchStep> steps;
   final List<ToolWidgetData> toolWidgets;
 
+  /// Response confidence metrics (from SourceVerifier & ConfidenceScorer)
+  final int? confidenceScore; // 0-100 percentage
+  final String? confidenceLevel; // High, Good, Moderate, Low
+
   MessageData({
     required this.query,
     required this.answer,
@@ -41,6 +45,8 @@ class MessageData {
     this.searchMode = SearchMode.search,
     this.steps = const [],
     this.toolWidgets = const [],
+    this.confidenceScore,
+    this.confidenceLevel,
   }) : timestamp = timestamp ?? DateTime.now();
 
   MessageData copyWith({
@@ -59,6 +65,8 @@ class MessageData {
     SearchMode? searchMode,
     List<SearchStep>? steps,
     List<ToolWidgetData>? toolWidgets,
+    int? confidenceScore,
+    String? confidenceLevel,
   }) {
     return MessageData(
       query: query ?? this.query,
@@ -76,6 +84,8 @@ class MessageData {
       searchMode: searchMode ?? this.searchMode,
       steps: steps ?? this.steps,
       toolWidgets: toolWidgets ?? this.toolWidgets,
+      confidenceScore: confidenceScore ?? this.confidenceScore,
+      confidenceLevel: confidenceLevel ?? this.confidenceLevel,
     );
   }
 

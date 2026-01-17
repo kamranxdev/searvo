@@ -498,10 +498,54 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
             : searchColors.accent.withValues(alpha: 0.7);
       }
     } else {
-      // For regular suggestions, use trending_up icon
-      icon = Icons.trending_up;
+      // Find the suggestion object to get its type/intent
+      final suggestionObj = _dynamicSuggestions.firstWhere(
+        (s) => s.text == suggestion,
+        orElse: () => AutocompleteSuggestion(
+          text: suggestion,
+          displayTitle: suggestion,
+          type: SuggestionType.related,
+          relevanceScore: 0,
+          intent: QueryIntent.general,
+        ),
+      );
+
+      switch (suggestionObj.intent) {
+        case QueryIntent.shopping:
+          icon = Icons.shopping_bag_outlined;
+          break;
+        case QueryIntent.technical:
+          icon = Icons.bug_report_outlined;
+          break;
+        case QueryIntent.creative:
+          icon = Icons.lightbulb_outline;
+          break;
+        case QueryIntent.media:
+          icon = Icons.play_circle_outline;
+          break;
+        case QueryIntent.local:
+          icon = Icons.place_outlined;
+          break;
+        case QueryIntent.question:
+          icon = Icons.help_outline;
+          break;
+        case QueryIntent.howTo:
+          icon = Icons.school_outlined;
+        case QueryIntent.research:
+          icon = Icons.science_outlined;
+          break;
+        default:
+          if (suggestionObj.type == SuggestionType.trending) {
+            icon = Icons.trending_up;
+          } else if (suggestionObj.type == SuggestionType.question) {
+            icon = Icons.help_outline;
+          } else {
+            icon = Icons.search;
+          }
+      }
+
       iconColor = isSelected
-          ? searchColors.caption
+          ? searchColors.accent
           : searchColors.caption.withValues(alpha: 0.7);
     }
 

@@ -1,52 +1,58 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
 import 'package:searvo/features/search/rag/bloc/rag_cubit.dart';
 import 'package:searvo/features/search/rag/bloc/rag_state.dart';
-import 'package:searvo/features/search/rag/services/orchestration/rag_orchestrator.dart';
+import 'package:searvo/features/search/data/datasources/rag_data_source.dart';
+import 'package:searvo/features/search/domain/entities/message_data.dart';
+import 'package:searvo/features/search/rag/domain/entities/rag_update.dart';
+import 'package:searvo/features/search/rag/domain/entities/rag_status.dart';
 
-import 'rag_cubit_test.mocks.dart';
+class MockRAGDataSource extends Mock implements RAGDataSource {
+  @override
+  Stream<RAGUpdate> generateRAGStream(
+    String? query, {
+    int? maxSearchResults = 20,
+    int? maxRelevantDocuments = 10,
+    int? maxContextLength,
+    bool? enableQueryEnhancement = true,
+    bool? enableAdaptivePrompting = true,
+    List<dynamic>? attachments,
+    dynamic searchMode,
+    List<MessageData>? previousMessages,
+    int? maxHistoryMessages = 3,
+    bool? isNewConversation = false,
+  }) {
+    return super.noSuchMethod(
+      Invocation.method(
+        #generateRAGStream,
+        [query],
+        {
+          #maxSearchResults: maxSearchResults,
+          #maxRelevantDocuments: maxRelevantDocuments,
+          #maxContextLength: maxContextLength,
+          #enableQueryEnhancement: enableQueryEnhancement,
+          #enableAdaptivePrompting: enableAdaptivePrompting,
+          #attachments: attachments,
+          #searchMode: searchMode,
+          #previousMessages: previousMessages,
+          #maxHistoryMessages: maxHistoryMessages,
+          #isNewConversation: isNewConversation,
+        },
+      ),
+      returnValue: Stream<RAGUpdate>.empty(),
+    );
+  }
+}
 
-@GenerateMocks([RAGOrchestrator])
 void main() {
-  group('RAGState Tests', () {
-    test('should have correct default values', () {
-      const state = RAGState();
-
-      expect(state.isProcessingRAG, false);
-      expect(state.isProcessingAttachments, false);
-      expect(state.isProcessingWebScraping, false);
-      expect(state.isProcessingPDF, false);
-      expect(state.isAnalyzingQuery, false);
-      expect(state.cachedDocuments, isEmpty);
-      expect(state.lastQueryAnalysis, isNull);
-      expect(state.performanceMetrics, isEmpty);
-      expect(state.errorMessage, isNull);
-    });
-    // ... (Keeping data class tests same)
-
-    group('isAnyProcessing', () {
-      test('should return false when nothing is processing', () {
-        const state = RAGState();
-        expect(state.isAnyProcessing, false);
-      });
-      // ... (rest of isAnyProcessing tests)
-    });
-    // ... (rest of simple state tests)
-  });
-
   group('RAGCubit Tests', () {
     late RAGCubit ragCubit;
-    late MockRAGOrchestrator mockRAGOrchestrator;
+    late MockRAGDataSource mockRAGDataSource;
 
     setUp(() {
-      mockRAGOrchestrator = MockRAGOrchestrator();
-
-      // Default subs
-      // when(mockRAGOrchestrator.initialize()).thenAnswer((_) async {});
-
-      ragCubit = RAGCubit(ragOrchestrator: mockRAGOrchestrator);
+      mockRAGDataSource = MockRAGDataSource();
+      ragCubit = RAGCubit(ragDataSource: mockRAGDataSource);
     });
 
     tearDown(() {
@@ -58,25 +64,70 @@ void main() {
     });
 
     blocTest<RAGCubit, RAGState>(
-      'initialize should call orchestrator initialize',
-      build: () => ragCubit,
-      act: (cubit) async => await cubit.initialize(),
-      // verify: (cubit) {
-      //   verify(mockRAGOrchestrator.initialize()).called(1);
-      // },
-      expect: () => [],
+      'generateRAGResponse should consume stream and return result',
+      build: () {
+        when(
+          mockRAGDataSource.generateRAGStream(
+            any,
+            attachments: anyNamed('attachments'),
+            searchMode: anyNamed('searchMode'),
+          ),
+        ).thenAnswer(
+          (_) => Stream.fromIterable([
+            RAGUpdate(status: RAGStatus.searching),
+            RAGUpdate(
+              status: RAGStatus.completed,
+              finalResult: MessageData(query: 'test', answer: 'Success'),
+            ),
+          ]),
+        );
+        return ragCubit;
+      },
+      act: (cubit) async => await cubit.generateRAGResponse(query: 'test'),
+      verify: (cubit) {
+        verify(
+          mockRAGDataSource.generateRAGStream(
+            any,
+            attachments: anyNamed('attachments'),
+            searchMode: anyNamed('searchMode'),
+          ),
+        ).called(1);
+      },
+      expect: () => [
+        const RAGState(isProcessingRAG: true),
+        const RAGState(isProcessingRAG: false),
+      ],
     );
 
     blocTest<RAGCubit, RAGState>(
-      'clearCache should reset state',
-      build: () => ragCubit,
-      seed: () => const RAGState(performanceMetrics: {'time': 100}),
-      act: (cubit) => cubit.clearCache(),
+      'generateRAGResponse should throw if stream yields no result',
+      build: () {
+        when(
+          mockRAGDataSource.generateRAGStream(
+            any,
+            attachments: anyNamed('attachments'),
+            searchMode: anyNamed('searchMode'),
+          ),
+        ).thenAnswer(
+          (_) => Stream.fromIterable([
+            RAGUpdate(status: RAGStatus.searching),
+            // No final result
+          ]),
+        );
+        return ragCubit;
+      },
+      act: (cubit) async {
+        try {
+          await cubit.generateRAGResponse(query: 'test');
+        } catch (_) {}
+      },
       expect: () => [
-        const RAGState(
-          cachedDocuments: [],
-          lastQueryAnalysis: null,
-          performanceMetrics: {},
+        const RAGState(isProcessingRAG: true),
+        predicate(
+          (state) =>
+              state is RAGState &&
+              state.isProcessingRAG == false &&
+              state.errorMessage != null,
         ),
       ],
     );

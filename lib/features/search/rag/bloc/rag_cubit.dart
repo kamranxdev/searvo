@@ -106,11 +106,22 @@ class RAGCubit extends Cubit<RAGState> {
     emit(state.copyWith(isProcessingRAG: true, errorMessage: null));
 
     try {
-      final response = await _ragDataSource.generateRAGResponse(
+      MessageData? finalResponse;
+      await for (final update in _ragDataSource.generateRAGStream(
         query,
         attachments: attachments,
         searchMode: searchMode,
-      );
+      )) {
+        if (update.finalResult != null) {
+          finalResponse = update.finalResult;
+        }
+      }
+
+      if (finalResponse == null) {
+        throw Exception('Failed to generate response');
+      }
+
+      final response = finalResponse;
 
       emit(state.copyWith(isProcessingRAG: false));
       return response;
