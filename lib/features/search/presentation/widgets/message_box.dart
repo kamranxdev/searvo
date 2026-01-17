@@ -184,7 +184,7 @@ class _MessageBoxState extends State<MessageBox> with TickerProviderStateMixin {
                   sources: _currentMessage.sources,
                   steps: _currentMessage.steps,
                   activeDetail: _currentMessage.steps
-                      .where((s) => s.isInProgress || s.isCompleted)
+                      .where((s) => s.isInProgress)
                       .lastOrNull
                       ?.title,
                   isGenerating: _currentMessage.isGenerating,

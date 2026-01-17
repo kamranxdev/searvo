@@ -345,6 +345,9 @@ class LLMProviderManager {
     if (provider == null) {
       throw Exception('No active provider set');
     }
+    print(
+      'LLMProviderManager: Calling generateResponse on ${provider.providerName}',
+    );
     return await provider.generateResponse(message);
   }
 

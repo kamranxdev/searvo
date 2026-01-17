@@ -119,7 +119,15 @@ class _ReasoningWidgetState extends State<ReasoningWidget>
         headerText = _getCurrentStatusText();
       }
     } else {
-      headerText = 'Thought Process ($completedSteps steps)';
+      final totalDurationMs = completedSteps > 0
+          ? widget.steps.fold<int>(
+              0,
+              (sum, step) => sum + step.duration.inMilliseconds,
+            )
+          : 0;
+      final durationText = (totalDurationMs / 1000).toStringAsFixed(1);
+
+      headerText = 'Thought Process ($completedSteps steps) • ${durationText}s';
     }
 
     return Container(

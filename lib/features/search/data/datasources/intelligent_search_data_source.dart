@@ -1,40 +1,42 @@
 import 'package:searvo/features/settings/services/llm_settings_service.dart';
-import '../entities/message_data.dart';
+import '../../domain/entities/message_data.dart';
 
-import 'package:searvo/features/search/rag/services/orchestration/rag_orchestrator.dart';
-import '../entities/search_mode.dart';
-import '../entities/search_enums.dart';
+import 'rag_data_source.dart';
+import '../../domain/entities/search_mode.dart';
+import '../../domain/entities/search_enums.dart';
 
-import '../../data/models/search_response_model.dart';
+import 'package:searvo/features/llm/services/providers/llm_provider_manager.dart';
+
+import '../models/search_response_model.dart';
 
 import '../../../settings/services/search_provider_settings_service.dart';
-import '../../data/datasources/searxng_remote_data_source.dart';
+import 'searxng_remote_data_source.dart';
 import '../../rag/services/data_ingestion/rag_scraper_adapter.dart';
 import '../../rag/services/data_ingestion/pdf_extractor_service.dart';
 import '../../rag/services/query_processing/query_analyzer.dart';
 import '../../rag/models/rag_models.dart';
-import 'agent/intent_orchestrator.dart';
-import 'agent/agent_executor.dart';
-import 'agent/tool_registry.dart';
-import '../tools/web_search/web_search_tool.dart';
-import '../tools/image_generator/image_generation_tool.dart';
-import '../tools/pdf_reader/pdf_reader_tool.dart';
-import '../tools/video_analyzer/video_analyzer_tool.dart';
-import '../tools/web_scraper/web_scraper_tool.dart';
-import '../tools/calculator/calculator_tool.dart';
-import '../tools/weather/weather_tool.dart';
-import '../tools/time/time_tool.dart';
-import '../tools/currency/currency_converter_tool.dart';
-import '../tools/dictionary/dictionary_tool.dart';
-import '../tools/wikipedia/wikipedia_tool.dart';
-import '../tools/unit_converter/unit_converter_tool.dart';
-import '../tools/country/country_info_tool.dart';
-import '../tools/numbers/numbers_tool.dart';
-import '../tools/holiday/holiday_tool.dart';
-import '../tools/crypto/crypto_price_tool.dart';
-import '../tools/stock/stock_price_tool.dart';
+import '../../domain/services/agent/intent_orchestrator.dart';
+import '../../domain/services/agent/agent_executor.dart';
+import '../../domain/services/agent/tool_registry.dart';
+import '../../domain/tools/web_search/web_search_tool.dart';
+import '../../domain/tools/image_generator/image_generation_tool.dart';
+import '../../domain/tools/pdf_reader/pdf_reader_tool.dart';
+import '../../domain/tools/video_analyzer/video_analyzer_tool.dart';
+import '../../domain/tools/web_scraper/web_scraper_tool.dart';
+import '../../domain/tools/calculator/calculator_tool.dart';
+import '../../domain/tools/weather/weather_tool.dart';
+import '../../domain/tools/time/time_tool.dart';
+import '../../domain/tools/currency/currency_converter_tool.dart';
+import '../../domain/tools/dictionary/dictionary_tool.dart';
+import '../../domain/tools/wikipedia/wikipedia_tool.dart';
+import '../../domain/tools/unit_converter/unit_converter_tool.dart';
+import '../../domain/tools/country/country_info_tool.dart';
+import '../../domain/tools/numbers/numbers_tool.dart';
+import '../../domain/tools/holiday/holiday_tool.dart';
+import '../../domain/tools/crypto/crypto_price_tool.dart';
+import '../../domain/tools/stock/stock_price_tool.dart';
 
-import '../entities/message_generation_state.dart';
+import '../../domain/entities/message_generation_state.dart';
 import '../../rag/domain/entities/rag_update.dart';
 import '../../rag/domain/entities/rag_status.dart';
 
@@ -44,27 +46,28 @@ export '../../rag/services/query_processing/query_analyzer.dart'
     show QueryAnalysis;
 export '../../rag/models/rag_models.dart' show Document;
 
-/// Complete search service with RAG, attachment support, and advanced search capabilities
-class SearchService {
-  SearchService({
-    required RAGOrchestrator ragOrchestrator,
+/// Complete search dataSource with RAG, attachment support, and advanced search capabilities
+class IntelligentSearchDataSource {
+  IntelligentSearchDataSource({
+    required RAGDataSource ragDataSource,
     required LLMSettingsService llmSettings,
     required SearchProviderSettingsService searchSettings,
     required RAGScraperAdapter scraperAdapter,
     required QueryAnalyzer queryAnalyzer,
-  }) : _ragOrchestrator = ragOrchestrator,
+  }) : _ragDataSource = ragDataSource,
        _llmSettings = llmSettings,
        _searchSettings = searchSettings,
        _scraperAdapter = scraperAdapter,
        _queryAnalyzer = queryAnalyzer;
 
-  final RAGOrchestrator _ragOrchestrator;
+  final RAGDataSource _ragDataSource;
   final LLMSettingsService _llmSettings;
   final SearchProviderSettingsService _searchSettings;
   final RAGScraperAdapter _scraperAdapter;
   final PDFExtractorService _pdfExtractor =
       PDFExtractorService(); // Kept as internal helper for now, can be injected later
   final QueryAnalyzer _queryAnalyzer;
+  final SearXNGRemoteDataSource _searxngService = SearXNGRemoteDataSource();
 
   late final IntentOrchestrator _intentOrchestrator;
   late final AgentExecutor _agentExecutor;
@@ -122,17 +125,17 @@ class SearchService {
 
   Future<void> _initializeSearchProviders() async {
     try {
-      final searxngService = SearXNGRemoteDataSource();
+      // Use the class field instead of local variable
       final searxngEndpoint = _searchSettings.getSearXNGEndpoint();
       final timeout = _searchSettings.getSearchTimeout();
 
-      await searxngService.initialize(
+      await _searxngService.initialize(
         baseUrl: searxngEndpoint,
         timeout: timeout,
       );
 
       // Test connection
-      final canConnect = await searxngService.testConnection();
+      final canConnect = await _searxngService.testConnection();
       if (canConnect) {
         print('✅ SearXNG connected at $searxngEndpoint');
       } else {
@@ -151,7 +154,7 @@ class SearchService {
   void _initializeAgent() {
     _toolRegistry = ToolRegistry();
     _toolRegistry.registerTools([
-      WebSearchTool(ragOrchestrator: _ragOrchestrator),
+      WebSearchTool(searxngService: _searxngService),
       ImageGenerationTool(),
       PdfReaderTool(),
       VideoAnalyzerTool(),
@@ -197,7 +200,7 @@ class SearchService {
     SearchMode searchMode = SearchMode.search,
     bool isNewConversation = false,
   }) {
-    return _ragOrchestrator.generateRAGStream(
+    return _ragDataSource.generateRAGStream(
       query,
       maxSearchResults: maxSearchResults,
       maxRelevantDocuments: maxRelevantDocuments,
@@ -222,6 +225,9 @@ class SearchService {
     SearchMode searchMode = SearchMode.search,
     bool isNewConversation = false,
   }) async* {
+    print(
+      'IntelligentSearchDataSource: generateSearchStream called for "$query"',
+    );
     if (!_isInitialized) {
       yield RAGUpdate(
         status: RAGStatus.failed,
@@ -231,13 +237,18 @@ class SearchService {
     }
 
     try {
+      print('IntelligentSearchDataSource: Yielding analyzing request...');
       yield RAGUpdate(
         status: RAGStatus.planning,
         message: 'Analyzing request...',
       );
 
       // 1. Plan
+      print(
+        'IntelligentSearchDataSource: Requesting plan from orchestrator...',
+      );
       final plan = await _intentOrchestrator.plan(query);
+      print('IntelligentSearchDataSource: Plan received');
 
       yield RAGUpdate(
         status: RAGStatus.planning,
@@ -257,8 +268,64 @@ class SearchService {
           // If it's a web search result, we might populate documents?
           // For now, let's rely on MessageData to carry the UI state.
         );
+        print(
+          'IntelligentSearchDataSource: Yielding RAGUpdate. Status: ${messageData.isGenerating ? "thinking" : "streaming"}, Answer: "${messageData.answer}"',
+        );
 
+        // Track final result for synthesis
         if (messageData.generationState == MessageGenerationState.completed) {
+          // If the agent finished but didn't generate an answer (e.g. only search results),
+          // we need to synthesize an answer from the sources.
+          if (messageData.answer.isEmpty && messageData.sources.isNotEmpty) {
+            print(
+              'IntelligentSearchDataSource: Agent finished with sources but no answer. Synthesizing...',
+            );
+
+            yield RAGUpdate(
+              status: RAGStatus.thinking,
+              message: 'Reading ${messageData.sources.length} sources...',
+            );
+
+            final llmManager = LLMProviderManager();
+            final sourcesText = messageData.sources
+                .map((s) => "- ${s.title}: ${s.description}")
+                .join("\n");
+            final prompt =
+                "Based on the following search results, please answer the user's query: $query\n\nSearch Results:\n$sourcesText\n\nProvide a comprehensive and helpful answer.";
+
+            final buffer = StringBuffer();
+            await for (final token in llmManager.generateResponseStream(
+              prompt,
+            )) {
+              buffer.write(token);
+              // Yield streaming update combined with the existing message data (sources, etc.)
+              final updatedData = messageData.copyWith(
+                answer: buffer.toString(),
+                generationState: MessageGenerationState.streaming,
+              );
+
+              yield RAGUpdate(
+                status: RAGStatus.streaming,
+                finalResult: updatedData,
+                steps: messageData.steps,
+                token: token,
+              );
+            }
+
+            // correct the final state
+            final finalData = messageData.copyWith(
+              answer: buffer.toString(),
+              generationState: MessageGenerationState.completed,
+            );
+
+            yield RAGUpdate(
+              status: RAGStatus.completed,
+              finalResult: finalData,
+              steps: messageData.steps,
+            );
+            return; // Done
+          }
+
           yield RAGUpdate(
             status: RAGStatus.completed,
             finalResult: messageData,
@@ -371,13 +438,13 @@ class SearchService {
 
     try {
       if (enableQueryEnhancement) {
-        final validation = _ragOrchestrator.validateQuery(query);
+        final validation = _ragDataSource.validateQuery(query);
         if (validation['quality'] < 40) {
           print('⚠️  Low quality query (${validation['quality']}/100)');
         }
       }
 
-      final complexity = _ragOrchestrator.analyzeQueryComplexity(query);
+      final complexity = _ragDataSource.analyzeQueryComplexity(query);
       print('📊 Complexity: ${complexity['complexity']}');
 
       // Adjust parameters based on search mode
@@ -410,7 +477,7 @@ class SearchService {
           break;
       }
 
-      final response = await _ragOrchestrator.generateRAGResponse(
+      final response = await _ragDataSource.generateRAGResponse(
         query,
         maxSearchResults: maxSearchResults,
         maxRelevantDocuments: effectiveMaxDocs,
@@ -450,7 +517,7 @@ class SearchService {
     int maxHistoryMessages = 3,
     List<dynamic>? attachments,
   }) {
-    return _ragOrchestrator.generateRAGStream(
+    return _ragDataSource.generateRAGStream(
       query,
       maxSearchResults: maxSearchResults,
       maxRelevantDocuments: maxRelevantDocuments,
@@ -493,7 +560,7 @@ class SearchService {
     final searchStart = DateTime.now();
 
     try {
-      final response = await _ragOrchestrator.generateRAGResponseWithHistory(
+      final response = await _ragDataSource.generateRAGResponseWithHistory(
         query,
         previousMessages,
         maxSearchResults: maxSearchResults,
@@ -522,15 +589,15 @@ class SearchService {
   }
 
   Map<String, dynamic> validateQuery(String query) {
-    return _ragOrchestrator.validateQuery(query);
+    return _ragDataSource.validateQuery(query);
   }
 
   String enhanceQuery(String query) {
-    return _ragOrchestrator.enhanceQuery(query);
+    return _ragDataSource.enhanceQuery(query);
   }
 
   Map<String, dynamic> analyzeQueryComplexity(String query) {
-    return _ragOrchestrator.analyzeQueryComplexity(query);
+    return _ragDataSource.analyzeQueryComplexity(query);
   }
 
   /// Analyze query to understand intent, complexity, and generate sub-queries
@@ -631,15 +698,14 @@ class SearchService {
 
   bool get isReady {
     return _isInitialized &&
-        _ragOrchestrator.isReady &&
+        _ragDataSource.isReady &&
         SearXNGRemoteDataSource().isConfigured;
   }
 
   bool get isConfigured => _llmSettings.hasAnyConfiguredProvider();
 
   String get activeProviderName {
-    return _ragOrchestrator.getStatus()['activeLLMProvider'] as String? ??
-        'None';
+    return _ragDataSource.getStatus()['activeLLMProvider'] as String? ?? 'None';
   }
 
   String get activeSearchProviderName {
@@ -647,7 +713,7 @@ class SearchService {
   }
 
   Map<String, dynamic> getStatus() {
-    final ragStatus = _ragOrchestrator.getStatus();
+    final ragStatus = _ragDataSource.getStatus();
 
     return {
       'isReady': isReady,
@@ -672,7 +738,7 @@ class SearchService {
 
   Map<String, dynamic> getDetailedStatus() {
     final basicStatus = getStatus();
-    final perfStats = _ragOrchestrator.getPerformanceStats();
+    final perfStats = _ragDataSource.getPerformanceStats();
 
     return {...basicStatus, 'performance': perfStats};
   }
@@ -689,7 +755,7 @@ class SearchService {
     final testStart = DateTime.now();
 
     try {
-      final response = await _ragOrchestrator.generateRAGResponse(
+      final response = await _ragDataSource.generateRAGResponse(
         'Hello, can you confirm you are working?',
         maxSearchResults: 5,
         maxRelevantDocuments: 3,
@@ -728,7 +794,7 @@ class SearchService {
   Future<Map<String, dynamic>> performHealthCheck() async {
     print('🏥 Performing health check...');
 
-    final health = await _ragOrchestrator.performHealthCheck();
+    final health = await _ragDataSource.performHealthCheck();
     health['searchService'] = _isInitialized ? 'healthy' : 'not_initialized';
     health['statistics'] = getStatus()['statistics'];
 
@@ -741,7 +807,7 @@ class SearchService {
     _successfulSearches = 0;
     _failedSearches = 0;
     _lastSearchTime = null;
-    _ragOrchestrator.clearMetrics();
+    _ragDataSource.clearMetrics();
 
     print('📊 Statistics reset');
   }
@@ -758,7 +824,7 @@ class SearchService {
             : 'N/A',
         'lastSearchTime': _lastSearchTime?.toIso8601String(),
       },
-      'ragOrchestrator': _ragOrchestrator.getPerformanceStats(),
+      'ragOrchestrator': _ragDataSource.getPerformanceStats(),
     };
   }
 

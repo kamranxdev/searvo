@@ -1,35 +1,36 @@
 // import 'package:searvo/features/search/rag/models/rag_models.dart';
 import 'package:searvo/features/search/rag/services/data_ingestion/rag_scraper_adapter.dart';
-import 'package:searvo/features/search/domain/tools/search_tools.dart';
+import 'package:searvo/features/search/domain/entities/agent/agent_tool.dart';
 
-class ReadPageTool extends SearchTool {
+class ReadPageTool extends AgentTool {
   final RAGScraperAdapter _scraperAdapter;
 
-  ReadPageTool(this._scraperAdapter);
+  ReadPageTool(this._scraperAdapter)
+    : super(
+        id: 'read_page',
+        name: 'Read Page',
+        description:
+            'Read the full content of a specific web page. Input should be a URL.',
+      );
 
   @override
-  String get name => 'Read Page';
+  Future<bool> get isAvailable async => true;
 
   @override
-  String get id => 'read_page';
+  Map<String, dynamic> get inputSchema => {
+    'type': 'object',
+    'properties': {
+      'url': {'type': 'string', 'description': 'The URL of the page to read'},
+    },
+    'required': ['url'],
+  };
 
   @override
-  String get icon => 'article';
-
-  @override
-  String get description =>
-      'Read the full content of a specific web page. Input should be a URL.';
-
-  @override
-  Future<ToolResult> execute(
-    String query, {
-    Map<String, dynamic>? params,
-  }) async {
+  Future<dynamic> execute(Map<String, dynamic> input) async {
+    final url = (input['url'] as String).trim();
     try {
-      // The query for this tool is the URL itself
-      final url = query.trim();
       if (!url.startsWith('http')) {
-        return ToolResult.failure('Invalid URL provided: $url');
+        return {'success': false, 'error': 'Invalid URL provided: $url'};
       }
 
       final document = await _scraperAdapter.scrape(
@@ -39,22 +40,28 @@ class ReadPageTool extends SearchTool {
       );
 
       if (document.content.isEmpty) {
-        return ToolResult.failure(
-          'Failed to extract content from $url. The page might be empty or protected.',
-        );
+        return {
+          'success': false,
+          'error':
+              'Failed to extract content from $url. The page might be empty or protected.',
+        };
       }
 
       // Check if it was a failed scrape based on metadata
       if (document.metadata['scraped'] == false) {
-        return ToolResult.failure(document.snippet ?? 'Failed to scrape page.');
+        return {
+          'success': false,
+          'error': document.snippet ?? 'Failed to scrape page.',
+        };
       }
 
-      return ToolResult.success(
-        "Content from $url:\n\n${document.content}",
-        documents: [document],
-      );
+      return {
+        'success': true,
+        'content': "Content from $url:\n\n${document.content}",
+        'documents': [document],
+      };
     } catch (e) {
-      return ToolResult.failure('Error reading page: $e');
+      return {'success': false, 'error': 'Error reading page: $e'};
     }
   }
 }

@@ -5,7 +5,7 @@ import 'search_state.dart';
 import '../../domain/entities/message_branch_manager.dart';
 import '../../domain/entities/message_generation_state.dart';
 import '../../domain/entities/source_item.dart';
-import '../../domain/services/search_service.dart';
+import '../../data/datasources/intelligent_search_data_source.dart';
 import 'conversation_manager.dart';
 import '../../domain/entities/search_mode.dart';
 import '../../../../common/widgets/attachment_input_widget.dart';
@@ -13,15 +13,15 @@ import '../../rag/models/rag_models.dart';
 import '../../../history/services/conversation_database_service.dart';
 
 class SearchBloc extends Bloc<SearchEvent, SearchState> {
-  final SearchService _searchService;
+  final IntelligentSearchDataSource _intelligentSearchDataSource;
   final ConversationManager _conversationManager;
   final ConversationDatabaseService _conversationDatabaseService;
 
   SearchBloc({
-    required SearchService searchService,
+    required IntelligentSearchDataSource intelligentSearchDataSource,
     required ConversationDatabaseService conversationDatabaseService,
     ConversationManager? conversationManager,
-  }) : _searchService = searchService,
+  }) : _intelligentSearchDataSource = intelligentSearchDataSource,
        _conversationDatabaseService = conversationDatabaseService,
        _conversationManager = conversationManager ?? ConversationManager(),
        super(const SearchState.initial()) {
@@ -51,7 +51,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   }
 
   Future<void> _onInitialize(Emitter<SearchState> emit) async {
-    await _searchService.initialize();
+    await _intelligentSearchDataSource.initialize();
   }
 
   Future<void> _onLoadConversation(
@@ -108,7 +108,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       int tokenBufferCount = 0;
       DateTime lastEmitTime = DateTime.now();
 
-      await _searchService
+      await _intelligentSearchDataSource
           .generateSearchStream(
             query,
             attachments: attachments,
@@ -130,6 +130,9 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
               streamController.add(update.token!);
               tokenBufferCount++;
             }
+            print(
+              'SearchBloc: Update processed. Answer length: ${accumulatedAnswer.length}. First 50 chars: "${accumulatedAnswer.length > 50 ? accumulatedAnswer.substring(0, 50) : accumulatedAnswer}..."',
+            );
 
             // Map RAG status
             final genState = update.status == RAGStatus.streaming
@@ -285,7 +288,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
 
       _conversationManager.updateCurrentMessage(streamingMessage);
 
-      await _searchService
+      await _intelligentSearchDataSource
           .generateFollowUpStream(
             query,
             conversationHistory,
@@ -428,7 +431,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       final oldMessageQuery = generatingMessage.query;
       final oldMessageAttachments = generatingMessage.attachments;
 
-      await _searchService
+      await _intelligentSearchDataSource
           .generateSearchStream(
             oldMessageQuery,
             attachments: oldMessageAttachments,
@@ -581,7 +584,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         ),
       );
 
-      await _searchService
+      await _intelligentSearchDataSource
           .generateSearchStream(
             newQuery,
             attachments: generatingMessage.attachments,

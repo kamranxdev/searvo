@@ -54,6 +54,8 @@ class AgentExecutor {
       currentData = currentData.copyWith(steps: List.from(planSteps));
       yield currentData;
 
+      final stepStartTime = DateTime.now();
+
       try {
         final tool = _toolRegistry.getToolById(stepPlan.toolId);
         if (tool == null) {
@@ -61,6 +63,7 @@ class AgentExecutor {
         }
 
         final result = await tool.execute(stepPlan.input);
+        print('AgentExecutor: Tool ${tool.id} returned: $result');
 
         // Process result based on tool type
         if (tool.id == 'image_generator' &&
@@ -69,15 +72,47 @@ class AgentExecutor {
           final newImages = List<String>.from(currentData.images)
             ..add(result['imageUrl']);
           currentData = currentData.copyWith(images: newImages);
-        } else if (tool.id == 'web_search' &&
-            result is Map &&
-            result.containsKey('answer')) {
-          // If it's the final search or primary answer, update the answer text
-          currentData = currentData.copyWith(answer: result['answer']);
+        } else if (tool.id == 'web_search' && result is Map) {
+          // Handle direct answer if present
+          if (result.containsKey('answer')) {
+            currentData = currentData.copyWith(answer: result['answer']);
+          }
+
+          // Handle sources from 'sources' or 'documents' key
+          var sourcesList = [];
           if (result['sources'] != null) {
-            final sources = (result['sources'] as List)
-                .map((s) => SourceItem.fromMap(s))
-                .toList();
+            sourcesList = result['sources'] as List;
+          } else if (result['documents'] != null) {
+            sourcesList = result['documents'] as List;
+          }
+
+          if (sourcesList.isNotEmpty) {
+            final sources = sourcesList.map((s) {
+              // Handle potential mismatch in keys if using 'documents'
+              if (result['documents'] != null) {
+                String domain = '';
+                try {
+                  final uri = Uri.parse(s['url'] ?? '');
+                  domain = uri.host;
+                } catch (_) {
+                  domain = s['source'] ?? 'web';
+                }
+
+                // Map document format to SourceItem expected map
+                return SourceItem(
+                  title: s['title'] ?? '',
+                  url: s['url'] ?? '',
+                  description: s['snippet'] ?? s['content'] ?? '',
+                  thumbnail: s['thumbnail'] ?? '',
+                  source: s['source'] ?? 'web',
+                  domain: domain,
+                  publishedDate: s['publishedDate'] != null
+                      ? DateTime.tryParse(s['publishedDate'])
+                      : null,
+                );
+              }
+              return SourceItem.fromMap(s);
+            }).toList();
             currentData = currentData.copyWith(sources: sources);
           }
 
@@ -134,13 +169,19 @@ class AgentExecutor {
         // Mark step complete
         planSteps[i] = planSteps[i].copyWith(
           status: SearchStepStatus.completed,
+          duration: DateTime.now().difference(stepStartTime),
         );
         currentData = currentData.copyWith(steps: List.from(planSteps));
+        currentData = currentData.copyWith(steps: List.from(planSteps));
+        print(
+          'AgentExecutor: Yielding update after step $i. Answer: "${currentData.answer}"',
+        );
         yield currentData;
       } catch (e) {
         planSteps[i] = planSteps[i].copyWith(
           status: SearchStepStatus.failed,
           description: "${stepPlan.description} (Failed: $e)",
+          duration: DateTime.now().difference(stepStartTime),
         );
         currentData = currentData.copyWith(steps: List.from(planSteps));
         yield currentData;

@@ -1,99 +1,38 @@
 import 'package:searvo/features/search/data/datasources/searxng_remote_data_source.dart';
 import 'package:searvo/features/search/domain/entities/search_enums.dart';
-import 'package:searvo/features/search/rag/models/rag_models.dart';
 import 'package:math_expressions/math_expressions.dart';
+import 'package:searvo/features/search/domain/entities/agent/agent_tool.dart';
 export 'read_page_tool.dart';
+export 'web_search/web_search_tool.dart';
 
-abstract class SearchTool {
-  String get name;
-  String get id;
-  String get icon;
-  String get description;
+// Helper to convert legacy ToolResult to what AgentTool expects or vice versa
+// Actually AgentTool returns dynamic, so we can return a Map or similar.
 
-  Future<ToolResult> execute(String query, {Map<String, dynamic>? params});
-}
-
-class ToolResult {
-  final bool success;
-  final dynamic data;
-  final String? errorMessage;
-  final List<Document> documents;
-
-  ToolResult({
-    required this.success,
-    this.data,
-    this.errorMessage,
-    this.documents = const [],
-  });
-
-  factory ToolResult.success(
-    dynamic data, {
-    List<Document> documents = const [],
-  }) {
-    return ToolResult(success: true, data: data, documents: documents);
-  }
-
-  factory ToolResult.failure(String error) {
-    return ToolResult(success: false, errorMessage: error);
-  }
-}
-
-class WebSearchTool extends SearchTool {
+class ImageSearchTool extends AgentTool {
   final SearXNGRemoteDataSource _service;
 
-  WebSearchTool(this._service);
-
-  @override
-  String get name => 'Web Search';
-  @override
-  String get id => 'web_search';
-  @override
-  String get icon => 'search';
-  @override
-  String get description =>
-      'Search the web for current information, news, and facts.';
-
-  @override
-  Future<ToolResult> execute(
-    String query, {
-    Map<String, dynamic>? params,
-  }) async {
-    try {
-      final response = await _service.search(
-        query,
-        searchType: SearchType.general,
-        resultsPerPage: 10,
+  ImageSearchTool(this._service)
+    : super(
+        id: 'image_search',
+        name: 'Image Search',
+        description: 'Search for images and visual content.',
       );
 
-      final documents = response.results
-          .map((r) => Document.fromSearchResult(r))
-          .toList();
-      return ToolResult.success(response, documents: documents);
-    } catch (e) {
-      return ToolResult.failure(e.toString());
-    }
-  }
-}
-
-class ImageSearchTool extends SearchTool {
-  final SearXNGRemoteDataSource _service;
-
-  ImageSearchTool(this._service);
+  @override
+  Future<bool> get isAvailable async => _service.isConfigured;
 
   @override
-  String get name => 'Image Search';
-  @override
-  String get id => 'image_search';
-  @override
-  String get icon => 'image';
-  @override
-  String get description => 'Search for images and visual content.';
+  Map<String, dynamic> get inputSchema => {
+    'type': 'object',
+    'properties': {
+      'query': {'type': 'string', 'description': 'Search query for images'},
+    },
+    'required': ['query'],
+  };
 
   @override
-  Future<ToolResult> execute(
-    String query, {
-    Map<String, dynamic>? params,
-  }) async {
+  Future<dynamic> execute(Map<String, dynamic> input) async {
+    final query = input['query'] as String;
     try {
       final response = await _service.search(
         query,
@@ -101,47 +40,53 @@ class ImageSearchTool extends SearchTool {
         resultsPerPage: 20,
       );
 
-      // Convert to documents but specialized for images
-      final documents = response.results.map((r) {
-        return Document.fromSearchResult(
-          r,
-        ).withRelevanceScore(1.0); // Assume high relevance for raw search
-      }).toList();
-
-      return ToolResult.success(response, documents: documents);
+      return {
+        'success': true,
+        'documents': [],
+        'images': response.results.map((r) => r.imgSrc ?? r.url).toList(),
+      };
     } catch (e) {
-      return ToolResult.failure(e.toString());
+      return {'success': false, 'error': e.toString()};
     }
   }
 }
 
-// TODO: Add VideoSearchTool, CodeSearchTool, etc.
-
-class CalculatorTool extends SearchTool {
-  @override
-  String get name => 'Calculator';
-  @override
-  String get id => 'calculator';
-  @override
-  String get icon => 'calculate';
-  @override
-  String get description =>
-      'Perform mathematical calculations (usage: "5 + 5", "sqrt(144)").';
+class CalculatorTool extends AgentTool {
+  CalculatorTool()
+    : super(
+        id: 'calculator',
+        name: 'Calculator',
+        description:
+            'Perform mathematical calculations (usage: "5 + 5", "sqrt(144)").',
+      );
 
   @override
-  Future<ToolResult> execute(
-    String query, {
-    Map<String, dynamic>? params,
-  }) async {
+  Future<bool> get isAvailable async => true;
+
+  @override
+  Map<String, dynamic> get inputSchema => {
+    'type': 'object',
+    'properties': {
+      'expression': {
+        'type': 'string',
+        'description': 'The math expression to evaluate',
+      },
+    },
+    'required': ['expression'],
+  };
+
+  @override
+  Future<dynamic> execute(Map<String, dynamic> input) async {
+    final expressionStr = input['expression'] as String;
     try {
       final cm = ContextModel();
-      final parser = Parser();
-      final expression = parser.parse(query);
+      final parser = GrammarParser();
+      final expression = parser.parse(expressionStr);
       final result = expression.evaluate(EvaluationType.REAL, cm);
 
-      return ToolResult.success("Calculation result: $result");
+      return {'success': true, 'result': result.toString()};
     } catch (e) {
-      return ToolResult.failure("Math error: $e");
+      return {'success': false, 'error': "Math error: $e"};
     }
   }
 }

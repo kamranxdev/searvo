@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'rag_state.dart';
 import '../models/rag_models.dart';
-import '../services/orchestration/rag_orchestrator.dart';
+import '../../data/datasources/rag_data_source.dart';
 import '../services/data_ingestion/attachment_processor.dart';
 import '../services/data_ingestion/rag_scraper_adapter.dart';
 import '../services/data_ingestion/pdf_extractor_service.dart';
@@ -10,14 +10,14 @@ import '../../domain/entities/message_data.dart';
 import '../../domain/entities/search_mode.dart';
 
 class RAGCubit extends Cubit<RAGState> {
-  final RAGOrchestrator _ragOrchestrator;
+  final RAGDataSource _ragDataSource;
   final AttachmentProcessor _attachmentProcessor = AttachmentProcessor();
   final RAGScraperAdapter _scraperAdapter = RAGScraperAdapter();
   final PDFExtractorService _pdfExtractor = PDFExtractorService();
   final QueryAnalyzer _queryAnalyzer = QueryAnalyzer();
 
-  RAGCubit({required RAGOrchestrator ragOrchestrator})
-    : _ragOrchestrator = ragOrchestrator,
+  RAGCubit({required RAGDataSource ragDataSource})
+    : _ragDataSource = ragDataSource,
       super(const RAGState());
 
   Future<void> initialize() async {
@@ -106,7 +106,7 @@ class RAGCubit extends Cubit<RAGState> {
     emit(state.copyWith(isProcessingRAG: true, errorMessage: null));
 
     try {
-      final response = await _ragOrchestrator.generateRAGResponse(
+      final response = await _ragDataSource.generateRAGResponse(
         query,
         attachments: attachments,
         searchMode: searchMode,

@@ -1,21 +1,21 @@
 import '../../entities/agent/agent_tool.dart';
-import '../../../rag/services/orchestration/rag_orchestrator.dart';
+import '../../../data/datasources/searxng_remote_data_source.dart';
 import '../../entities/search_mode.dart';
 
 class WebSearchTool extends AgentTool {
-  final RAGOrchestrator _ragOrchestrator;
+  final SearXNGRemoteDataSource _searxngService;
 
-  WebSearchTool({required RAGOrchestrator ragOrchestrator})
-    : _ragOrchestrator = ragOrchestrator,
+  WebSearchTool({required SearXNGRemoteDataSource searxngService})
+    : _searxngService = searxngService,
       super(
         id: 'web_search',
         name: 'Web Search',
         description:
-            'Search the web for information, news, and answers using RAG.',
+            'Search the web for information, news, and answers using SearXNG.',
       );
 
   @override
-  Future<bool> get isAvailable async => _ragOrchestrator.isReady;
+  Future<bool> get isAvailable async => _searxngService.isConfigured;
 
   @override
   Map<String, dynamic> get inputSchema => {
@@ -27,6 +27,11 @@ class WebSearchTool extends AgentTool {
         'enum': ['search', 'research', 'study'],
         'description': 'The search mode to use',
       },
+      'maxResults': {
+        'type': 'integer',
+        'description': 'Maximum results to return',
+        'default': 10,
+      },
     },
     'required': ['query'],
   };
@@ -34,42 +39,32 @@ class WebSearchTool extends AgentTool {
   @override
   Future<dynamic> execute(Map<String, dynamic> input) async {
     final query = input['query'] as String;
-    final modeStr = input['mode'] as String? ?? 'search';
+    final maxResults = input['maxResults'] as int? ?? 10;
+    // Map mode if needed, but primarily we just want search results
 
-    SearchMode mode;
-    switch (modeStr) {
-      case 'research':
-        mode = SearchMode.research;
-        break;
-      case 'study':
-        mode = SearchMode.study;
-        break;
-      default:
-        mode = SearchMode.search;
-    }
-
-    final response = await _ragOrchestrator.generateRAGResponse(
+    // Execute search
+    final response = await _searxngService.search(
       query,
-      searchMode: mode,
+      resultsPerPage: maxResults,
     );
 
+    // Return raw documents for the agent/orchestrator to process
     return {
-      'answer': response.answer,
-      'sources': response.sources
+      'success': true,
+      'documents': response.results
           .map(
-            (s) => {
-              'title': s.title,
-              'url': s.url,
-              'description': s.description,
-              'thumbnail': s.thumbnail,
-              'domain': s.domain,
-              'source': s.source,
-              'publishedDate': s.publishedDate?.toIso8601String(),
+            (r) => {
+              'title': r.title,
+              'url': r.url,
+              'snippet': r.snippet,
+              'source': r.source,
+              'publishedDate': r.publishedDate?.toIso8601String(),
+              'thumbnail': r.thumbnail,
             },
           )
           .toList(),
-      'images': response.images,
-      'videos': response.videos.map((v) => v.toMap()).toList(),
+      'images': <String>[],
+      'videos': <Map<String, String>>[],
     };
   }
 }

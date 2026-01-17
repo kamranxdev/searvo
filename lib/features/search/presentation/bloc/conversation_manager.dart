@@ -134,9 +134,11 @@ class ConversationManager {
     final currentBranches = List<MessageBranchManager>.from(
       state.messageBranches,
     );
-    final activeManager = currentBranches.last;
+    // Create a copy to ensure immutability and new instance for Bloc detection
+    final activeManager = currentBranches.last.copyWith();
 
     activeManager.updateCurrentBranch(newMessage);
+    currentBranches[currentBranches.length - 1] = activeManager;
 
     _emit(state.copyWith(messageBranches: currentBranches));
   }
@@ -230,7 +232,8 @@ class ConversationManager {
     final currentBranches = List<MessageBranchManager>.from(
       state.messageBranches,
     );
-    final branchManager = currentBranches[index];
+    // Create a copy to ensure immutability
+    final branchManager = currentBranches[index].copyWith();
     final oldMessage = branchManager.currentMessage;
 
     final generatingMessage = MessageData(
@@ -250,6 +253,7 @@ class ConversationManager {
     );
 
     branchManager.addBranch(rewriteBranch);
+    currentBranches[index] = branchManager;
 
     _emit(state.copyWith(messageBranches: currentBranches, isProcessing: true));
 
@@ -267,7 +271,8 @@ class ConversationManager {
     final currentBranches = List<MessageBranchManager>.from(
       state.messageBranches,
     );
-    final branchManager = currentBranches[index];
+    // Create a copy to ensure immutability
+    final branchManager = currentBranches[index].copyWith();
     final oldMessage = branchManager.currentMessage;
 
     final generatingMessage = MessageData(
@@ -302,10 +307,12 @@ class ConversationManager {
     final currentBranches = List<MessageBranchManager>.from(
       state.messageBranches,
     );
-    final branchManager = currentBranches[messageIndex];
+    // Create a copy
+    final branchManager = currentBranches[messageIndex].copyWith();
 
     if (branchIndex >= 0 && branchIndex < branchManager.branches.length) {
       branchManager.goToBranch(branchIndex);
+      currentBranches[messageIndex] = branchManager;
 
       _emit(state.copyWith(messageBranches: currentBranches));
     }

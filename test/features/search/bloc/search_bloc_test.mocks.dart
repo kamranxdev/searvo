@@ -22,7 +22,7 @@ import 'package:searvo/features/search/domain/entities/search_enums.dart'
     as _i15;
 import 'package:searvo/features/search/domain/entities/search_mode.dart'
     as _i14;
-import 'package:searvo/features/search/domain/services/search_service.dart'
+import 'package:searvo/features/search/data/datasources/intelligent_search_data_source.dart'
     as _i11;
 import 'package:searvo/features/search/presentation/bloc/conversation_manager.dart'
     as _i7;
@@ -107,11 +107,12 @@ class _FakeConversationsCompanion_10 extends _i1.SmartFake
     : super(parent, parentInvocation);
 }
 
-/// A class which mocks [SearchService].
+/// A class which mocks [IntelligentSearchDataSource].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockSearchService extends _i1.Mock implements _i11.SearchService {
-  MockSearchService() {
+class MockIntelligentSearchDataSource extends _i1.Mock
+    implements _i11.IntelligentSearchDataSource {
+  MockIntelligentSearchDataSource() {
     _i1.throwOnMissingStub(this);
   }
 

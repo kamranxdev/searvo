@@ -2,8 +2,8 @@ import 'package:get_it/get_it.dart';
 import 'package:searvo/features/history/services/conversation_database_service.dart';
 import 'package:searvo/features/search/presentation/bloc/search_bloc.dart';
 import 'package:searvo/features/search/rag/bloc/rag_cubit.dart';
-import 'package:searvo/features/search/rag/services/orchestration/rag_orchestrator.dart';
-import 'package:searvo/features/search/domain/services/search_service.dart';
+import 'package:searvo/features/search/data/datasources/rag_data_source.dart';
+import 'package:searvo/features/search/data/datasources/intelligent_search_data_source.dart';
 import 'package:searvo/features/search/presentation/bloc/conversation_manager.dart';
 import 'package:searvo/features/search/data/datasources/searxng_remote_data_source.dart';
 import 'package:searvo/features/search/rag/services/document_processing/document_ranker.dart';
@@ -14,6 +14,9 @@ import 'package:searvo/features/search/rag/services/query_processing/prompt_engi
 import 'package:searvo/features/search/rag/services/data_ingestion/attachment_processor.dart';
 import 'package:searvo/features/search/rag/services/query_processing/query_analyzer.dart';
 import 'package:searvo/features/search/rag/services/data_ingestion/rag_scraper_adapter.dart';
+import 'package:searvo/features/search/rag/services/langchain_service.dart';
+import 'package:searvo/features/search/rag/services/vector_store/qdrant_vector_store.dart';
+import 'package:searvo/features/search/rag/services/wrappers/custom_embeddings_wrapper.dart';
 import 'package:searvo/features/search/domain/services/intent_classifier.dart';
 import 'package:searvo/features/search/data/datasources/search_local_data_source.dart';
 import 'package:searvo/features/settings/services/llm_settings_service.dart';
@@ -48,20 +51,20 @@ Future<void> initSearchDependencies() async {
   sl.registerLazySingleton(() => RAGScraperAdapter());
   sl.registerLazySingleton(() => IntentClassifier());
 
-  // RAG Orchestrator
+  // LangChain Components
+  sl.registerLazySingleton(() => LangChainService(llmManager: sl()));
   sl.registerLazySingleton(
-    () => RAGOrchestrator(
-      searxngService: sl(),
-      documentRanker: sl(),
-      contextFusion: sl(),
-      citationManager: sl(),
+    () => QdrantVectorStore(embeddings: CustomEmbeddingsWrapper(sl())),
+  );
+
+  // RAG DataSource
+  sl.registerLazySingleton(
+    () => RAGDataSource(
       llmManager: sl(),
-      promptEngineer: sl(),
-      attachmentProcessor: sl(),
-      queryAnalyzer: sl(),
-      scraperAdapter: sl(),
-      cacheService: sl(),
-      intentClassifier: sl(),
+      promptEngineer: sl<PromptEngineer>(),
+      scraperAdapter: sl<RAGScraperAdapter>(),
+      langChainService: sl(),
+      vectorStore: sl(),
     ),
   );
 
@@ -75,10 +78,10 @@ Future<void> initSearchDependencies() async {
   // Use Cases
   sl.registerLazySingleton(() => GetAutocompleteSuggestionsUseCase(sl()));
 
-  // Search Service
+  // Intelligent Search DataSource
   sl.registerLazySingleton(
-    () => SearchService(
-      ragOrchestrator: sl(),
+    () => IntelligentSearchDataSource(
+      ragDataSource: sl(),
       llmSettings: sl(),
       searchSettings: sl(),
       scraperAdapter: sl(),
@@ -89,11 +92,11 @@ Future<void> initSearchDependencies() async {
   // Blocs
   sl.registerFactory(
     () => SearchBloc(
-      searchService: sl(),
+      intelligentSearchDataSource: sl(),
       conversationManager: sl(),
       conversationDatabaseService: sl<ConversationDatabaseService>(),
     ),
   );
 
-  sl.registerFactory(() => RAGCubit(ragOrchestrator: sl()));
+  sl.registerFactory(() => RAGCubit(ragDataSource: sl()));
 }

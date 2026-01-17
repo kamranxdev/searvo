@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:searvo/features/search/domain/services/search_service.dart';
+
 import 'package:searvo/features/search/domain/repositories/search_repository.dart';
 import 'package:searvo/features/search/data/repositories/search_repository_impl.dart';
 import 'package:searvo/features/search/domain/usecases/get_autocomplete_suggestions_usecase.dart';
@@ -27,7 +27,7 @@ void main() {
     final autocompleteUseCase = GetAutocompleteSuggestionsUseCase(repository);
     expect(autocompleteUseCase, isNotNull);
 
-    // 4. Verify SearchService imports (just instantiation if possible, but it has many deps)
+    // 4. Verify IntelligentSearchDataSource imports
     // We just checks imports by virtue of this file compiling
   });
 }
