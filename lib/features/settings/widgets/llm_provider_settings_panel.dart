@@ -3,6 +3,7 @@ import 'package:searvo/core/theme/theme.dart';
 import 'package:searvo/features/settings/theme/settings_theme.dart';
 import 'package:searvo/features/settings/services/llm_settings_service.dart';
 import 'package:searvo/features/llm/services/providers/llm_provider_manager.dart';
+import 'package:searvo/features/llm/services/providers/openrouter.dart';
 import 'api_key_field.dart';
 import 'settings_card.dart';
 
@@ -24,11 +25,100 @@ class LLMProviderSettingsPanel extends StatefulWidget {
 class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
   final LLMSettingsService _llmSettings = LLMSettingsService();
   LLMProviderType? _selectedProvider;
+  List<OpenRouterModelInfo> _openRouterModels = [];
+  bool _isLoadingModels = false;
+
+  List<String> _openAIModels = [];
+  List<String> _googleModels = [];
+  List<String> _anthropicModels = [];
+  List<String> _ollamaModels = [];
+  bool _isLoadingOpenAIModels = false;
+  bool _isLoadingGoogleModels = false;
+  bool _isLoadingAnthropicModels = false;
+  bool _isLoadingOllamaModels = false;
 
   @override
   void initState() {
     super.initState();
     _selectedProvider = _llmSettings.getActiveProvider();
+    _fetchOpenRouterModels();
+    _fetchOpenAIModels();
+    _fetchGoogleModels();
+    _fetchAnthropicModels();
+    _fetchOllamaModels();
+  }
+
+  Future<void> _fetchOpenAIModels() async {
+    setState(() => _isLoadingOpenAIModels = true);
+    try {
+      final models = await _llmSettings.fetchAvailableOpenAIModels();
+      if (mounted) setState(() => _openAIModels = models);
+    } catch (e) {
+      print('Error fetching OpenAI models: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingOpenAIModels = false);
+    }
+  }
+
+  Future<void> _fetchGoogleModels() async {
+    setState(() => _isLoadingGoogleModels = true);
+    try {
+      final models = await _llmSettings.fetchAvailableGoogleModels();
+      if (mounted) setState(() => _googleModels = models);
+    } catch (e) {
+      print('Error fetching Google models: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingGoogleModels = false);
+    }
+  }
+
+  Future<void> _fetchAnthropicModels() async {
+    setState(() => _isLoadingAnthropicModels = true);
+    try {
+      final models = await _llmSettings.fetchAvailableAnthropicModels();
+      if (mounted) setState(() => _anthropicModels = models);
+    } catch (e) {
+      print('Error fetching Anthropic models: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingAnthropicModels = false);
+    }
+  }
+
+  Future<void> _fetchOllamaModels() async {
+    setState(() => _isLoadingOllamaModels = true);
+    try {
+      final models = await _llmSettings.fetchAvailableOllamaModels();
+      if (mounted) setState(() => _ollamaModels = models);
+    } catch (e) {
+      print('Error fetching Ollama models: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingOllamaModels = false);
+    }
+  }
+
+  Future<void> _fetchOpenRouterModels() async {
+    setState(() {
+      _isLoadingModels = true;
+    });
+    try {
+      final models = await _llmSettings.fetchOpenRouterModels();
+      // Sort models alphabetically by name, or ID if name is empty
+      models.sort((a, b) {
+        final nameA = a.name.isEmpty ? a.id : a.name;
+        final nameB = b.name.isEmpty ? b.id : b.name;
+        return nameA.toLowerCase().compareTo(nameB.toLowerCase());
+      });
+
+      setState(() {
+        _openRouterModels = models;
+        _isLoadingModels = false;
+      });
+    } catch (e) {
+      print('Error fetching OpenRouter models: $e');
+      setState(() {
+        _isLoadingModels = false;
+      });
+    }
   }
 
   @override
@@ -65,14 +155,13 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
   ) {
     return Column(
       children: [
-        // First row: OpenAI and Google
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: _buildProviderCard(
                 context,
-                Icons.psychology,
+                Icons.bolt,
                 'OpenAI Configuration',
                 _buildOpenAISettings(
                   context,
@@ -84,8 +173,8 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
             Expanded(
               child: _buildProviderCard(
                 context,
-                Icons.auto_awesome,
-                'Google Gemini Configuration',
+                Icons.search,
+                'Google (Gemini) Configuration',
                 _buildGoogleSettings(
                   context,
                   providerStatus[LLMProviderType.google] ?? false,
@@ -95,19 +184,17 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
           ],
         ),
         const SizedBox(height: 24),
-
-        // Second row: Ollama and OpenRouter
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: _buildProviderCard(
                 context,
-                Icons.computer,
-                'Ollama Configuration',
-                _buildOllamaSettings(
+                Icons.psychology,
+                'Anthropic (Claude) Configuration',
+                _buildAnthropicSettings(
                   context,
-                  providerStatus[LLMProviderType.ollama] ?? false,
+                  providerStatus[LLMProviderType.anthropic] ?? false,
                 ),
               ),
             ),
@@ -126,23 +213,22 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
           ],
         ),
         const SizedBox(height: 24),
-
-        // Third row: Anthropic
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: _buildProviderCard(
                 context,
-                Icons.psychology_alt,
-                'Anthropic Claude Configuration',
-                _buildAnthropicSettings(
+                Icons.computer,
+                'Ollama Configuration',
+                _buildOllamaSettings(
                   context,
-                  providerStatus[LLMProviderType.anthropic] ?? false,
+                  providerStatus[LLMProviderType.ollama] ?? false,
                 ),
               ),
             ),
-            const Expanded(child: SizedBox()), // Empty space for alignment
+            const SizedBox(width: 24),
+            const Expanded(child: SizedBox()), // Spacer for grid alignment
           ],
         ),
       ],
@@ -155,10 +241,9 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
   ) {
     return Column(
       children: [
-        // OpenAI Settings
         _buildProviderCard(
           context,
-          Icons.psychology,
+          Icons.bolt,
           'OpenAI Configuration',
           _buildOpenAISettings(
             context,
@@ -166,32 +251,26 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
           ),
         ),
         const SizedBox(height: 24),
-
-        // Google Settings
         _buildProviderCard(
           context,
-          Icons.auto_awesome,
-          'Google Gemini Configuration',
+          Icons.search,
+          'Google (Gemini) Configuration',
           _buildGoogleSettings(
             context,
             providerStatus[LLMProviderType.google] ?? false,
           ),
         ),
         const SizedBox(height: 24),
-
-        // Ollama Settings
         _buildProviderCard(
           context,
-          Icons.computer,
-          'Ollama Configuration',
-          _buildOllamaSettings(
+          Icons.psychology,
+          'Anthropic (Claude) Configuration',
+          _buildAnthropicSettings(
             context,
-            providerStatus[LLMProviderType.ollama] ?? false,
+            providerStatus[LLMProviderType.anthropic] ?? false,
           ),
         ),
         const SizedBox(height: 24),
-
-        // OpenRouter Settings
         _buildProviderCard(
           context,
           Icons.router,
@@ -202,15 +281,13 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
           ),
         ),
         const SizedBox(height: 24),
-
-        // Anthropic Settings
         _buildProviderCard(
           context,
-          Icons.psychology_alt,
-          'Anthropic Claude Configuration',
-          _buildAnthropicSettings(
+          Icons.computer,
+          'Ollama Configuration',
+          _buildOllamaSettings(
             context,
-            providerStatus[LLMProviderType.anthropic] ?? false,
+            providerStatus[LLMProviderType.ollama] ?? false,
           ),
         ),
       ],
@@ -223,9 +300,6 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
     String title,
     Widget content,
   ) {
-    // Note: colorScheme here is likely still needed for the icon container background if we don't have settings specific one,
-    // but better to use context to get settings colors again or pass them.
-    // For simplicity, let's get settings colors from context inside.
     final settingsColors = SettingsTheme.colors(context);
 
     return Container(
@@ -374,6 +448,64 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
     );
   }
 
+  Widget _buildOllamaSettings(BuildContext context, bool isConfigured) {
+    return Column(
+      children: [
+        _buildTextField(
+          context,
+          'Base URL',
+          '',
+          'Ollama server URL (default: http://localhost:11434)',
+          _llmSettings.getOllamaBaseUrl(),
+          (value) async {
+            await _llmSettings.setOllamaBaseUrl(value);
+            if (value.isNotEmpty) _fetchOllamaModels();
+            setState(() {});
+          },
+        ),
+        const SizedBox(height: 16),
+        if (_isLoadingOllamaModels)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 8.0),
+            child: LinearProgressIndicator(minHeight: 2),
+          ),
+        if (_ollamaModels.isNotEmpty) ...[
+          _buildModelSelector(
+            context,
+            'Reasoning Model',
+            _llmSettings.getOllamaReasoningModel(),
+            _ollamaModels,
+            (model) async {
+              await _llmSettings.setOllamaReasoningModel(model);
+              await _llmSettings.initializeLLMManager();
+              setState(() {});
+            },
+          ),
+          const SizedBox(height: 16),
+          _buildModelSelector(
+            context,
+            'Generation Model',
+            _llmSettings.getOllamaGenerationModel(),
+            _ollamaModels,
+            (model) async {
+              await _llmSettings.setOllamaGenerationModel(model);
+              await _llmSettings.initializeLLMManager();
+              setState(() {});
+            },
+          ),
+        ] else if (_llmSettings.getOllamaBaseUrl()?.isNotEmpty == true &&
+            !_isLoadingOllamaModels)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(
+              'No models found. Please check connectivity.',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
+      ],
+    );
+  }
+
   Widget _buildOpenAISettings(BuildContext context, bool isConfigured) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -382,29 +514,58 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
           label: 'OpenAI API Key',
           placeholder: 'sk-...',
           description:
-              'Your OpenAI API key from https://platform.openai.com/account/api-keys',
+              'Your OpenAI API key from https://platform.openai.com/api-keys',
           value: _llmSettings.getOpenAIApiKey() ?? '',
           obscuredValue: _llmSettings.getObscuredOpenAIApiKey(),
-          onChanged: (value) {
-            _llmSettings.setOpenAIApiKey(value);
-            setState(() {}); // Refresh UI
+          onChanged: (value) async {
+            await _llmSettings.setOpenAIApiKey(value);
+            if (value.isNotEmpty) _fetchOpenAIModels();
+            setState(() {});
           },
-          onClear: () {
-            _llmSettings.setOpenAIApiKey('');
-            setState(() {}); // Refresh UI
-          },
-        ),
-        const SizedBox(height: 16),
-        _buildModelSelector(
-          context,
-          'OpenAI Model',
-          _llmSettings.getOpenAIModel(),
-          _llmSettings.getAvailableOpenAIModels(),
-          (model) {
-            _llmSettings.setOpenAIModel(model);
+          onClear: () async {
+            await _llmSettings.setOpenAIApiKey('');
             setState(() {});
           },
         ),
+        const SizedBox(height: 16),
+        if (_isLoadingOpenAIModels)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 8.0),
+            child: LinearProgressIndicator(minHeight: 2),
+          ),
+        if (_openAIModels.isNotEmpty) ...[
+          _buildModelSelector(
+            context,
+            'Reasoning Model',
+            _llmSettings.getOpenAIReasoningModel(),
+            _openAIModels,
+            (model) async {
+              await _llmSettings.setOpenAIReasoningModel(model);
+              await _llmSettings.initializeLLMManager();
+              setState(() {});
+            },
+          ),
+          const SizedBox(height: 16),
+          _buildModelSelector(
+            context,
+            'Generation Model',
+            _llmSettings.getOpenAIGenerationModel(),
+            _openAIModels,
+            (model) async {
+              await _llmSettings.setOpenAIGenerationModel(model);
+              await _llmSettings.initializeLLMManager();
+              setState(() {});
+            },
+          ),
+        ] else if (_llmSettings.getOpenAIApiKey()?.isNotEmpty == true &&
+            !_isLoadingOpenAIModels)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(
+              'No models found. Please check your API key.',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
       ],
     );
   }
@@ -414,97 +575,61 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ApiKeyField(
-          label: 'Google AI API Key',
-          placeholder: 'AIza...',
+          label: 'Google API Key',
+          placeholder: 'AIzaSy...',
           description:
-              'Your Google AI API key from https://aistudio.google.com/app/api-keys',
+              'Your Google AI Studio API key from https://aistudio.google.com/app/apikey',
           value: _llmSettings.getGoogleApiKey() ?? '',
           obscuredValue: _llmSettings.getObscuredGoogleApiKey(),
-          onChanged: (value) {
-            _llmSettings.setGoogleApiKey(value);
-            setState(() {}); // Refresh UI
+          onChanged: (value) async {
+            await _llmSettings.setGoogleApiKey(value);
+            if (value.isNotEmpty) _fetchGoogleModels();
+            setState(() {});
           },
-          onClear: () {
-            _llmSettings.setGoogleApiKey('');
-            setState(() {}); // Refresh UI
-          },
-        ),
-        const SizedBox(height: 16),
-        _buildModelSelector(
-          context,
-          'Gemini Model',
-          _llmSettings.getGoogleModel(),
-          _llmSettings.getAvailableGoogleModels(),
-          (model) {
-            _llmSettings.setGoogleModel(model);
+          onClear: () async {
+            await _llmSettings.setGoogleApiKey('');
             setState(() {});
           },
         ),
-      ],
-    );
-  }
-
-  Widget _buildOllamaSettings(BuildContext context, bool isConfigured) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildTextField(
-          context,
-          'Base URL',
-          '',
-          'Ollama server URL (default: http://localhost:11434)',
-          null,
-          (value) {
-            _llmSettings.setOllamaBaseUrl(value);
-            setState(() {}); // Refresh UI
-          },
-        ),
         const SizedBox(height: 16),
-        _buildModelSelector(
-          context,
-          'Ollama Model',
-          _llmSettings.getOllamaModel(),
-          _llmSettings.getAvailableOllamaModels(),
-          (model) {
-            _llmSettings.setOllamaModel(model);
-            setState(() {});
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildOpenRouterSettings(BuildContext context, bool isConfigured) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ApiKeyField(
-          label: 'OpenRouter API Key',
-          placeholder: 'sk-or-v1-...',
-          description:
-              'Your OpenRouter API key from https://openrouter.ai/keys',
-          value: _llmSettings.getOpenRouterApiKey() ?? '',
-          obscuredValue: _llmSettings.getObscuredOpenRouterApiKey(),
-          onChanged: (value) {
-            _llmSettings.setOpenRouterApiKey(value);
-            setState(() {}); // Refresh UI
-          },
-          onClear: () {
-            _llmSettings.setOpenRouterApiKey('');
-            setState(() {}); // Refresh UI
-          },
-        ),
-        const SizedBox(height: 16),
-        _buildModelSelector(
-          context,
-          'OpenRouter Model',
-          _llmSettings.getOpenRouterModel(),
-          _llmSettings.getAvailableOpenRouterModels(),
-          (model) {
-            _llmSettings.setOpenRouterModel(model);
-            setState(() {});
-          },
-        ),
+        if (_isLoadingGoogleModels)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 8.0),
+            child: LinearProgressIndicator(minHeight: 2),
+          ),
+        if (_googleModels.isNotEmpty) ...[
+          _buildModelSelector(
+            context,
+            'Reasoning Model',
+            _llmSettings.getGoogleReasoningModel(),
+            _googleModels,
+            (model) async {
+              await _llmSettings.setGoogleReasoningModel(model);
+              await _llmSettings.initializeLLMManager();
+              setState(() {});
+            },
+          ),
+          const SizedBox(height: 16),
+          _buildModelSelector(
+            context,
+            'Generation Model',
+            _llmSettings.getGoogleGenerationModel(),
+            _googleModels,
+            (model) async {
+              await _llmSettings.setGoogleGenerationModel(model);
+              await _llmSettings.initializeLLMManager();
+              setState(() {});
+            },
+          ),
+        ] else if (_llmSettings.getGoogleApiKey()?.isNotEmpty == true &&
+            !_isLoadingGoogleModels)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(
+              'No models found. Please check your API key.',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
       ],
     );
   }
@@ -515,29 +640,281 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
       children: [
         ApiKeyField(
           label: 'Anthropic API Key',
-          placeholder: 'sk-ant-...',
+          placeholder: 'sk-ant...',
           description:
               'Your Anthropic API key from https://console.anthropic.com/settings/keys',
           value: _llmSettings.getAnthropicApiKey() ?? '',
           obscuredValue: _llmSettings.getObscuredAnthropicApiKey(),
-          onChanged: (value) {
-            _llmSettings.setAnthropicApiKey(value);
-            setState(() {}); // Refresh UI
+          onChanged: (value) async {
+            await _llmSettings.setAnthropicApiKey(value);
+            if (value.isNotEmpty) _fetchAnthropicModels();
+            setState(() {});
           },
-          onClear: () {
-            _llmSettings.setAnthropicApiKey('');
-            setState(() {}); // Refresh UI
+          onClear: () async {
+            await _llmSettings.setAnthropicApiKey('');
+            setState(() {});
           },
         ),
         const SizedBox(height: 16),
-        _buildModelSelector(
-          context,
-          'Claude Model',
-          _llmSettings.getAnthropicModel(),
-          _llmSettings.getAvailableAnthropicModels(),
-          (model) {
-            _llmSettings.setAnthropicModel(model);
-            setState(() {});
+        if (_isLoadingAnthropicModels)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 8.0),
+            child: LinearProgressIndicator(minHeight: 2),
+          ),
+        if (_anthropicModels.isNotEmpty) ...[
+          _buildModelSelector(
+            context,
+            'Reasoning Model',
+            _llmSettings.getAnthropicReasoningModel(),
+            _anthropicModels,
+            (model) async {
+              await _llmSettings.setAnthropicReasoningModel(model);
+              await _llmSettings.initializeLLMManager();
+              setState(() {});
+            },
+          ),
+          const SizedBox(height: 16),
+          _buildModelSelector(
+            context,
+            'Generation Model',
+            _llmSettings.getAnthropicGenerationModel(),
+            _anthropicModels,
+            (model) async {
+              await _llmSettings.setAnthropicGenerationModel(model);
+              await _llmSettings.initializeLLMManager();
+              setState(() {});
+            },
+          ),
+        ] else if (_llmSettings.getAnthropicApiKey()?.isNotEmpty == true &&
+            !_isLoadingAnthropicModels)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(
+              'No models found. Please check your API key.',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildOpenRouterSettings(BuildContext context, bool isConfigured) {
+    final settingsColors = SettingsTheme.colors(context);
+
+    // Fallback to empty if fetch fails - we enforce API key for OpenRouter now too for consistency
+    final models = _openRouterModels.isNotEmpty
+        ? _openRouterModels.map((e) => e.id).toList()
+        : <String>[];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ApiKeyField(
+          label: 'OpenRouter API Key',
+          placeholder: 'sk-or-v1-...',
+          description:
+              'Your OpenRouter API key from https://openrouter.ai/keys',
+          value: _llmSettings.getOpenRouterApiKey() ?? '',
+          obscuredValue: _llmSettings.getObscuredOpenRouterApiKey(),
+          onChanged: (value) async {
+            await _llmSettings.setOpenRouterApiKey(value);
+            if (value.isNotEmpty) {
+              _fetchOpenRouterModels(); // Fetch models when API key is set
+            }
+            if (mounted) setState(() {});
+          },
+          onClear: () {
+            _llmSettings.setOpenRouterApiKey('');
+            if (mounted) setState(() {});
+          },
+        ),
+        const SizedBox(height: 16),
+        if (_isLoadingModels)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: settingsColors.accent,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Fetching available models...',
+                  style: SettingsTheme.inputText(context),
+                ),
+              ],
+            ),
+          ),
+
+        if (models.isNotEmpty) ...[
+          // Reasoning Model
+          _buildOpenRouterModelSelector(
+            context,
+            'Reasoning Model',
+            _llmSettings.getOpenRouterReasoningModel(),
+            (model) async {
+              await _llmSettings.setOpenRouterReasoningModel(model);
+              await _llmSettings.initializeLLMManager();
+              if (mounted) setState(() {});
+            },
+          ),
+          const SizedBox(height: 16),
+
+          // Generation Model
+          _buildOpenRouterModelSelector(
+            context,
+            'Generation Model',
+            _llmSettings.getOpenRouterGenerationModel(),
+            (model) async {
+              await _llmSettings.setOpenRouterGenerationModel(model);
+              await _llmSettings.initializeLLMManager();
+              if (mounted) setState(() {});
+            },
+          ),
+        ] else if (_llmSettings.hasOpenRouterApiKey() && !_isLoadingModels)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(
+              'No models found. Please check your API key.',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildOpenRouterModelSelector(
+    BuildContext context,
+    String label,
+    String currentModel,
+    Function(String) onChanged,
+  ) {
+    if (_openRouterModels.isEmpty) {
+      // Fallback to simple selector if no metadata
+      return _buildModelSelector(
+        context,
+        label,
+        currentModel,
+        _llmSettings.getAvailableOpenRouterModels(),
+        onChanged,
+      );
+    }
+
+    final settingsColors = SettingsTheme.colors(context);
+
+    // Ensure current model is in list or add it if missing (custom)
+    final models = List<OpenRouterModelInfo>.from(_openRouterModels);
+
+    // Check if current model exists in the list (by ID)
+    final hasCurrentModel = models.any((m) => m.id == currentModel);
+
+    if (!hasCurrentModel && currentModel.isNotEmpty) {
+      // Add placeholder info for current model if not found
+      models.insert(
+        0,
+        OpenRouterModelInfo(
+          id: currentModel,
+          name: currentModel,
+          description: 'Custom',
+          contextLength: 0,
+          pricing: PromptPricing(prompt: '0', completion: '0'), // Unknown
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: SettingsTheme.inputLabel(context)),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          isExpanded: true,
+          value: models.any((m) => m.id == currentModel) ? currentModel : null,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: settingsColors.inputBackground,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: settingsColors.border),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: settingsColors.border),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: settingsColors.accent, width: 2),
+            ),
+          ),
+          dropdownColor: settingsColors.inputBackground,
+          items: models.map((info) {
+            final isFree = info.isFree;
+            return DropdownMenuItem<String>(
+              value: info.id,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    fit: FlexFit.loose,
+                    child: Text(
+                      info.name.isEmpty ? info.id : info.name,
+                      style: SettingsTheme.inputText(context),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (isFree)
+                    Container(
+                      margin: const EdgeInsets.only(left: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'Free',
+                        style: TextStyle(
+                          color: Colors.green,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    )
+                  else
+                    Container(
+                      margin: const EdgeInsets.only(left: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'Paid',
+                        style: TextStyle(
+                          color: Colors.orange,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          }).toList(),
+          onChanged: (value) {
+            if (value != null) {
+              onChanged(value);
+            }
           },
         ),
       ],
@@ -613,7 +990,10 @@ class _LLMProviderSettingsPanelState extends State<LLMProviderSettingsPanel> {
         Text(label, style: SettingsTheme.inputLabel(context)),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          initialValue: currentModel,
+          isExpanded: true,
+          value: availableModels.contains(currentModel)
+              ? currentModel
+              : (availableModels.isNotEmpty ? availableModels.first : null),
           decoration: InputDecoration(
             filled: true,
             fillColor: settingsColors.inputBackground,

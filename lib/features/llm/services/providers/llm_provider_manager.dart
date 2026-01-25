@@ -1,13 +1,16 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'base_llm_provider.dart';
-import 'openai.dart';
+import 'anthropic.dart';
 import 'google.dart';
 import 'ollama.dart';
+import 'openai.dart';
 import 'openrouter.dart';
-import 'anthropic.dart';
 
 /// Available LLM providers
 enum LLMProviderType { openai, google, ollama, openrouter, anthropic }
+
+/// LLM Use Cases
+enum LLMUseCase { general, reasoning, generation }
 
 /// Provider manager to handle multiple LLM providers and their configurations
 class LLMProviderManager {
@@ -20,13 +23,37 @@ class LLMProviderManager {
   static const String _openaiModelKey = 'openai_model';
   static const String _googleModelKey = 'google_model';
   static const String _ollamaModelKey = 'ollama_model';
-  static const String _openrouterModelKey = 'openrouter_model';
+  static const String _openrouterModelKey =
+      'openrouter_model'; // Legacy/General
   static const String _anthropicModelKey = 'anthropic_model';
+  static const String _openrouterReasoningModelKey =
+      'openrouter_reasoning_model';
+  static const String _openrouterGenerationModelKey =
+      'openrouter_generation_model';
+  static const String _openaiReasoningModelKey = 'openai_reasoning_model';
+  static const String _openaiGenerationModelKey = 'openai_generation_model';
+  static const String _googleReasoningModelKey = 'google_reasoning_model';
+  static const String _googleGenerationModelKey = 'google_generation_model';
+  static const String _anthropicReasoningModelKey = 'anthropic_reasoning_model';
+  static const String _anthropicGenerationModelKey =
+      'anthropic_generation_model';
+  static const String _ollamaReasoningModelKey = 'ollama_reasoning_model';
+  static const String _ollamaGenerationModelKey = 'ollama_generation_model';
   static const String _activeProviderKey = 'active_provider';
 
   // Manager instance variables
   final Map<LLMProviderType, BaseLLMProvider> _providers = {};
   LLMProviderType? _activeProvider;
+
+  // Specific OpenRouter instances for different use cases (if needed) or just model swapping
+  // Currently OpenRouterProvider takes one model in constructor.
+  // We might need to make OpenRouterProvider capable of switching models per request,
+  // OR instantiate multiple OpenRouterProviders.
+  // Ease of implementation: Use one OpenRouterProvider, but update its model before request or pass model param if supported.
+  // Detailed check on OpenRouterProvider: it initializes `ChatOpenAI` with a `defaultOptions`.
+  // `ChatOpenAI.invoke` allows passing options. We should utilize that.
+
+  // Actually, LLMService is the one calling these. Manager orchestrates.
 
   /// Singleton instance
   static final LLMProviderManager _instance = LLMProviderManager._internal();
@@ -47,6 +74,57 @@ class LLMProviderManager {
     return prefs.getString(_openaiApiKeyKey);
   }
 
+  /// Save OpenAI model
+  static Future<void> setOpenAIModel(
+    String model, {
+    LLMUseCase useCase = LLMUseCase.general,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    switch (useCase) {
+      case LLMUseCase.reasoning:
+        await prefs.setString(_openaiReasoningModelKey, model);
+        break;
+      case LLMUseCase.generation:
+        await prefs.setString(_openaiGenerationModelKey, model);
+        break;
+      case LLMUseCase.general:
+        await prefs.setString(_openaiModelKey, model);
+        break;
+    }
+  }
+
+  /// Get OpenAI model
+  static Future<String> getOpenAIModel({
+    LLMUseCase useCase = LLMUseCase.general,
+  }) async {
+    if (useCase == LLMUseCase.general) {
+      return getOpenAIModel(useCase: LLMUseCase.generation);
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    String? key;
+    switch (useCase) {
+      case LLMUseCase.reasoning:
+        key = _openaiReasoningModelKey;
+        break;
+      case LLMUseCase.generation:
+        key = _openaiGenerationModelKey;
+        break;
+      default:
+        key = _openaiGenerationModelKey;
+    }
+
+    final savedModel = prefs.getString(key);
+    if (savedModel != null) return savedModel;
+
+    // Fallbacks
+    if (useCase == LLMUseCase.reasoning) {
+      return getOpenAIModel(useCase: LLMUseCase.generation);
+    }
+
+    return OpenAI.defaultModel;
+  }
+
   /// Save Google API key
   static Future<void> setGoogleApiKey(String apiKey) async {
     final prefs = await SharedPreferences.getInstance();
@@ -57,6 +135,56 @@ class LLMProviderManager {
   static Future<String?> getGoogleApiKey() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_googleApiKeyKey);
+  }
+
+  /// Save Google model
+  static Future<void> setGoogleModel(
+    String model, {
+    LLMUseCase useCase = LLMUseCase.general,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    switch (useCase) {
+      case LLMUseCase.reasoning:
+        await prefs.setString(_googleReasoningModelKey, model);
+        break;
+      case LLMUseCase.generation:
+        await prefs.setString(_googleGenerationModelKey, model);
+        break;
+      case LLMUseCase.general:
+        await prefs.setString(_googleModelKey, model);
+        break;
+    }
+  }
+
+  /// Get Google model
+  static Future<String> getGoogleModel({
+    LLMUseCase useCase = LLMUseCase.general,
+  }) async {
+    if (useCase == LLMUseCase.general) {
+      return getGoogleModel(useCase: LLMUseCase.generation);
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    String? key;
+    switch (useCase) {
+      case LLMUseCase.reasoning:
+        key = _googleReasoningModelKey;
+        break;
+      case LLMUseCase.generation:
+        key = _googleGenerationModelKey;
+        break;
+      default:
+        key = _googleGenerationModelKey;
+    }
+
+    final savedModel = prefs.getString(key);
+    if (savedModel != null) return savedModel;
+
+    if (useCase == LLMUseCase.reasoning) {
+      return getGoogleModel(useCase: LLMUseCase.generation);
+    }
+
+    return Google.defaultModel;
   }
 
   /// Save Ollama base URL
@@ -76,56 +204,59 @@ class LLMProviderManager {
   static String _normalizeBaseUrl(String url) {
     final trimmed = url.trim();
     if (trimmed.isEmpty) return Ollama.defaultBaseUrl;
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://'))
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
       return trimmed;
+    }
     return 'http://$trimmed';
   }
 
-  /// Save OpenAI model
-  static Future<void> setOpenAIModel(String model) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_openaiModelKey, model);
-  }
-
-  /// Get OpenAI model
-  static Future<String> getOpenAIModel() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedModel = prefs.getString(_openaiModelKey);
-    if (savedModel != null) return savedModel;
-
-    // Return the provider's default model
-    return OpenAI.defaultModel;
-  }
-
-  /// Save Google model
-  static Future<void> setGoogleModel(String model) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_googleModelKey, model);
-  }
-
-  /// Get Google model
-  static Future<String> getGoogleModel() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedModel = prefs.getString(_googleModelKey);
-    if (savedModel != null) return savedModel;
-
-    // Return the provider's default model
-    return Google.defaultModel;
-  }
-
   /// Save Ollama model
-  static Future<void> setOllamaModel(String model) async {
+  static Future<void> setOllamaModel(
+    String model, {
+    LLMUseCase useCase = LLMUseCase.general,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_ollamaModelKey, model);
+    switch (useCase) {
+      case LLMUseCase.reasoning:
+        await prefs.setString(_ollamaReasoningModelKey, model);
+        break;
+      case LLMUseCase.generation:
+        await prefs.setString(_ollamaGenerationModelKey, model);
+        break;
+      case LLMUseCase.general:
+        await prefs.setString(_ollamaModelKey, model);
+        break;
+    }
   }
 
   /// Get Ollama model
-  static Future<String> getOllamaModel() async {
+  static Future<String> getOllamaModel({
+    LLMUseCase useCase = LLMUseCase.general,
+  }) async {
+    if (useCase == LLMUseCase.general) {
+      return getOllamaModel(useCase: LLMUseCase.generation);
+    }
+
     final prefs = await SharedPreferences.getInstance();
-    final savedModel = prefs.getString(_ollamaModelKey);
+    String? key;
+    switch (useCase) {
+      case LLMUseCase.reasoning:
+        key = _ollamaReasoningModelKey;
+        break;
+      case LLMUseCase.generation:
+        key = _ollamaGenerationModelKey;
+        break;
+      default:
+        key = _ollamaGenerationModelKey;
+    }
+
+    final savedModel = prefs.getString(key);
     if (savedModel != null) return savedModel;
 
-    // Return the provider's default model
+    if (useCase == LLMUseCase.reasoning) {
+      return getOllamaModel(useCase: LLMUseCase.generation);
+    }
+
     return Ollama.defaultModel;
   }
 
@@ -141,19 +272,55 @@ class LLMProviderManager {
     return prefs.getString(_openrouterApiKeyKey);
   }
 
-  /// Save OpenRouter model
-  static Future<void> setOpenRouterModel(String model) async {
+  /// Save OpenRouter models
+  static Future<void> setOpenRouterModel(
+    String model, {
+    LLMUseCase useCase = LLMUseCase.general,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_openrouterModelKey, model);
+    switch (useCase) {
+      case LLMUseCase.reasoning:
+        await prefs.setString(_openrouterReasoningModelKey, model);
+        break;
+      case LLMUseCase.generation:
+        await prefs.setString(_openrouterGenerationModelKey, model);
+        break;
+      case LLMUseCase.general:
+        await prefs.setString(_openrouterModelKey, model);
+        break;
+    }
   }
 
   /// Get OpenRouter model
-  static Future<String> getOpenRouterModel() async {
+  static Future<String> getOpenRouterModel({
+    LLMUseCase useCase = LLMUseCase.general,
+  }) async {
+    if (useCase == LLMUseCase.general) {
+      return getOpenRouterModel(useCase: LLMUseCase.generation);
+    }
+
     final prefs = await SharedPreferences.getInstance();
-    final savedModel = prefs.getString(_openrouterModelKey);
+    String? key;
+    switch (useCase) {
+      case LLMUseCase.reasoning:
+        key = _openrouterReasoningModelKey;
+        break;
+      case LLMUseCase.generation:
+        key = _openrouterGenerationModelKey;
+        break;
+      default:
+        key =
+            _openrouterModelKey; // Keep legacy default for OpenRouter if needed
+    }
+
+    final savedModel = prefs.getString(key);
     if (savedModel != null) return savedModel;
 
-    // Return the provider's default model
+    // Fallbacks
+    if (useCase == LLMUseCase.reasoning) {
+      return getOpenRouterModel(useCase: LLMUseCase.generation);
+    }
+
     return OpenRouterProvider.defaultModel;
   }
 
@@ -170,18 +337,52 @@ class LLMProviderManager {
   }
 
   /// Save Anthropic model
-  static Future<void> setAnthropicModel(String model) async {
+  static Future<void> setAnthropicModel(
+    String model, {
+    LLMUseCase useCase = LLMUseCase.general,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_anthropicModelKey, model);
+    switch (useCase) {
+      case LLMUseCase.reasoning:
+        await prefs.setString(_anthropicReasoningModelKey, model);
+        break;
+      case LLMUseCase.generation:
+        await prefs.setString(_anthropicGenerationModelKey, model);
+        break;
+      case LLMUseCase.general:
+        await prefs.setString(_anthropicModelKey, model);
+        break;
+    }
   }
 
   /// Get Anthropic model
-  static Future<String> getAnthropicModel() async {
+  static Future<String> getAnthropicModel({
+    LLMUseCase useCase = LLMUseCase.general,
+  }) async {
+    if (useCase == LLMUseCase.general) {
+      return getAnthropicModel(useCase: LLMUseCase.generation);
+    }
+
     final prefs = await SharedPreferences.getInstance();
-    final savedModel = prefs.getString(_anthropicModelKey);
+    String? key;
+    switch (useCase) {
+      case LLMUseCase.reasoning:
+        key = _anthropicReasoningModelKey;
+        break;
+      case LLMUseCase.generation:
+        key = _anthropicGenerationModelKey;
+        break;
+      default:
+        key = _anthropicGenerationModelKey;
+    }
+
+    final savedModel = prefs.getString(key);
     if (savedModel != null) return savedModel;
 
-    // Return the provider's default model
+    if (useCase == LLMUseCase.reasoning) {
+      return getAnthropicModel(useCase: LLMUseCase.generation);
+    }
+
     return Anthropic.defaultModel;
   }
 
@@ -210,25 +411,38 @@ class LLMProviderManager {
     await prefs.remove(_ollamaModelKey);
     await prefs.remove(_openrouterModelKey);
     await prefs.remove(_anthropicModelKey);
+    await prefs.remove(_openrouterReasoningModelKey);
+    await prefs.remove(_openrouterGenerationModelKey);
     await prefs.remove(_activeProviderKey);
   }
 
   /// Get available OpenAI models
-  static List<String> getAvailableOpenAIModels() => OpenAI.getAvailableModels();
+  static Future<List<String>> getAvailableOpenAIModels() async {
+    final apiKey = await getOpenAIApiKey();
+    return OpenAI.fetchAvailableModels(apiKey ?? '');
+  }
 
   /// Get available Google models
-  static List<String> getAvailableGoogleModels() => Google.getAvailableModels();
+  static Future<List<String>> getAvailableGoogleModels() async {
+    final apiKey = await getGoogleApiKey();
+    return Google.fetchAvailableModels(apiKey ?? '');
+  }
 
   /// Get available Ollama models
-  static List<String> getAvailableOllamaModels() => Ollama.getAvailableModels();
+  static Future<List<String>> getAvailableOllamaModels() async {
+    final baseUrl = await getOllamaBaseUrl();
+    return Ollama.fetchAvailableModels(baseUrl: baseUrl);
+  }
 
   /// Get available OpenRouter models
   static List<String> getAvailableOpenRouterModels() =>
       OpenRouterProvider.getAvailableModels();
 
   /// Get available Anthropic models
-  static List<String> getAvailableAnthropicModels() =>
-      Anthropic.getAvailableModels();
+  static Future<List<String>> getAvailableAnthropicModels() async {
+    final apiKey = await getAnthropicApiKey();
+    return Anthropic.fetchAvailableModels(apiKey ?? '');
+  }
 
   /// Get all saved configurations
   static Future<Map<String, String?>> getAllConfigurations() async {
@@ -243,6 +457,36 @@ class LLMProviderManager {
       'ollama_model': await getOllamaModel(),
       'openrouter_model': await getOpenRouterModel(),
       'anthropic_model': await getAnthropicModel(),
+      'openrouter_reasoning_model': await getOpenRouterModel(
+        useCase: LLMUseCase.reasoning,
+      ),
+      'openrouter_generation_model': await getOpenRouterModel(
+        useCase: LLMUseCase.generation,
+      ),
+      'openai_reasoning_model': await getOpenAIModel(
+        useCase: LLMUseCase.reasoning,
+      ),
+      'openai_generation_model': await getOpenAIModel(
+        useCase: LLMUseCase.generation,
+      ),
+      'google_reasoning_model': await getGoogleModel(
+        useCase: LLMUseCase.reasoning,
+      ),
+      'google_generation_model': await getGoogleModel(
+        useCase: LLMUseCase.generation,
+      ),
+      'anthropic_reasoning_model': await getAnthropicModel(
+        useCase: LLMUseCase.reasoning,
+      ),
+      'anthropic_generation_model': await getAnthropicModel(
+        useCase: LLMUseCase.generation,
+      ),
+      'ollama_reasoning_model': await getOllamaModel(
+        useCase: LLMUseCase.reasoning,
+      ),
+      'ollama_generation_model': await getOllamaModel(
+        useCase: LLMUseCase.generation,
+      ),
       'active_provider': await getActiveProviderName(),
     };
   }
@@ -280,6 +524,8 @@ class LLMProviderManager {
     registerProvider(LLMProviderType.ollama, ollamaProvider);
 
     // Register OpenRouter provider
+    // Note: We initialize with the general model.
+    // For specific use cases, we need to handle model switching.
     final openrouterProvider = OpenRouterProvider(
       apiKey: openrouterApiKey,
       model: openrouterModel,
@@ -340,11 +586,36 @@ class LLMProviderManager {
   }
 
   /// Generate response using the active provider
-  Future<String> generateResponse(String message) async {
+  Future<String> generateResponse(
+    String message, {
+    LLMUseCase useCase = LLMUseCase.general,
+  }) async {
     final provider = activeProvider;
     if (provider == null) {
       throw Exception('No active provider set');
     }
+
+    // Switch model if needed for any provider (not just OpenRouter)
+    if (useCase != LLMUseCase.general) {
+      String? modelName;
+      if (provider is OpenRouterProvider) {
+        modelName = await getOpenRouterModel(useCase: useCase);
+      } else if (provider is OpenAI) {
+        modelName = await getOpenAIModel(useCase: useCase);
+      } else if (provider is Google) {
+        modelName = await getGoogleModel(useCase: useCase);
+      } else if (provider is Anthropic) {
+        modelName = await getAnthropicModel(useCase: useCase);
+      } else if (provider is Ollama) {
+        modelName = await getOllamaModel(useCase: useCase);
+      }
+
+      if (modelName != null) {
+        provider.setModel(modelName);
+        await provider.initialize();
+      }
+    }
+
     print(
       'LLMProviderManager: Calling generateResponse on ${provider.providerName}',
     );
@@ -352,23 +623,69 @@ class LLMProviderManager {
   }
 
   /// Generate streaming response using the active provider
-  Stream<String> generateResponseStream(String message) async* {
+  Stream<String> generateResponseStream(
+    String message, {
+    LLMUseCase useCase = LLMUseCase.general,
+  }) async* {
     final provider = activeProvider;
     if (provider == null) {
       throw Exception('No active provider set');
     }
+
+    if (useCase != LLMUseCase.general) {
+      String? modelName;
+      if (provider is OpenRouterProvider) {
+        modelName = await getOpenRouterModel(useCase: useCase);
+      } else if (provider is OpenAI) {
+        modelName = await getOpenAIModel(useCase: useCase);
+      } else if (provider is Google) {
+        modelName = await getGoogleModel(useCase: useCase);
+      } else if (provider is Anthropic) {
+        modelName = await getAnthropicModel(useCase: useCase);
+      } else if (provider is Ollama) {
+        modelName = await getOllamaModel(useCase: useCase);
+      }
+
+      if (modelName != null) {
+        provider.setModel(modelName);
+        await provider.initialize();
+      }
+    }
+
     yield* provider.generateResponseStream(message);
   }
 
   /// Generate response with history using the active provider
   Future<String> generateResponseWithHistory(
     String message,
-    List<Map<String, dynamic>> history,
-  ) async {
+    List<Map<String, dynamic>> history, {
+    LLMUseCase useCase = LLMUseCase.general,
+  }) async {
     final provider = activeProvider;
     if (provider == null) {
       throw Exception('No active provider set');
     }
+
+    if (useCase != LLMUseCase.general) {
+      String? modelName;
+      if (provider is OpenRouterProvider) {
+        modelName = await getOpenRouterModel(useCase: useCase);
+      } else if (provider is OpenAI) {
+        modelName = await getOpenAIModel(useCase: useCase);
+      } else if (provider is Google) {
+        modelName = await getGoogleModel(useCase: useCase);
+      } else if (provider is Anthropic) {
+        modelName = await getAnthropicModel(useCase: useCase);
+      } else if (provider is Ollama) {
+        modelName = await getOllamaModel(useCase: useCase);
+      }
+
+      if (modelName != null) {
+        provider.setModel(modelName);
+        await provider.initialize();
+      }
+    }
+
     return await provider.generateResponseWithHistory(message, history);
   }
 

@@ -8,6 +8,7 @@ import 'package:searvo/features/search/theme/search_theme.dart';
 import 'package:searvo/features/search/domain/entities/message_branch_manager.dart';
 import 'package:searvo/features/search/domain/entities/message_data.dart';
 import 'package:searvo/features/search/domain/entities/source_item.dart';
+import 'package:searvo/features/search/domain/entities/image_item.dart';
 
 import 'package:searvo/features/voice/services/voice_service.dart';
 import 'package:searvo/common/widgets/streaming_text_widget.dart';
@@ -17,6 +18,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:searvo/common/widgets/link_preview.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import 'package:searvo/features/search/presentation/widgets/reasoning_widget.dart';
 import 'package:searvo/features/search/presentation/widgets/tools/weather_widget.dart';
@@ -610,39 +612,154 @@ class _MessageBoxState extends State<MessageBox> with TickerProviderStateMixin {
   }
 
   Widget _buildImagesTab(SearchColors colors) {
-    if (_currentMessage.images.isEmpty) {
+    final useRichData = _currentMessage.imageItems.isNotEmpty;
+    final itemCount = useRichData
+        ? _currentMessage.imageItems.length
+        : _currentMessage.images.length;
+
+    if (itemCount == 0) {
       return _buildEmptyState(
         colors,
         icon: Icons.image_not_supported_rounded,
         message: 'No images available',
       );
     }
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: MasonryGridView.count(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
         crossAxisCount: 2,
-        crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 1.5,
+        crossAxisSpacing: 12,
+        itemCount: itemCount,
+        itemBuilder: (context, index) {
+          if (useRichData) {
+            return _buildRichImageCard(
+              colors,
+              _currentMessage.imageItems[index],
+              index,
+            );
+          } else {
+            // Fallback for simple URLs
+            final imgUrl = _currentMessage.images[index];
+            return _buildSimpleImageCard(colors, imgUrl, index);
+          }
+        },
       ),
-      itemCount: _currentMessage.images.length,
-      itemBuilder: (context, index) {
-        final imgUrl = _currentMessage.images[index];
-        return GestureDetector(
-          onTap: () => _showImageModal(index),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: CachedNetworkImage(
-              imageUrl: imgUrl,
-              fit: BoxFit.cover,
-              placeholder: (_, __) => Container(color: colors.inputBackground),
-              errorWidget: (_, __, ___) => const Icon(Icons.broken_image),
+    );
+  }
+
+  Widget _buildRichImageCard(SearchColors colors, ImageItem item, int index) {
+    return GestureDetector(
+      onTap: () => _showImageModal(index),
+      child: Container(
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: colors.border.withOpacity(0.5)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-          ),
-        );
-      },
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image
+            AspectRatio(
+              // Use generic aspect ratio or parsing info if available?
+              // Since we don't have exact aspect ratio from most search engines without parsing dimensions,
+              // we let the image determine size or use a random/fixed aspect.
+              // But Masonry works best if we let it flow.
+              // CachedNetworkImage unfortunately doesn't layout until loaded.
+              // We can use the 'width'/'height' from ImageItem if available!
+              aspectRatio:
+                  (item.width != null &&
+                      item.height != null &&
+                      item.height! > 0)
+                  ? item.width! / item.height!
+                  : 1.0, // Default to square if unknown, or maybe 4/3
+              child: CachedNetworkImage(
+                imageUrl: item.thumbnail.isNotEmpty ? item.thumbnail : item.url,
+                fit: BoxFit.cover,
+                placeholder: (_, __) => Container(
+                  color: colors.inputBackground,
+                  child: const Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                ),
+                errorWidget: (_, __, ___) => Container(
+                  color: colors.inputBackground,
+                  child: const Icon(Icons.broken_image, size: 24),
+                ),
+              ),
+            ),
+
+            // Metadata Footer
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title,
+                    style: TextStyle(
+                      color: colors.text,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      // Tiny favicon or icon?
+                      if (item.domain.isNotEmpty)
+                        Expanded(
+                          child: Text(
+                            item.domain,
+                            style: TextStyle(
+                              color: colors.caption,
+                              fontSize: 10,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSimpleImageCard(SearchColors colors, String imgUrl, int index) {
+    return GestureDetector(
+      onTap: () => _showImageModal(index),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: CachedNetworkImage(
+          imageUrl: imgUrl,
+          fit: BoxFit.cover,
+          placeholder: (_, __) => Container(color: colors.inputBackground),
+          errorWidget: (_, __, ___) => const Icon(Icons.broken_image),
+        ),
+      ),
     );
   }
 
@@ -1400,12 +1517,62 @@ class _MessageBoxState extends State<MessageBox> with TickerProviderStateMixin {
   }
 
   void _showImageModal(int initialIndex) {
-    // TODO: Implement simple image viewer
     showDialog(
       context: context,
+      barrierColor: Colors.black.withOpacity(0.9),
       builder: (context) => Dialog(
-        child: CachedNetworkImage(
-          imageUrl: _currentMessage.images[initialIndex],
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Main Image Container
+            Container(
+              constraints: const BoxConstraints(maxWidth: 1200, maxHeight: 800),
+              width: double.infinity,
+              height: 500, // Consistent height for the preview area
+              child: InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: CachedNetworkImage(
+                  imageUrl: _currentMessage.images[initialIndex],
+                  fit: BoxFit
+                      .scaleDown, // Prevent upscaling small images (thumbnails) to avoid pixelation
+                  placeholder: (_, __) => const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  ),
+                  errorWidget: (_, __, ___) => const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.broken_image, color: Colors.white, size: 48),
+                      SizedBox(height: 16),
+                      Text(
+                        'Failed to load image',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            // Close Button
+            Positioned(
+              top: 0,
+              right: 0,
+              child: IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(
+                  Icons.close_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.black.withOpacity(0.5),
+                  padding: const EdgeInsets.all(8),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

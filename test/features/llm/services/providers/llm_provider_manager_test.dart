@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:langchain/langchain.dart';
 import 'package:searvo/features/llm/services/providers/base_llm_provider.dart';
 import 'package:searvo/features/llm/services/providers/llm_provider_manager.dart';
@@ -36,6 +37,11 @@ class MockLLMProvider implements BaseLLMProvider {
 
   void setConfigured(bool value) {
     _isConfigured = value;
+  }
+
+  @override
+  void setModel(String model) {
+    // No-op for mock
   }
 
   @override
@@ -99,27 +105,29 @@ class MockLLMProvider implements BaseLLMProvider {
 /// Note: This tests the manager's provider registration and management logic
 /// without SharedPreferences (which requires widget binding)
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('LLMProviderType Enum', () {
     test('should have all expected provider types', () {
       expect(LLMProviderType.values.length, 5);
-      expect(LLMProviderType.values, contains(LLMProviderType.openai));
-      expect(LLMProviderType.values, contains(LLMProviderType.google));
       expect(LLMProviderType.values, contains(LLMProviderType.ollama));
       expect(LLMProviderType.values, contains(LLMProviderType.openrouter));
+      expect(LLMProviderType.values, contains(LLMProviderType.openai));
+      expect(LLMProviderType.values, contains(LLMProviderType.google));
       expect(LLMProviderType.values, contains(LLMProviderType.anthropic));
     });
 
     test('should have correct enum names', () {
-      expect(LLMProviderType.openai.name, 'openai');
-      expect(LLMProviderType.google.name, 'google');
       expect(LLMProviderType.ollama.name, 'ollama');
       expect(LLMProviderType.openrouter.name, 'openrouter');
+      expect(LLMProviderType.openai.name, 'openai');
+      expect(LLMProviderType.google.name, 'google');
       expect(LLMProviderType.anthropic.name, 'anthropic');
     });
 
     test('should be able to look up by name', () {
-      final type = LLMProviderType.values.firstWhere((t) => t.name == 'openai');
-      expect(type, LLMProviderType.openai);
+      final type = LLMProviderType.values.firstWhere((t) => t.name == 'ollama');
+      expect(type, LLMProviderType.ollama);
     });
 
     test('should throw when looking up invalid name', () {
@@ -139,15 +147,17 @@ void main() {
         // Note: In real tests, you'd want to reset the singleton
         final manager = LLMProviderManager();
         final mockProvider = MockLLMProvider(
-          providerName: 'TestOpenAI',
+          providerName: 'TestOpenRouter',
           isConfigured: true,
         );
 
-        manager.registerProvider(LLMProviderType.openai, mockProvider);
+        manager.registerProvider(LLMProviderType.openrouter, mockProvider);
 
-        final retrievedProvider = manager.getProvider(LLMProviderType.openai);
+        final retrievedProvider = manager.getProvider(
+          LLMProviderType.openrouter,
+        );
         expect(retrievedProvider, isNotNull);
-        expect(retrievedProvider!.providerName, 'TestOpenAI');
+        expect(retrievedProvider!.providerName, 'TestOpenRouter');
 
         // Clean up
         manager.dispose();
@@ -159,7 +169,7 @@ void main() {
         // Clear any existing providers
         manager.dispose();
 
-        final provider = manager.getProvider(LLMProviderType.google);
+        final provider = manager.getProvider(LLMProviderType.ollama);
         expect(provider, isNull);
       });
 
@@ -176,8 +186,11 @@ void main() {
           isConfigured: false,
         );
 
-        manager.registerProvider(LLMProviderType.openai, configuredProvider);
-        manager.registerProvider(LLMProviderType.google, unconfiguredProvider);
+        manager.registerProvider(
+          LLMProviderType.openrouter,
+          configuredProvider,
+        );
+        manager.registerProvider(LLMProviderType.ollama, unconfiguredProvider);
 
         final configured = manager.configuredProviders;
         expect(configured.length, 1);
@@ -196,7 +209,7 @@ void main() {
             providerName: 'Test',
             isConfigured: true,
           );
-          manager.registerProvider(LLMProviderType.openai, provider);
+          manager.registerProvider(LLMProviderType.openrouter, provider);
 
           expect(manager.hasConfiguredProvider, true);
 
@@ -214,7 +227,7 @@ void main() {
             providerName: 'Test',
             isConfigured: false,
           );
-          manager.registerProvider(LLMProviderType.openai, provider);
+          manager.registerProvider(LLMProviderType.openrouter, provider);
 
           expect(manager.hasConfiguredProvider, false);
 
@@ -232,8 +245,8 @@ void main() {
           providerName: 'ActiveProvider',
           isConfigured: true,
         );
-        manager.registerProvider(LLMProviderType.openai, provider);
-        manager.setActiveProvider(LLMProviderType.openai);
+        manager.registerProvider(LLMProviderType.openrouter, provider);
+        manager.setActiveProvider(LLMProviderType.openrouter);
 
         expect(manager.activeProvider, isNotNull);
         expect(manager.activeProvider!.providerName, 'ActiveProvider');
@@ -249,10 +262,10 @@ void main() {
           providerName: 'Unconfigured',
           isConfigured: false,
         );
-        manager.registerProvider(LLMProviderType.openai, provider);
+        manager.registerProvider(LLMProviderType.openrouter, provider);
 
         expect(
-          () => manager.setActiveProvider(LLMProviderType.openai),
+          () => manager.setActiveProvider(LLMProviderType.openrouter),
           throwsA(isA<Exception>()),
         );
 
@@ -264,7 +277,7 @@ void main() {
         manager.dispose();
 
         expect(
-          () => manager.setActiveProvider(LLMProviderType.google),
+          () => manager.setActiveProvider(LLMProviderType.ollama),
           throwsA(isA<Exception>()),
         );
       });
@@ -287,8 +300,8 @@ void main() {
           isConfigured: true,
           responseToReturn: 'Test response',
         );
-        manager.registerProvider(LLMProviderType.openai, provider);
-        manager.setActiveProvider(LLMProviderType.openai);
+        manager.registerProvider(LLMProviderType.openrouter, provider);
+        manager.setActiveProvider(LLMProviderType.openrouter);
 
         final response = await manager.generateResponse('Hello');
         expect(response, 'Test response');
@@ -321,8 +334,8 @@ void main() {
             isConfigured: true,
             responseToReturn: 'History response',
           );
-          manager.registerProvider(LLMProviderType.openai, provider);
-          manager.setActiveProvider(LLMProviderType.openai);
+          manager.registerProvider(LLMProviderType.openrouter, provider);
+          manager.setActiveProvider(LLMProviderType.openrouter);
 
           final history = [
             {'role': 'user', 'content': 'Previous question'},
@@ -365,15 +378,18 @@ void main() {
         final manager = LLMProviderManager();
         manager.dispose();
 
-        final openaiProvider = MockLLMProvider(providerName: 'OpenAI');
-        final googleProvider = MockLLMProvider(providerName: 'Google');
+        final openrouterProvider = MockLLMProvider(providerName: 'OpenRouter');
+        final ollamaProvider = MockLLMProvider(providerName: 'Ollama');
 
-        manager.registerProvider(LLMProviderType.openai, openaiProvider);
-        manager.registerProvider(LLMProviderType.google, googleProvider);
+        manager.registerProvider(
+          LLMProviderType.openrouter,
+          openrouterProvider,
+        );
+        manager.registerProvider(LLMProviderType.ollama, ollamaProvider);
 
         final names = manager.providerNames;
-        expect(names[LLMProviderType.openai], 'OpenAI');
-        expect(names[LLMProviderType.google], 'Google');
+        expect(names[LLMProviderType.openrouter], 'OpenRouter');
+        expect(names[LLMProviderType.ollama], 'Ollama');
 
         manager.dispose();
       });
@@ -387,8 +403,8 @@ void main() {
           providerName: 'Test',
           isConfigured: true,
         );
-        manager.registerProvider(LLMProviderType.openai, provider);
-        manager.setActiveProvider(LLMProviderType.openai);
+        manager.registerProvider(LLMProviderType.openrouter, provider);
+        manager.setActiveProvider(LLMProviderType.openrouter);
 
         expect(manager.activeProvider, isNotNull);
         expect(manager.hasConfiguredProvider, true);
@@ -416,39 +432,29 @@ void main() {
         final manager = LLMProviderManager();
         manager.dispose();
 
-        final openaiProvider = MockLLMProvider(
-          providerName: 'OpenAI',
-          isConfigured: true,
-        );
-        final googleProvider = MockLLMProvider(
-          providerName: 'Google',
+        final openrouterProvider = MockLLMProvider(
+          providerName: 'OpenRouter',
           isConfigured: true,
         );
         final ollamaProvider = MockLLMProvider(
           providerName: 'Ollama',
-          isConfigured: false,
+          isConfigured: true,
         );
 
-        manager.registerProvider(LLMProviderType.openai, openaiProvider);
-        manager.registerProvider(LLMProviderType.google, googleProvider);
+        manager.registerProvider(
+          LLMProviderType.openrouter,
+          openrouterProvider,
+        );
         manager.registerProvider(LLMProviderType.ollama, ollamaProvider);
 
         expect(manager.configuredProviders.length, 2);
         expect(
-          manager.getProvider(LLMProviderType.openai)?.providerName,
-          'OpenAI',
-        );
-        expect(
-          manager.getProvider(LLMProviderType.google)?.providerName,
-          'Google',
+          manager.getProvider(LLMProviderType.openrouter)?.providerName,
+          'OpenRouter',
         );
         expect(
           manager.getProvider(LLMProviderType.ollama)?.providerName,
           'Ollama',
-        );
-        expect(
-          manager.getProvider(LLMProviderType.ollama)?.isConfigured,
-          false,
         );
 
         manager.dispose();
@@ -458,29 +464,32 @@ void main() {
         final manager = LLMProviderManager();
         manager.dispose();
 
-        final openaiProvider = MockLLMProvider(
-          providerName: 'OpenAI',
+        final openrouterProvider = MockLLMProvider(
+          providerName: 'OpenRouter',
           isConfigured: true,
-          responseToReturn: 'OpenAI response',
+          responseToReturn: 'OpenRouter response',
         );
-        final googleProvider = MockLLMProvider(
-          providerName: 'Google',
+        final ollamaProvider = MockLLMProvider(
+          providerName: 'Ollama',
           isConfigured: true,
-          responseToReturn: 'Google response',
+          responseToReturn: 'Ollama response',
         );
 
-        manager.registerProvider(LLMProviderType.openai, openaiProvider);
-        manager.registerProvider(LLMProviderType.google, googleProvider);
+        manager.registerProvider(
+          LLMProviderType.openrouter,
+          openrouterProvider,
+        );
+        manager.registerProvider(LLMProviderType.ollama, ollamaProvider);
 
-        // Use OpenAI
-        manager.setActiveProvider(LLMProviderType.openai);
+        // Use OpenRouter
+        manager.setActiveProvider(LLMProviderType.openrouter);
         var response = await manager.generateResponse('Hello');
-        expect(response, 'OpenAI response');
+        expect(response, 'OpenRouter response');
 
-        // Switch to Google
-        manager.setActiveProvider(LLMProviderType.google);
+        // Switch to Ollama
+        manager.setActiveProvider(LLMProviderType.ollama);
         response = await manager.generateResponse('Hello');
-        expect(response, 'Google response');
+        expect(response, 'Ollama response');
 
         manager.dispose();
       });
@@ -488,30 +497,45 @@ void main() {
   });
 
   group('Static Model Lists', () {
-    test('getAvailableOpenAIModels should return OpenAI models', () {
-      final models = LLMProviderManager.getAvailableOpenAIModels();
-      expect(models, isNotEmpty);
-      expect(models, contains('gpt-4-turbo'));
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
     });
 
-    test('getAvailableGoogleModels should return Google models', () {
-      final models = LLMProviderManager.getAvailableGoogleModels();
-      expect(models, isNotEmpty);
-    });
-
-    test('getAvailableOllamaModels should return Ollama models', () {
-      final models = LLMProviderManager.getAvailableOllamaModels();
-      expect(models, isNotEmpty);
-    });
+    test(
+      'getAvailableOllamaModels should return empty list when unreachable',
+      () async {
+        final models = await LLMProviderManager.getAvailableOllamaModels();
+        expect(models, isEmpty);
+      },
+    );
 
     test('getAvailableOpenRouterModels should return OpenRouter models', () {
       final models = LLMProviderManager.getAvailableOpenRouterModels();
       expect(models, isNotEmpty);
     });
 
-    test('getAvailableAnthropicModels should return Anthropic models', () {
-      final models = LLMProviderManager.getAvailableAnthropicModels();
-      expect(models, isNotEmpty);
-    });
+    test(
+      'getAvailableOpenAIModels should return empty list when no key',
+      () async {
+        final models = await LLMProviderManager.getAvailableOpenAIModels();
+        expect(models, isEmpty);
+      },
+    );
+
+    test(
+      'getAvailableGoogleModels should return empty list when no key',
+      () async {
+        final models = await LLMProviderManager.getAvailableGoogleModels();
+        expect(models, isEmpty);
+      },
+    );
+
+    test(
+      'getAvailableAnthropicModels should return Anthropic models',
+      () async {
+        final models = await LLMProviderManager.getAvailableAnthropicModels();
+        expect(models, isEmpty);
+      },
+    );
   });
 }

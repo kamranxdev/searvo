@@ -1,6 +1,7 @@
 import 'package:langchain/langchain.dart' hide Document;
 import 'package:langchain_core/documents.dart' as lc;
 import 'package:searvo/features/llm/services/providers/llm_provider_manager.dart';
+import 'package:searvo/features/llm/services/providers/openrouter.dart';
 import 'package:searvo/features/search/rag/models/rag_models.dart';
 import '../../domain/entities/message_data.dart';
 import 'wrappers/custom_embeddings_wrapper.dart';
@@ -106,6 +107,21 @@ class LangChainService {
     final provider = _llmManager.activeProvider;
     if (provider == null) {
       throw Exception('No active provider set for RAG generation');
+    }
+
+    // Ensure OpenRouter uses the generation model from settings
+    if (provider is OpenRouterProvider) {
+      final generationModel = await LLMProviderManager.getOpenRouterModel(
+        useCase: LLMUseCase.generation,
+      );
+      print(
+        '🔄 LangChain: Loading generation model from settings: $generationModel',
+      );
+      provider.setModel(generationModel);
+      await provider.initialize();
+      print(
+        '✅ LangChain: OpenRouter reinitialized with model: $generationModel',
+      );
     }
 
     // 1. Map documents to unique source IDs to allow precise citation

@@ -32,6 +32,9 @@ abstract class BaseLLMProvider {
   /// Check if the provider is configured and ready to use
   bool get isConfigured;
 
+  /// Set the model to be used by the provider
+  void setModel(String model);
+
   /// Dispose resources
   void dispose();
 }

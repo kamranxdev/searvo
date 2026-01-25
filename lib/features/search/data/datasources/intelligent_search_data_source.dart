@@ -306,6 +306,7 @@ class IntelligentSearchDataSource {
             final buffer = StringBuffer();
             await for (final token in llmManager.generateResponseStream(
               prompt,
+              useCase: LLMUseCase.generation,
             )) {
               buffer.write(token);
               // Yield streaming update combined with the existing message data (sources, etc.)
@@ -604,6 +605,7 @@ class IntelligentSearchDataSource {
             final buffer = StringBuffer();
             await for (final token in llmManager.generateResponseStream(
               prompt,
+              useCase: LLMUseCase.generation,
             )) {
               buffer.write(token);
               final updatedData = messageData.copyWith(

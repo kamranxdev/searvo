@@ -1,6 +1,50 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:langchain_openai/langchain_openai.dart';
 import 'package:langchain/langchain.dart';
 import 'base_llm_provider.dart';
+
+class OpenRouterModelInfo {
+  final String id;
+  final String name;
+  final String description;
+  final int contextLength;
+  final PromptPricing pricing;
+
+  OpenRouterModelInfo({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.contextLength,
+    required this.pricing,
+  });
+
+  bool get isFree {
+    return (double.tryParse(pricing.prompt) ?? 0) == 0 &&
+        (double.tryParse(pricing.completion) ?? 0) == 0;
+  }
+
+  factory OpenRouterModelInfo.fromJson(Map<String, dynamic> json) {
+    final pricing = json['pricing'] ?? {};
+    return OpenRouterModelInfo(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      description: json['description'] ?? '',
+      contextLength: json['context_length'] ?? 0,
+      pricing: PromptPricing(
+        prompt: pricing['prompt'] ?? '0',
+        completion: pricing['completion'] ?? '0',
+      ),
+    );
+  }
+}
+
+class PromptPricing {
+  final String prompt;
+  final String completion;
+
+  PromptPricing({required this.prompt, required this.completion});
+}
 
 /// OpenRouter provider implementation
 class OpenRouterProvider extends BaseLLMProvider {
@@ -10,6 +54,7 @@ class OpenRouterProvider extends BaseLLMProvider {
   static const String defaultModel = 'openai/gpt-4o';
 
   late ChatOpenAI _chatModel;
+  late OpenAIEmbeddings _embeddings;
   String? _apiKey;
   String _model;
 
@@ -32,7 +77,22 @@ class OpenRouterProvider extends BaseLLMProvider {
     _chatModel = ChatOpenAI(
       apiKey: _apiKey!,
       baseUrl: _baseUrl,
-      defaultOptions: ChatOpenAIOptions(model: _model, temperature: 0.7),
+      defaultOptions: ChatOpenAIOptions(
+        model: _model,
+        temperature: 0.7,
+        maxTokens: 2048,
+      ),
+    );
+
+    _embeddings = OpenAIEmbeddings(
+      apiKey: _apiKey!,
+      baseUrl: _baseUrl,
+      // OpenRouter generally uses OpenAI-compatible embeddings, usually text-embedding-3-small or similar if supported
+      // Or we can let the user configure it. For now, we will default to a standard model or let OpenRouter handle the default.
+      // NOTE: OpenRouter might not technically proxy embeddings for all models.
+      // If this fails, we might need a dedicated embedding provider setting.
+      // But for "Unified" experience, we'll try to use it.
+      // Note: OpenRouter docs say they forward requests.
     );
   }
 
@@ -80,13 +140,21 @@ class OpenRouterProvider extends BaseLLMProvider {
   }
 
   @override
-  bool get supportsEmbeddings => false; // OpenRouter is typically just for LLMs here, or we can use OpenAIEmbeddings if needed but let's stick to false for now based on previous impl checks
+  bool get supportsEmbeddings => true;
 
   @override
   Future<List<double>> generateEmbeddings(String text) async {
-    throw UnsupportedError(
-      'OpenRouter embeddings not fully configured in this refactor',
-    );
+    try {
+      // We use OpenAIEmbeddings which returns List<double> for a single query
+      final embeddings = await _embeddings.embedQuery(text);
+      return embeddings;
+    } catch (e) {
+      // Fallback or rethrow logic
+      print('OpenRouter Embeddings Error: $e');
+      // If OpenRouter doesn't support embeddings for the default endpoint/model,
+      // we might need to fallback to a purely local one or throw meaningful error.
+      rethrow;
+    }
   }
 
   /// Set API key
@@ -121,6 +189,8 @@ class OpenRouterProvider extends BaseLLMProvider {
   @override
   void dispose() {
     // Clean up resources if needed
+    _chatModel.close();
+    _embeddings.close();
   }
 
   /// Generate chat completion with streaming
@@ -132,6 +202,29 @@ class OpenRouterProvider extends BaseLLMProvider {
       }
     } catch (e) {
       throw Exception('Failed to stream response from OpenRouter: $e');
+    }
+  }
+
+  /// Fetch available models from OpenRouter API
+  static Future<List<OpenRouterModelInfo>> fetchAvailableModels() async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://openrouter.ai/api/v1/models'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> models = data['data'];
+        return models
+            .map((json) => OpenRouterModelInfo.fromJson(json))
+            .toList();
+      } else {
+        print('Failed to fetch OpenRouter models: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching OpenRouter models: $e');
+      return [];
     }
   }
 

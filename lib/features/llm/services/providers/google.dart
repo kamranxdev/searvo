@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:langchain_google/langchain_google.dart';
 import 'package:langchain/langchain.dart';
 import 'base_llm_provider.dart';
@@ -116,16 +118,43 @@ class Google extends BaseLLMProvider {
   }
 
   /// Set model
+  @override
   void setModel(String model) {
     _model = model;
   }
 
-  /// Gemini models optimized for textual use cases (2025)
-  static const List<String> availableModels = [
-    'gemini-2.5-pro', // Best for deep reasoning, complex text, coding
-    'gemini-2.5-flash', // Balanced speed and quality for scalable text generation
-    'gemini-2.0-flash', // Previous generation flash model useful for fast tasks
-  ];
+  /// Fetch available models from Google AI API
+  static Future<List<String>> fetchAvailableModels(String apiKey) async {
+    if (apiKey.isEmpty) return [];
+
+    try {
+      final response = await http.get(
+        Uri.parse(
+          'https://generativelanguage.googleapis.com/v1beta/models?key=$apiKey',
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> models = data['models'];
+
+        final modelIds = models
+            .map((e) => (e['name'] as String).replaceFirst('models/', ''))
+            .where((id) => id.contains('gemini'))
+            .toList();
+
+        modelIds.sort();
+
+        return modelIds;
+      } else {
+        print('Failed to fetch Google models: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching Google models: $e');
+      return [];
+    }
+  }
 
   /// Latest Google embedding model optimized for text
   static const List<String> availableEmbeddingModels = ['gemini-embedding-001'];
@@ -139,7 +168,7 @@ class Google extends BaseLLMProvider {
   }
 
   /// Get available Google models
-  static List<String> getAvailableModels() => availableModels;
+  static List<String> getAvailableModels() => [];
 
   /// Get available Google embedding models
   static List<String> getAvailableEmbeddingModels() => availableEmbeddingModels;

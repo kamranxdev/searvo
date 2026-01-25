@@ -6,6 +6,7 @@ import '../../domain/entities/source_item.dart';
 import '../../domain/entities/search_enums.dart';
 import '../datasources/searxng_remote_data_source.dart';
 import '../datasources/search_local_data_source.dart';
+import '../../../settings/services/search_provider_settings_service.dart';
 
 class SearchRepositoryImpl implements SearchRepository {
   final SearXNGRemoteDataSource remoteDataSource;
@@ -36,10 +37,20 @@ class SearchRepositoryImpl implements SearchRepository {
     String? category,
   }) async {
     final searchType = _mapCategoryToSearchType(category);
+
+    // Get settings
+    final settingsService = SearchProviderSettingsService();
+    final safeSearch = settingsService.getSafeSearch();
+    final region = settingsService.getRegion();
+    final timeout = settingsService.getMaxSearchTime();
+
     final response = await remoteDataSource.search(
       query,
       page: page,
       searchType: searchType,
+      safeSearch: safeSearch,
+      region: region,
+      timeoutLimit: timeout,
     );
     return response.results;
   }

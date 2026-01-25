@@ -1,5 +1,6 @@
 import 'package:searvo/features/search/domain/entities/agent/agent_tool.dart';
 import 'package:searvo/features/search/data/datasources/searxng_remote_data_source.dart';
+import 'package:searvo/features/search/domain/entities/image_item.dart';
 
 class WebSearchTool extends AgentTool {
   final SearXNGRemoteDataSource _searxngService;
@@ -49,6 +50,7 @@ class WebSearchTool extends AgentTool {
 
     // Extract media
     final images = <String>[];
+    final imageItems = <Map<String, dynamic>>[];
     final videos = <Map<String, dynamic>>[];
 
     for (final result in response.results) {
@@ -56,10 +58,38 @@ class WebSearchTool extends AgentTool {
       // Prioritize high-res image source, fallback to thumbnail if specific image search or good quality
       if (result.imgSrc != null && result.imgSrc!.isNotEmpty) {
         images.add(result.imgSrc!);
+        imageItems.add(
+          ImageItem(
+            title: result.title,
+            url: result.imgSrc!,
+            thumbnail: result.thumbnailSrc ?? result.thumbnail ?? '',
+            source: result.source ?? '',
+            domain: Uri.tryParse(result.url)?.host ?? '',
+            originalUrl: result.url,
+            width: _parseDimension(result.resolution, 0),
+            height: _parseDimension(result.resolution, 1),
+          ).toMap(),
+        );
       } else if (result.thumbnailSrc != null &&
           result.thumbnailSrc!.isNotEmpty) {
         // Only valid thumbnails
         images.add(result.thumbnailSrc!);
+
+        // Add as ImageItem
+        imageItems.add(
+          ImageItem(
+            title: result.title,
+            url: result
+                .thumbnailSrc!, // Use thumbnail as main image if imgSrc missing
+            thumbnail: result.thumbnailSrc!,
+            source: result.source ?? '',
+            domain: Uri.tryParse(result.url)?.host ?? '',
+            originalUrl: result.url,
+            // Resolution often not available for thumbnails, or only thumbnail size
+            width: null,
+            height: null,
+          ).toMap(),
+        );
       }
 
       // 2. Extract Videos
@@ -103,7 +133,20 @@ class WebSearchTool extends AgentTool {
           )
           .toList(),
       'images': images,
+      'imageItems': imageItems,
       'videos': videos,
     };
+  }
+
+  /// Helper to parse "WxH" string
+  int? _parseDimension(String? resolution, int index) {
+    if (resolution == null || !resolution.contains('x')) return null;
+    try {
+      final parts = resolution.split('x');
+      if (parts.length > index) {
+        return int.tryParse(parts[index].trim());
+      }
+    } catch (_) {}
+    return null;
   }
 }

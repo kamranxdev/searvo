@@ -113,9 +113,11 @@ class RAGDataSource {
 
     final allRawDocuments = <Document>[]; // Internal documents
 
+    // List to collect all found images (high-res preferred)
+    final List<String> collectedImages = [];
+
     // Execute WebSearchTool
     for (final tool in _tools.where((t) => t.id == 'web_search')) {
-      // AgentTool.execute takes a Map
       final result = await tool.execute({
         'query': query,
         'maxResults': maxSearchResults,
@@ -136,10 +138,32 @@ class RAGDataSource {
                   ? DateTime.tryParse(d['publishedDate'])
                   : null,
               source: d['source'],
+              metadata: {'thumbnail': d['thumbnail']},
             ),
           ),
         );
+
+        // Also collect images from web search (usually thumbnails, but better than nothing)
+        final imgs = result['images'] as List?;
+        if (imgs != null) {
+          collectedImages.addAll(imgs.map((e) => e.toString()));
+        }
       }
+    }
+
+    // Execute ImageSearchTool (Parallel) to get High-Res Images
+    try {
+      for (final tool in _tools.where((t) => t.id == 'image_search')) {
+        final result = await tool.execute({'query': query});
+
+        if (result is Map && result['success'] == true) {
+          final images = result['images'] as List;
+          // Insert high-res images at the BEGINNING of the list to prioritize them
+          collectedImages.insertAll(0, images.map((e) => e.toString()));
+        }
+      }
+    } catch (e) {
+      print('Image search failed: $e');
     }
 
     if (allRawDocuments.isEmpty) {
@@ -200,10 +224,11 @@ class RAGDataSource {
     final thinkingStep = createStep("Generating answer");
     yield RAGUpdate(status: RAGStatus.thinking, steps: List.from(steps));
 
+    // Images are already collected in 'collectedImages' from earlier steps.
+
     List<lc.Document> retrievedDocs;
     if (isVectorStoreAvailable) {
       try {
-        // Use LangChain to query
         final chainResult = await _langChainService.query(
           query,
           vectorStore: _vectorStore,
@@ -212,24 +237,19 @@ class RAGDataSource {
         retrievedDocs = chainResult['docs'] as List<lc.Document>;
       } catch (e) {
         print('Vector Store query failed: $e');
-        // Fallback to top documents if query fails
         retrievedDocs = lcDocuments.take(maxRelevantDocuments).toList();
       }
     } else {
-      // Direct usage of documents if Vector Store is down
       retrievedDocs = lcDocuments.take(maxRelevantDocuments).toList();
     }
 
     final StringBuffer fullAnswer = StringBuffer();
-
-    // Generate Answer with Retry Logic for Rate Limits
     int retryCount = 0;
     const maxRetries = 3;
     bool generationSuccess = false;
 
     while (!generationSuccess && retryCount <= maxRetries) {
       try {
-        // Use LangChainService to generate the answer stream
         await for (final token in _langChainService.generateAnswer(
           query,
           retrievedDocs,
@@ -240,12 +260,12 @@ class RAGDataSource {
             status: RAGStatus.streaming,
             token: token,
             steps: List.from(steps),
+            images: collectedImages, // Pass images found
           );
         }
         generationSuccess = true;
       } catch (e) {
         final errorStr = e.toString();
-        // Check for Rate Limit (429) or Quota Exceeded
         if (errorStr.contains('429') ||
             errorStr.toLowerCase().contains('quota') ||
             errorStr.toLowerCase().contains('rate limit')) {
@@ -259,57 +279,39 @@ class RAGDataSource {
               status: RAGStatus.thinking,
               steps: List.from(steps),
             );
-
             await Future.delayed(Duration(seconds: 2 * retryCount));
-            // Create a fresh buffer for the retry?
-            // Usually we want to clear partial answer if it failed midway,
-            // but RateLimit usually fails at the start.
-            if (fullAnswer.isNotEmpty) {
-              // If we already had content and it failed mid-stream,
-              // we technically might be duplicating or losing context.
-              // For now, simpler to clear and restart or keep appending?
-              // Rate limit unlikely checks in mid-stream, usually at start.
-              fullAnswer.clear();
-            }
+            if (fullAnswer.isNotEmpty) fullAnswer.clear();
             continue;
           }
         }
-
-        // If not rate limit or retries exhausted
         print('Generation failed: $e');
         updateStep(
           thinkingStep.id,
           status: SearchStepStatus.failed,
           description: "Generation failed: $e",
         );
-
-        // Yield a friendly error helper if we haven't yielded anything yet
         if (fullAnswer.isEmpty) {
           fullAnswer.write(
             "I apologize, but I'm currently experiencing high traffic or connection issues. Here is what I found from the search results:\n\n",
           );
-          // Append simple summary of sources
           for (var doc in retrievedDocs.take(3)) {
             fullAnswer.write(
               "- ${doc.metadata['title']}: ${doc.pageContent.substring(0, 100)}...\n",
             );
           }
-          generationSuccess = true; // Treat fallback as success
+          generationSuccess = true;
         } else {
-          // We already streamed some content, just stop.
           generationSuccess = true;
         }
       }
     }
 
     if (!generationSuccess && fullAnswer.isEmpty) {
-      // Should have been handled in catch block fallback, but just in case
       fullAnswer.write("Unable to generate response due to repeated errors.");
     }
 
     updateStep(thinkingStep.id, status: SearchStepStatus.completed);
 
-    // Verify response quality (no LLM calls - pure algorithmic)
     final answerText = fullAnswer.toString();
     final verification = _sourceVerifier.verifyResponse(
       answerText,
@@ -323,16 +325,7 @@ class RAGDataSource {
     print(
       '📊 Response verification: ${verification.confidenceLevel} (${(verification.overallScore * 100).toStringAsFixed(1)}%)',
     );
-    print(
-      '📊 Confidence score: ${confidence.level} (${confidence.percentage}%)',
-    );
-    if (verification.unverifiedEntities.isNotEmpty) {
-      print(
-        '⚠️ Unverified entities: ${verification.unverifiedEntities.take(3).join(", ")}',
-      );
-    }
 
-    // Convert raw documents to SourceItems for the final result
     final sourceItems = allRawDocuments
         .map(
           (doc) => SourceItem(
@@ -354,11 +347,13 @@ class RAGDataSource {
         answer: answerText,
         steps: steps,
         sources: sourceItems,
+        images: collectedImages, // Pass correct images
         confidenceScore: confidence.percentage,
         confidenceLevel: confidence.level,
       ),
       steps: List.from(steps),
       documents: allRawDocuments,
+      images: collectedImages,
     );
   }
 

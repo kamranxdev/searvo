@@ -43,6 +43,9 @@ class MockLLMProvider implements BaseLLMProvider {
   bool get isConfigured => true;
 
   @override
+  void setModel(String model) {}
+
+  @override
   Future<void> initialize() async {}
 
   @override
@@ -93,8 +96,8 @@ void main() {
       // We need to register the mock provider to the manager
       llmManager = LLMProviderManager();
       llmManager.dispose(); // clean slate
-      llmManager.registerProvider(LLMProviderType.openai, mockLLM);
-      llmManager.setActiveProvider(LLMProviderType.openai);
+      llmManager.registerProvider(LLMProviderType.openrouter, mockLLM);
+      llmManager.setActiveProvider(LLMProviderType.openrouter);
 
       orchestrator = IntentOrchestrator(
         toolRegistry: toolRegistry,

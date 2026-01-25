@@ -52,20 +52,6 @@ class _EmbeddingSettingsPanelState extends State<EmbeddingSettingsPanel> {
 
         const SizedBox(height: 32),
 
-        // OpenAI Embedding Settings
-        if (_selectedEmbeddingProvider == LLMProviderType.openai)
-          _buildOpenAIEmbeddingSettings(
-            context,
-            providerStatus[LLMProviderType.openai] ?? false,
-          ),
-
-        // Google Embedding Settings
-        if (_selectedEmbeddingProvider == LLMProviderType.google)
-          _buildGoogleEmbeddingSettings(
-            context,
-            providerStatus[LLMProviderType.google] ?? false,
-          ),
-
         // Ollama Embedding Settings
         if (_selectedEmbeddingProvider == LLMProviderType.ollama)
           _buildOllamaEmbeddingSettings(
@@ -83,6 +69,14 @@ class _EmbeddingSettingsPanelState extends State<EmbeddingSettingsPanel> {
   ) {
     final settingsColors = SettingsTheme.colors(context);
 
+    // Only show providers that support embeddings or we want to allow configuration for
+    const allowedProviders = [
+      LLMProviderType.ollama,
+      LLMProviderType.openrouter,
+      LLMProviderType.openai,
+      LLMProviderType.google,
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -98,7 +92,7 @@ class _EmbeddingSettingsPanelState extends State<EmbeddingSettingsPanel> {
             border: Border.all(color: settingsColors.border),
           ),
           child: Column(
-            children: LLMProviderType.values.map((provider) {
+            children: allowedProviders.map((provider) {
               final isConfigured = providerStatus[provider] ?? false;
               final isSelected = _selectedEmbeddingProvider == provider;
               final name = providerNames[provider] ?? provider.name;
@@ -195,151 +189,17 @@ class _EmbeddingSettingsPanelState extends State<EmbeddingSettingsPanel> {
 
   String _getEmbeddingProviderDescription(LLMProviderType provider) {
     switch (provider) {
-      case LLMProviderType.openai:
-        return 'High-quality embeddings for semantic search and analysis';
-      case LLMProviderType.google:
-        return 'Google\'s embedding models with multilingual support';
       case LLMProviderType.ollama:
         return 'Local embedding models running on your machine';
       case LLMProviderType.openrouter:
-        return 'Access various open-source embedding models via OpenRouter';
+        return 'Access various open-source embedding models via OpenRouter (using OpenAI compatibility)';
+      case LLMProviderType.openai:
+        return 'State-of-the-art embedding models from OpenAI';
+      case LLMProviderType.google:
+        return 'Google Gemini embedding models';
       case LLMProviderType.anthropic:
-        return 'Anthropic\'s Claude models for advanced language understanding';
+        return 'Anthropic does not currently verify support for embeddings';
     }
-  }
-
-  Widget _buildOpenAIEmbeddingSettings(
-    BuildContext context,
-    bool isConfigured,
-  ) {
-    final settingsColors = SettingsTheme.colors(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(Icons.memory, size: 20, color: settingsColors.text),
-            const SizedBox(width: 8),
-            Text(
-              'OpenAI Embedding Configuration',
-              style: SettingsTheme.settingTitle(
-                context,
-              ).copyWith(fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        if (isConfigured) ...[
-          _buildModelSelector(
-            context,
-            'OpenAI Embedding Model',
-            _llmSettings.getOpenAIEmbeddingModel(),
-            _llmSettings.getAvailableOpenAIEmbeddingModels(),
-            (model) {
-              _llmSettings.setOpenAIEmbeddingModel(model);
-              setState(() {});
-            },
-          ),
-          const SizedBox(height: 16),
-          _buildModelInfo(context, _llmSettings.getOpenAIEmbeddingModel()),
-        ] else
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: settingsColors.inputBackground.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: settingsColors.border),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.info_outline,
-                  color: settingsColors.subtitle,
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'OpenAI API key is required. Please configure it in the AI Providers tab first.',
-                    style: TextStyle(
-                      color: settingsColors.subtitle,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildGoogleEmbeddingSettings(
-    BuildContext context,
-    bool isConfigured,
-  ) {
-    final settingsColors = SettingsTheme.colors(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(Icons.memory, size: 20, color: settingsColors.text),
-            const SizedBox(width: 8),
-            Text(
-              'Google Embedding Configuration',
-              style: SettingsTheme.settingTitle(
-                context,
-              ).copyWith(fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        if (isConfigured) ...[
-          _buildModelSelector(
-            context,
-            'Google Embedding Model',
-            _llmSettings.getGoogleEmbeddingModel(),
-            _llmSettings.getAvailableGoogleEmbeddingModels(),
-            (model) {
-              _llmSettings.setGoogleEmbeddingModel(model);
-              setState(() {});
-            },
-          ),
-          const SizedBox(height: 16),
-          _buildModelInfo(context, _llmSettings.getGoogleEmbeddingModel()),
-        ] else
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: settingsColors.inputBackground.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: settingsColors.border),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.info_outline,
-                  color: settingsColors.subtitle,
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Google AI API key is required. Please configure it in the AI Providers tab first.',
-                    style: TextStyle(
-                      color: settingsColors.subtitle,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
-    );
   }
 
   Widget _buildOllamaEmbeddingSettings(

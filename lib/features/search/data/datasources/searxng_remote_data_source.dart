@@ -47,6 +47,8 @@ class SearXNGRemoteDataSource {
     SearchType searchType = SearchType.general,
     SearchRecency recency = SearchRecency.any,
     String? region,
+    int? safeSearch,
+    double? timeoutLimit,
   }) async {
     if (!isConfigured || _httpClient == null) {
       throw Exception(
@@ -71,7 +73,8 @@ class SearXNGRemoteDataSource {
           searxngCategory = 'science';
           break;
         case SearchType.shopping:
-          // SearXNG doesn't have shopping, use general with modified query
+          // SearXNG doesn't have a standard shopping category
+          // Use general with expanded reach
           searxngCategory = 'general';
           query = '$query shop buy';
           break;
@@ -102,25 +105,32 @@ class SearXNGRemoteDataSource {
 
       // Build the search URL
       final uri = Uri.parse('${_baseUrl.trimEnd('/')}/search');
+
       final queryParams = {
         'q': query,
         'format': 'json',
         'pageno': page.toString(),
-        'categories':
-            searxngCategory, // Changed from 'category' to 'categories'
+        'categories': searxngCategory,
         'language': language,
         if (timeRange.isNotEmpty) 'time_range': timeRange,
-        'safesearch': '0',
+        'safesearch': (safeSearch ?? 0).toString(),
       };
 
-      // Add specific engines for better results
-      if (searchType == SearchType.images) {
-        queryParams['engines'] = 'google_images,bing_images,flickr';
-      } else if (searchType == SearchType.videos) {
-        queryParams['engines'] = 'youtube,vimeo,dailymotion';
-      } else if (searchType == SearchType.news) {
-        queryParams['engines'] = 'google_news,bing_news';
+      // Add region if specified
+      if (region != null && region.isNotEmpty) {
+        queryParams['region'] = region;
+      } else {
+        // Explicitly set 'all' or empty string if not provided to avoid sticky session issues
+        // queryParams['region'] = '';
       }
+
+      // Add timeout_limit if provided (SearXNG API parameter)
+      if (timeoutLimit != null) {
+        queryParams['timeout_limit'] = timeoutLimit.toString();
+      }
+
+      // NO HARDCODED ENGINES - Let SearXNG configuration decide!
+      // This allows fallback to other engines (DDG, Qwant) if Google/Bing fail.
 
       final searchUri = uri.replace(queryParameters: queryParams);
 

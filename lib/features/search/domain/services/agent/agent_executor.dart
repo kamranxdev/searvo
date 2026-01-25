@@ -2,6 +2,7 @@ import '../../entities/message_data.dart';
 import '../../entities/message_generation_state.dart';
 import '../../entities/source_item.dart';
 import '../../entities/video_item.dart';
+import '../../entities/image_item.dart';
 import '../../entities/search_step.dart';
 import '../../entities/tool_widget_data.dart';
 import '../../entities/agent/orchestrator_plan.dart';
@@ -136,6 +137,14 @@ class AgentExecutor {
             currentData = currentData.copyWith(
               images: List<String>.from(result['images']),
             );
+          }
+
+          if (result['imageItems'] != null &&
+              (result['imageItems'] as List).isNotEmpty) {
+            final items = (result['imageItems'] as List)
+                .map((e) => ImageItem.fromMap(e))
+                .toList();
+            currentData = currentData.copyWith(imageItems: items);
           }
 
           if (result['videos'] != null &&

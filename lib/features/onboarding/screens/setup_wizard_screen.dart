@@ -28,43 +28,43 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
   late PageController _pageController;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
-  
+
   final SetupService _setupService = SetupService();
   final LLMSettingsService _llmSettings = LLMSettingsService();
-  
+
   // Responsive breakpoints
   static const double _desktopBreakpoint = 900;
   static const double _tabletBreakpoint = 600;
-  
+
   int _currentPage = 0;
   final int _totalPages = 4;
-  
+
   // State
   String? _selectedProvider;
   bool _isLoading = false;
   String? _errorMessage;
-  
+
   // Text controllers for API key input
   final TextEditingController _apiKeyController = TextEditingController();
-  
+
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
-    
+
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-    
+
     _fadeAnimation = CurvedAnimation(
       parent: _fadeController,
       curve: Curves.easeInOut,
     );
-    
+
     _fadeController.forward();
   }
-  
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -72,7 +72,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
     _apiKeyController.dispose();
     super.dispose();
   }
-  
+
   void _goToPage(int page) {
     if (page >= 0 && page < _totalPages) {
       _pageController.animateToPage(
@@ -82,19 +82,19 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
       );
     }
   }
-  
+
   void _nextPage() {
     if (_currentPage < _totalPages - 1) {
       _goToPage(_currentPage + 1);
     }
   }
-  
+
   void _previousPage() {
     if (_currentPage > 0) {
       _goToPage(_currentPage - 1);
     }
   }
-  
+
   void _onProviderSelected(String providerId) {
     setState(() {
       _selectedProvider = providerId;
@@ -102,19 +102,22 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
       _apiKeyController.clear();
     });
   }
-  
+
   Future<void> _saveApiKey(String apiKey) async {
     if (_selectedProvider == null) return;
-    
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
-    
+
     try {
       bool success = false;
-      
+
       switch (_selectedProvider) {
+        case 'openrouter':
+          success = await _llmSettings.setOpenRouterApiKey(apiKey);
+          break;
         case 'openai':
           success = await _llmSettings.setOpenAIApiKey(apiKey);
           break;
@@ -124,14 +127,11 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
         case 'anthropic':
           success = await _llmSettings.setAnthropicApiKey(apiKey);
           break;
-        case 'openrouter':
-          success = await _llmSettings.setOpenRouterApiKey(apiKey);
-          break;
         case 'ollama':
           success = await _llmSettings.setOllamaBaseUrl(apiKey);
           break;
       }
-      
+
       if (success) {
         // Set as active provider
         await _llmSettings.setActiveProviderByName(_selectedProvider!);
@@ -152,18 +152,18 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
       });
     }
   }
-  
+
   Future<void> _completeSetup() async {
     setState(() => _isLoading = true);
-    
+
     await _setupService.completeSetup();
-    
+
     if (mounted) {
       // Navigate to home
       context.go('/');
     }
   }
-  
+
   Future<void> _skipSetup() async {
     final shouldSkip = await showDialog<bool>(
       context: context,
@@ -185,7 +185,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
         ],
       ),
     );
-    
+
     if (shouldSkip == true) {
       await _setupService.skipSetup();
       if (mounted) {
@@ -193,7 +193,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
       }
     }
   }
-  
+
   AIProviderOption? get _selectedProviderOption {
     if (_selectedProvider == null) return null;
     return AIProviderOption.allProviders.firstWhere(
@@ -201,16 +201,14 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
       orElse: () => AIProviderOption.allProviders.first,
     );
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = context.colorScheme;
     final isDark = context.isDark;
-    
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: isDark
-          ? SystemUiOverlayStyle.light
-          : SystemUiOverlayStyle.dark,
+      value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: Scaffold(
         body: SafeArea(
           child: FadeTransition(
@@ -218,9 +216,10 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final isDesktop = constraints.maxWidth >= _desktopBreakpoint;
-                final isTablet = constraints.maxWidth >= _tabletBreakpoint &&
+                final isTablet =
+                    constraints.maxWidth >= _tabletBreakpoint &&
                     constraints.maxWidth < _desktopBreakpoint;
-                
+
                 if (isDesktop) {
                   return _buildDesktopLayout(context, colorScheme);
                 } else if (isTablet) {
@@ -235,7 +234,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
       ),
     );
   }
-  
+
   /// Desktop Layout - Split screen with branding on left, wizard on right
   Widget _buildDesktopLayout(BuildContext context, ColorScheme colorScheme) {
     return Row(
@@ -245,7 +244,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
           flex: 5,
           child: _buildBrandingPanel(context, colorScheme, isDesktop: true),
         ),
-        
+
         // Right side - Wizard content
         Expanded(
           flex: 5,
@@ -264,7 +263,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
       ],
     );
   }
-  
+
   /// Tablet Layout - Centered content with max width constraint
   Widget _buildTabletLayout(BuildContext context, ColorScheme colorScheme) {
     return Column(
@@ -281,7 +280,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
       ],
     );
   }
-  
+
   /// Mobile Layout - Full width content
   Widget _buildMobileLayout(BuildContext context, ColorScheme colorScheme) {
     return Column(
@@ -293,15 +292,15 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
       ],
     );
   }
-  
+
   /// Branding panel for desktop layout
   Widget _buildBrandingPanel(
-    BuildContext context, 
-    ColorScheme colorScheme,
-    {required bool isDesktop}
-  ) {
+    BuildContext context,
+    ColorScheme colorScheme, {
+    required bool isDesktop,
+  }) {
     final theme = Theme.of(context);
-    
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -336,9 +335,9 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
                 child: AppLogo(size: 48, withBackground: false),
               ),
             ),
-            
+
             const SizedBox(height: 40),
-            
+
             // Title
             Text(
               'Setup Your\nAI Assistant',
@@ -348,9 +347,9 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
                 height: 1.2,
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Subtitle
             Text(
               'Configure your preferred AI provider to unlock powerful search capabilities.',
@@ -359,9 +358,9 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
                 height: 1.6,
               ),
             ),
-            
+
             const SizedBox(height: 48),
-            
+
             // Features
             _buildDesktopFeature(
               context,
@@ -388,7 +387,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
       ),
     );
   }
-  
+
   Widget _buildDesktopFeature(
     BuildContext context, {
     required IconData icon,
@@ -408,11 +407,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
             color: colorScheme.primary.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(
-            icon,
-            color: colorScheme.primary,
-            size: 24,
-          ),
+          child: Icon(icon, color: colorScheme.primary, size: 24),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -438,9 +433,12 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
       ],
     );
   }
-  
+
   /// Wizard PageView with step content
-  Widget _buildWizardPageView({required bool isDesktop, required bool isTablet}) {
+  Widget _buildWizardPageView({
+    required bool isDesktop,
+    required bool isTablet,
+  }) {
     return PageView(
       controller: _pageController,
       physics: const NeverScrollableScrollPhysics(),
@@ -457,7 +455,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
           isDesktop: isDesktop,
           isTablet: isTablet,
         ),
-        
+
         // Step 2: Provider Selection
         ProviderSelectionStep(
           selectedProvider: _selectedProvider,
@@ -467,7 +465,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
           isDesktop: isDesktop,
           isTablet: isTablet,
         ),
-        
+
         // Step 3: API Key Entry
         ApiKeyStep(
           provider: _selectedProviderOption,
@@ -483,7 +481,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
           isDesktop: isDesktop,
           isTablet: isTablet,
         ),
-        
+
         // Step 4: Completion
         CompletionStep(
           selectedProvider: _selectedProviderOption?.name,
@@ -497,12 +495,12 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
       ],
     );
   }
-  
+
   Widget _buildHeader(ColorScheme colorScheme, {bool isCompact = false}) {
-    final padding = isCompact 
+    final padding = isCompact
         ? EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h)
         : const EdgeInsets.symmetric(horizontal: 24, vertical: 16);
-    
+
     return Padding(
       padding: padding,
       child: Row(
@@ -515,7 +513,7 @@ class _SetupWizardScreenState extends State<SetupWizardScreen>
               isCompact: isCompact,
             ),
           ),
-          
+
           // Skip button (only show on first 3 pages)
           if (_currentPage < 3)
             TextButton(

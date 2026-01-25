@@ -11,7 +11,8 @@ class SetupService extends ChangeNotifier {
 
   static const String _setupCompletedKey = 'setup_completed';
   static const String _setupVersionKey = 'setup_version';
-  static const int _currentSetupVersion = 1; // Increment when setup flow changes
+  static const int _currentSetupVersion =
+      1; // Increment when setup flow changes
 
   SharedPreferences? _prefs;
   bool _isInitialized = false;
@@ -86,11 +87,12 @@ class SetupService extends ChangeNotifier {
   /// Check if minimum requirements are met (at least one AI provider configured)
   bool get hasMinimumRequirements {
     final llmSettings = LLMSettingsService();
-    return llmSettings.hasOpenAIApiKey() ||
-        llmSettings.hasGoogleApiKey() ||
-        llmSettings.hasAnthropicApiKey() ||
-        llmSettings.hasOpenRouterApiKey() ||
-        (llmSettings.getOllamaBaseUrl() != null && llmSettings.getOllamaBaseUrl()!.isNotEmpty);
+    return llmSettings.hasOpenRouterApiKey() ||
+        llmSettings.getOpenAIApiKey() != null ||
+        llmSettings.getGoogleApiKey() != null ||
+        llmSettings.getAnthropicApiKey() != null ||
+        (llmSettings.getOllamaBaseUrl() != null &&
+            llmSettings.getOllamaBaseUrl()!.isNotEmpty);
   }
 
   /// Get list of configured providers
@@ -98,11 +100,13 @@ class SetupService extends ChangeNotifier {
     final llmSettings = LLMSettingsService();
     final providers = <String>[];
 
-    if (llmSettings.hasOpenAIApiKey()) providers.add('OpenAI');
-    if (llmSettings.hasGoogleApiKey()) providers.add('Google Gemini');
-    if (llmSettings.hasAnthropicApiKey()) providers.add('Anthropic Claude');
     if (llmSettings.hasOpenRouterApiKey()) providers.add('OpenRouter');
-    if (llmSettings.getOllamaBaseUrl() != null && llmSettings.getOllamaBaseUrl()!.isNotEmpty) {
+    if (llmSettings.getOpenAIApiKey() != null) providers.add('OpenAI');
+    if (llmSettings.getGoogleApiKey() != null) providers.add('Google Gemini');
+    if (llmSettings.getAnthropicApiKey() != null)
+      providers.add('Anthropic Claude');
+    if (llmSettings.getOllamaBaseUrl() != null &&
+        llmSettings.getOllamaBaseUrl()!.isNotEmpty) {
       providers.add('Ollama');
     }
 

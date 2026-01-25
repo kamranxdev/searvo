@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'search_step.dart';
 import 'tool_widget_data.dart';
+import 'image_item.dart';
 
 import 'source_item.dart';
 import 'video_item.dart';
@@ -14,6 +15,7 @@ class MessageData {
   final List<String> relatedQuestions;
   final List<SourceItem> sources;
   final List<String> images;
+  final List<ImageItem> imageItems;
   final List<VideoItem> videos;
   final MessageGenerationState generationState;
   final Stream<String>? answerStream;
@@ -35,6 +37,7 @@ class MessageData {
     this.relatedQuestions = const [],
     this.sources = const [],
     this.images = const [],
+    this.imageItems = const [],
     this.videos = const [],
     this.generationState = MessageGenerationState.completed,
     this.answerStream,
@@ -55,6 +58,7 @@ class MessageData {
     List<String>? relatedQuestions,
     List<SourceItem>? sources,
     List<String>? images,
+    List<ImageItem>? imageItems,
     List<VideoItem>? videos,
     MessageGenerationState? generationState,
     Stream<String>? answerStream,
@@ -74,6 +78,7 @@ class MessageData {
       relatedQuestions: relatedQuestions ?? this.relatedQuestions,
       sources: sources ?? this.sources,
       images: images ?? this.images,
+      imageItems: imageItems ?? this.imageItems,
       videos: videos ?? this.videos,
       generationState: generationState ?? this.generationState,
       answerStream: answerStream ?? this.answerStream,

@@ -540,7 +540,7 @@ engines:
   - name: bing
     engine: bing
     shortcut: bi
-    disabled: true
+    disabled: false
 
   - name: bing images
     engine: bing_images
@@ -824,21 +824,21 @@ engines:
     categories: [images, web]
     ddg_category: images
     shortcut: ddi
-    disabled: true
+    disabled: false
 
   - name: duckduckgo videos
     engine: duckduckgo_extra
     categories: [videos, web]
     ddg_category: videos
     shortcut: ddv
-    disabled: true
+    disabled: false
 
   - name: duckduckgo news
     engine: duckduckgo_extra
     categories: [news, web]
     ddg_category: news
     shortcut: ddn
-    disabled: true
+    disabled: false
 
   - name: duckduckgo weather
     engine: duckduckgo_weather

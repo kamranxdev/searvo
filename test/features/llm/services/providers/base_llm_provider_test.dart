@@ -34,6 +34,11 @@ class MockLLMProvider implements BaseLLMProvider {
 
   bool get isInitialized => _isInitialized;
 
+  @override
+  void setModel(String model) {
+    // No-op for mock
+  }
+
   void setConfigured(bool value) {
     _isConfigured = value;
   }

@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:langchain_ollama/langchain_ollama.dart';
 import 'package:langchain/langchain.dart';
 import 'base_llm_provider.dart';
@@ -139,8 +141,42 @@ class Ollama extends BaseLLMProvider {
   }
 
   /// Set model
+  @override
   void setModel(String model) {
     _model = model;
+  }
+
+  /// Fetch available models from Ollama server
+  static Future<List<String>> fetchAvailableModels({
+    String baseUrl = defaultBaseUrl,
+  }) async {
+    final normalizedUrl = _normalizeBaseUrl(baseUrl);
+    try {
+      final response = await http.get(Uri.parse('$normalizedUrl/api/tags'));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> models = data['models'];
+
+        final modelNames = models.map((e) => e['name'] as String).toList();
+
+        modelNames.sort();
+
+        // Ensure popular models are present if they are not returned (unlikely for local but safe)
+        // Actually for local, we only show what is installed.
+        if (modelNames.isEmpty) {
+          return [];
+        }
+
+        return modelNames;
+      } else {
+        print('Failed to fetch Ollama models: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching Ollama models: $e');
+      return [];
+    }
   }
 
   /// Check if Ollama server is reachable
@@ -153,20 +189,6 @@ class Ollama extends BaseLLMProvider {
       return false;
     }
   }
-
-  /// Popular Ollama models
-  static const List<String> popularModels = [
-    'llama3.2',
-    'llama3.2:1b',
-    'llama3.2:3b',
-    'gemma2',
-    'gemma2:2b',
-    'mistral',
-    'mixtral',
-    'phi3.5',
-    'qwen2.5',
-    'codellama',
-  ];
 
   /// Popular Ollama embedding models
   static const List<String> popularEmbeddingModels = [
@@ -188,7 +210,7 @@ class Ollama extends BaseLLMProvider {
   }
 
   /// Get available Ollama models
-  static List<String> getAvailableModels() => popularModels;
+  static List<String> getAvailableModels() => [];
 
   /// Get available Ollama embedding models
   static List<String> getAvailableEmbeddingModels() => popularEmbeddingModels;

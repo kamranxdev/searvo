@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:langchain_openai/langchain_openai.dart';
 import 'package:langchain/langchain.dart';
 import 'base_llm_provider.dart';
@@ -113,17 +115,54 @@ class OpenAI extends BaseLLMProvider {
   }
 
   /// Set model
+  @override
   void setModel(String model) {
     _model = model;
   }
 
-  /// Recommended OpenAI models optimized for textual use cases (2025)
-  static const List<String> availableModels = [
-    'o3-pro', // High-end reasoning and text generation
-    'o4-mini', // Fast and cost-efficient reasoning model
-    'gpt-4-turbo', // Balanced high-quality text generation
-    'gpt-3.5-turbo', // Cost-effective simple text generation
-  ];
+  /// Fetch available models from OpenAI API
+  static Future<List<String>> fetchAvailableModels(String apiKey) async {
+    if (apiKey.isEmpty) return [];
+
+    try {
+      final response = await http.get(
+        Uri.parse('https://api.openai.com/v1/models'),
+        headers: {
+          'Authorization': 'Bearer $apiKey',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> models = data['data'];
+
+        // Filter for chat models and sort
+        final modelIds = models
+            .map((e) => e['id'] as String)
+            .where(
+              (id) =>
+                  id.startsWith('gpt') ||
+                  id.startsWith('o1') ||
+                  id.startsWith('o3') ||
+                  id.startsWith('o4'),
+            ) // Simple heuristic
+            .toList();
+
+        modelIds.sort();
+
+        return modelIds;
+      } else {
+        print(
+          'Failed to fetch OpenAI models: ${response.statusCode} ${response.body}',
+        );
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching OpenAI models: $e');
+      return [];
+    }
+  }
 
   /// Recommended OpenAI embedding models (2025)
   static const List<String> availableEmbeddingModels = [
@@ -140,7 +179,7 @@ class OpenAI extends BaseLLMProvider {
   }
 
   /// Get available OpenAI models
-  static List<String> getAvailableModels() => availableModels;
+  static List<String> getAvailableModels() => [];
 
   /// Get available OpenAI embedding models
   static List<String> getAvailableEmbeddingModels() => availableEmbeddingModels;

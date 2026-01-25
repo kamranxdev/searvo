@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:langchain_anthropic/langchain_anthropic.dart';
 import 'package:langchain/langchain.dart';
 import 'base_llm_provider.dart';
@@ -106,17 +108,50 @@ class Anthropic extends BaseLLMProvider {
   }
 
   /// Set model
+  @override
   void setModel(String model) {
     _model = model;
   }
 
-  /// Latest Anthropic Claude models optimized for text and reasoning (2025)
-  static const List<String> availableModels = [
-    'claude-sonnet-4.5-latest', // Top model for coding, complex agents, and reasoning
-    'claude-opus-4-latest', // Powerful reasoning and scientific tasks model
-    'claude-sonnet-3.7', // Previous gen, good balance of speed and accuracy
-    'claude-opus-3-latest', // Previous gen complex reasoning model
-  ];
+  /// Fetch available models from Anthropic API
+  static Future<List<String>> fetchAvailableModels(String apiKey) async {
+    if (apiKey.isEmpty) return [];
+
+    try {
+      final response = await http.get(
+        Uri.parse('https://api.anthropic.com/v1/models'),
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> models = data['data'];
+
+        final modelIds = models
+            .map((e) => e['id'] as String)
+            .where((id) => id.contains('claude'))
+            .toList();
+
+        modelIds.sort(
+          (a, b) => b.compareTo(a),
+        ); // Reverse sort usually implies newer first for dates, but for strings it's situational.
+        // Actually let's just sort alphabetically for consistency
+        modelIds.sort();
+
+        return modelIds;
+      } else {
+        print('Failed to fetch Anthropic models: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      print('Error fetching Anthropic models: $e');
+      return [];
+    }
+  }
 
   @override
   bool get isConfigured => _apiKey != null && _apiKey!.isNotEmpty;
@@ -128,5 +163,5 @@ class Anthropic extends BaseLLMProvider {
   }
 
   /// Get available Anthropic models
-  static List<String> getAvailableModels() => availableModels;
+  static List<String> getAvailableModels() => [];
 }
