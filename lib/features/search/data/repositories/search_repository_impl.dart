@@ -2,7 +2,7 @@ import 'dart:async';
 
 import '../../domain/repositories/search_repository.dart';
 import '../../domain/entities/source_item.dart';
-import '../../domain/entities/search_mode.dart';
+
 import '../../domain/entities/search_enums.dart';
 import '../datasources/searxng_remote_data_source.dart';
 import '../datasources/search_local_data_source.dart';
@@ -19,7 +19,6 @@ class SearchRepositoryImpl implements SearchRepository {
   @override
   Stream<dynamic> performSearch(
     String query, {
-    SearchMode searchMode = SearchMode.search,
     required Map<String, dynamic> options,
   }) async* {
     try {

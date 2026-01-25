@@ -8,9 +8,12 @@ import 'package:searvo/common/widgets/attachment_input_widget.dart';
 import 'package:searvo/core/di/injection_container.dart';
 import 'package:searvo/features/search/domain/usecases/get_autocomplete_suggestions_usecase.dart';
 import 'package:searvo/features/search/domain/entities/autocomplete_entities.dart';
-import 'package:searvo/features/search/domain/entities/search_mode.dart';
+
+import 'package:searvo/features/search/domain/entities/search_intent.dart';
 import 'dart:ui';
-import 'search_box_mode_tooltip.dart';
+import 'package:searvo/features/search/rag/services/ingestion/attachment_ingestion_service.dart';
+
+enum IngestionStatus { pending, processing, success, error }
 
 class SearchBox extends StatefulWidget {
   final TextEditingController controller;
@@ -21,7 +24,8 @@ class SearchBox extends StatefulWidget {
   final Function(List<AttachmentData>)? onAttachmentsChanged;
   final Function(AttachmentData)? onAttachmentAdded;
   final Function(String)? onAttachmentError;
-  final Function(SearchMode)? onSearchModeChanged;
+
+  final bool suggestionsOnTop;
 
   const SearchBox({
     super.key,
@@ -33,7 +37,8 @@ class SearchBox extends StatefulWidget {
     this.onAttachmentsChanged,
     this.onAttachmentAdded,
     this.onAttachmentError,
-    this.onSearchModeChanged,
+
+    this.suggestionsOnTop = false,
   });
 
   @override
@@ -41,9 +46,6 @@ class SearchBox extends StatefulWidget {
 }
 
 class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
-  SearchMode _selectedMode = SearchMode.search;
-  TooltipData? _currentTooltip;
-  bool _tooltipVisible = false;
   bool _isTextFieldFocused = false;
   int _selectedSuggestionIndex = -1;
   FocusNode _textFieldFocusNode = FocusNode();
@@ -58,6 +60,11 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
 
   // Autocomplete use case
   late GetAutocompleteSuggestionsUseCase _autocompleteUseCase;
+
+  // Ingestion service
+  late AttachmentIngestionService _ingestionService;
+  final Map<String, IngestionStatus> _attachmentStatuses = {};
+
   List<AutocompleteSuggestion> _dynamicSuggestions = [];
   bool _isLoadingSuggestions = false;
 
@@ -73,15 +80,6 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
   // Use GlobalKey to access AttachmentInputWidget
   final GlobalKey<AttachmentInputWidgetState> _attachmentWidgetKey =
       GlobalKey<AttachmentInputWidgetState>();
-
-  SearchMode get selectedMode => _selectedMode;
-
-  set selectedMode(SearchMode mode) {
-    setState(() {
-      _selectedMode = mode;
-    });
-    widget.onSearchModeChanged?.call(mode);
-  }
 
   DetectedType _getCurrentInputType() {
     final text = _effectiveQuery;
@@ -131,8 +129,9 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
     // Initialize website mappings
     _websiteMappings = _settingsService.getWebsiteMappings();
 
-    // Initialize autocomplete use case
+    // Initialize services
     _autocompleteUseCase = sl<GetAutocompleteSuggestionsUseCase>();
+    _ingestionService = sl<AttachmentIngestionService>();
 
     // Fetch trending suggestions for empty state
     _fetchTrendingSuggestions();
@@ -299,42 +298,6 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
     super.dispose();
   }
 
-  // Define tooltip data for left side search mode buttons only
-  final Map<String, TooltipData> _tooltipData = {
-    'search': const TooltipData(
-      title: 'Search',
-      subtitle: 'Fast answers to everyday questions',
-      description:
-          'Get quick, concise answers to your questions with our AI-powered search mode.',
-    ),
-    'research': const TooltipData(
-      title: 'Research',
-      subtitle: 'Deep research on any topic',
-      description:
-          'In-depth research capabilities to help you explore complex topics thoroughly.',
-    ),
-    'study': const TooltipData(
-      title: 'Study',
-      subtitle: 'Step-by-step explanations and learning',
-      description:
-          'Interactive learning and study tools that guide you toward deeper understanding beyond quick answers.',
-      badge: 'New',
-    ),
-  };
-
-  void _showTooltip(String key) {
-    setState(() {
-      _currentTooltip = _tooltipData[key];
-      _tooltipVisible = true;
-    });
-  }
-
-  void _hideTooltip() {
-    setState(() {
-      _tooltipVisible = false;
-    });
-  }
-
   void _handleAttachmentsChanged(List<AttachmentData> attachments) {
     setState(() {
       _attachments = attachments;
@@ -347,7 +310,34 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
   }
 
   void _handleAttachmentRemoved(AttachmentData attachment) {
-    // This will be called when attachment is removed from AttachmentInputWidget
+    setState(() {
+      _attachmentStatuses.remove(attachment.path);
+    });
+  }
+
+  Future<void> _processAttachment(AttachmentData attachment) async {
+    setState(() {
+      _attachmentStatuses[attachment.path] = IngestionStatus.processing;
+    });
+
+    final result = await _ingestionService.ingestAttachment(attachment);
+
+    if (mounted) {
+      setState(() {
+        _attachmentStatuses[attachment.path] = result['success'] == true
+            ? IngestionStatus.success
+            : IngestionStatus.error;
+      });
+
+      if (result['success'] != true) {
+        widget.onAttachmentError?.call(result['error'] ?? 'Ingestion failed');
+      }
+    }
+  }
+
+  void _handleAttachmentAdded(AttachmentData attachment) {
+    _processAttachment(attachment);
+    widget.onAttachmentAdded?.call(attachment);
   }
 
   Widget _buildAttachmentPill(AttachmentData attachment) {
@@ -382,8 +372,28 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
             style: TextStyle(color: searchColors.caption, fontSize: 10),
           ),
           const SizedBox(width: 6),
+          // Status Indicator
+          if (_attachmentStatuses[attachment.path] ==
+              IngestionStatus.processing)
+            SizedBox(
+              width: 10,
+              height: 10,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: searchColors.accent,
+              ),
+            )
+          else if (_attachmentStatuses[attachment.path] ==
+              IngestionStatus.success)
+            Icon(Icons.check_circle, size: 10, color: Colors.green)
+          else if (_attachmentStatuses[attachment.path] ==
+              IngestionStatus.error)
+            Icon(Icons.error, size: 10, color: Colors.red),
+
+          const SizedBox(width: 6),
           GestureDetector(
             onTap: () => _removeAttachment(attachment),
+
             child: Container(
               width: 16,
               height: 16,
@@ -506,32 +516,36 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
           displayTitle: suggestion,
           type: SuggestionType.related,
           relevanceScore: 0,
-          intent: QueryIntent.general,
+          intent: SearchIntent.general,
         ),
       );
 
       switch (suggestionObj.intent) {
-        case QueryIntent.shopping:
+        case SearchIntent.shopping:
           icon = Icons.shopping_bag_outlined;
           break;
-        case QueryIntent.technical:
+        case SearchIntent.technical:
+        case SearchIntent.coding: // Added coding map
           icon = Icons.bug_report_outlined;
           break;
-        case QueryIntent.creative:
+        case SearchIntent.creative:
+        case SearchIntent.visual: // Added visual map
           icon = Icons.lightbulb_outline;
           break;
-        case QueryIntent.media:
+        case SearchIntent.media:
           icon = Icons.play_circle_outline;
           break;
-        case QueryIntent.local:
+        case SearchIntent.local:
+        case SearchIntent.map: // Added map map
           icon = Icons.place_outlined;
           break;
-        case QueryIntent.question:
+        case SearchIntent.question:
           icon = Icons.help_outline;
           break;
-        case QueryIntent.howTo:
+        case SearchIntent.howTo:
           icon = Icons.school_outlined;
-        case QueryIntent.research:
+        case SearchIntent
+            .academic: // Changed to academic from research (SearchIntent.academic)
           icon = Icons.science_outlined;
           break;
         default:
@@ -693,6 +707,80 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    if (widget.suggestionsOnTop) ...[
+                      // 1. Suggestions (Top)
+                      AnimatedBuilder(
+                        animation: _suggestionsAnimationController,
+                        builder: (context, child) {
+                          final shouldShow =
+                              _isTextFieldFocused &&
+                              _filteredSuggestions.isNotEmpty;
+
+                          return SizeTransition(
+                            sizeFactor: _suggestionsHeightAnimation,
+                            axisAlignment: 1.0, // Grow upwards from bottom
+                            child: FadeTransition(
+                              opacity: _suggestionsOpacityAnimation,
+                              child: shouldShow
+                                  ? Container(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        16,
+                                        16,
+                                        16,
+                                        0,
+                                      ), // Top padding
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          if (_isLoadingSuggestions) ...[
+                                            Center(
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 8,
+                                                    ),
+                                                child: SizedBox(
+                                                  width: 20,
+                                                  height: 20,
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    valueColor:
+                                                        AlwaysStoppedAnimation<
+                                                          Color
+                                                        >(searchColors.accent),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ] else ...[
+                                            ..._filteredSuggestions
+                                                .asMap()
+                                                .entries
+                                                .map(
+                                                  (entry) =>
+                                                      _buildSuggestionItem(
+                                                        entry.value,
+                                                        entry.key,
+                                                      ),
+                                                ),
+                                          ],
+                                          const SizedBox(height: 16),
+                                          Divider(
+                                            color: searchColors.divider,
+                                            height: 1,
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+
+                    // 2. Attachments
                     if (_attachments.isNotEmpty)
                       Container(
                         width: double.infinity,
@@ -712,6 +800,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
                         ),
                       ),
 
+                    // 3. Text Input
                     Focus(
                       onKeyEvent: (node, event) {
                         if (event.logicalKey == LogicalKeyboardKey.arrowDown ||
@@ -733,6 +822,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
                         child: TextField(
                           controller: _mentionController,
                           focusNode: _textFieldFocusNode,
+                          textInputAction: TextInputAction.search,
                           decoration: InputDecoration(
                             hintText: 'Ask anything or @mention a website',
                             hintStyle: SearchTheme.searchPlaceholder(context),
@@ -754,81 +844,11 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
                       ),
                     ),
 
+                    // 4. Buttons (Actions only)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                       child: Row(
                         children: [
-                          Tooltip(
-                            message: '',
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                MouseRegion(
-                                  onEnter: (_) => _showTooltip('search'),
-                                  onExit: (_) => _hideTooltip(),
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        selectedMode = SearchMode.search;
-                                      });
-                                    },
-                                    child: Icon(
-                                      Icons.search,
-                                      color: selectedMode == SearchMode.search
-                                          ? searchColors.accent
-                                          : searchColors.caption.withOpacity(
-                                              0.6,
-                                            ),
-                                      size: 20,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                MouseRegion(
-                                  onEnter: (_) => _showTooltip('research'),
-                                  onExit: (_) => _hideTooltip(),
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        selectedMode = SearchMode.research;
-                                      });
-                                    },
-                                    child: Icon(
-                                      Icons.casino_outlined,
-                                      color: selectedMode == SearchMode.research
-                                          ? searchColors.accent
-                                          : searchColors.caption.withOpacity(
-                                              0.6,
-                                            ),
-                                      size: 20,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                MouseRegion(
-                                  onEnter: (_) => _showTooltip('study'),
-                                  onExit: (_) => _hideTooltip(),
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        selectedMode = SearchMode.study;
-                                      });
-                                    },
-                                    child: Icon(
-                                      Icons.explore,
-                                      color: selectedMode == SearchMode.study
-                                          ? searchColors.accent
-                                          : searchColors.caption.withOpacity(
-                                              0.6,
-                                            ),
-                                      size: 20,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
                           const Spacer(),
 
                           Row(
@@ -837,7 +857,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
                               AttachmentInputWidget(
                                 key: _attachmentWidgetKey,
                                 onAttachmentsChanged: _handleAttachmentsChanged,
-                                onAttachmentAdded: widget.onAttachmentAdded,
+                                onAttachmentAdded: _handleAttachmentAdded,
                                 onAttachmentRemoved: _handleAttachmentRemoved,
                                 onError: widget.onAttachmentError,
                                 activeColor: searchColors.accent,
@@ -883,7 +903,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: const Icon(
-                                    Icons.graphic_eq,
+                                    Icons.arrow_upward,
                                     color: Colors.white,
                                     size: 18,
                                   ),
@@ -895,90 +915,84 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
                       ),
                     ),
 
-                    AnimatedBuilder(
-                      animation: _suggestionsAnimationController,
-                      builder: (context, child) {
-                        final shouldShow =
-                            _isTextFieldFocused &&
-                            _filteredSuggestions.isNotEmpty;
+                    if (!widget.suggestionsOnTop) ...[
+                      // 5. Suggestions (Bottom) - Original Order
+                      AnimatedBuilder(
+                        animation: _suggestionsAnimationController,
+                        builder: (context, child) {
+                          final shouldShow =
+                              _isTextFieldFocused &&
+                              _filteredSuggestions.isNotEmpty;
 
-                        return SizeTransition(
-                          sizeFactor: _suggestionsHeightAnimation,
-                          axisAlignment: -1.0,
-                          child: FadeTransition(
-                            opacity: _suggestionsOpacityAnimation,
-                            child: shouldShow
-                                ? Container(
-                                    padding: const EdgeInsets.fromLTRB(
-                                      16,
-                                      0,
-                                      16,
-                                      16,
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Divider(
-                                          color: searchColors.divider,
-                                          height: 1,
-                                        ),
-                                        const SizedBox(height: 16),
-                                        if (_isLoadingSuggestions) ...[
-                                          Center(
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 8,
+                          return SizeTransition(
+                            sizeFactor: _suggestionsHeightAnimation,
+                            axisAlignment: -1.0, // Grow downwards from top
+                            child: FadeTransition(
+                              opacity: _suggestionsOpacityAnimation,
+                              child: shouldShow
+                                  ? Container(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        16,
+                                        0,
+                                        16,
+                                        16,
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Divider(
+                                            color: searchColors.divider,
+                                            height: 1,
+                                          ),
+                                          const SizedBox(height: 16),
+                                          if (_isLoadingSuggestions) ...[
+                                            Center(
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 8,
+                                                    ),
+                                                child: SizedBox(
+                                                  width: 20,
+                                                  height: 20,
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    valueColor:
+                                                        AlwaysStoppedAnimation<
+                                                          Color
+                                                        >(searchColors.accent),
                                                   ),
-                                              child: SizedBox(
-                                                width: 20,
-                                                height: 20,
-                                                child: CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                  valueColor:
-                                                      AlwaysStoppedAnimation<
-                                                        Color
-                                                      >(searchColors.accent),
                                                 ),
                                               ),
                                             ),
-                                          ),
-                                        ] else ...[
-                                          ..._filteredSuggestions
-                                              .asMap()
-                                              .entries
-                                              .map(
-                                                (entry) => _buildSuggestionItem(
-                                                  entry.value,
-                                                  entry.key,
+                                          ] else ...[
+                                            ..._filteredSuggestions
+                                                .asMap()
+                                                .entries
+                                                .map(
+                                                  (entry) =>
+                                                      _buildSuggestionItem(
+                                                        entry.value,
+                                                        entry.key,
+                                                      ),
                                                 ),
-                                              ),
+                                          ],
                                         ],
-                                      ],
-                                    ),
-                                  )
-                                : const SizedBox.shrink(),
-                          ),
-                        );
-                      },
-                    ),
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ],
                 ),
               ),
             ),
           ),
         ),
-
-        if (_tooltipVisible)
-          Positioned(
-            left: 0,
-            top: _attachments.isNotEmpty ? 140 : 115,
-            child: SearchBoxModeTooltip(
-              data: _currentTooltip,
-              isVisible: _tooltipVisible,
-            ),
-          ),
       ],
     );
   }

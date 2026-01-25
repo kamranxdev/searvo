@@ -1,6 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../domain/entities/message_branch_manager.dart';
-import '../../domain/entities/search_mode.dart';
+
 import '../../../../common/widgets/attachment_input_widget.dart'; // For AttachmentData
 
 part 'search_event.freezed.dart';
@@ -10,7 +10,6 @@ class SearchEvent with _$SearchEvent {
   /// Perform initial search with query and optional conversation ID
   const factory SearchEvent.performInitialSearch({
     required String query,
-    required SearchMode searchMode,
     List<dynamic>? attachments,
     String? conversationId,
   }) = _PerformInitialSearch;

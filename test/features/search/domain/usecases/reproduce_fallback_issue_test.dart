@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
-import 'package:searvo/features/search/domain/entities/autocomplete_entities.dart';
+
 import 'package:searvo/features/search/domain/repositories/search_repository.dart';
 import 'package:searvo/features/search/domain/usecases/get_autocomplete_suggestions_usecase.dart';
 

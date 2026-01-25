@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:searvo/features/search/theme/search_theme.dart';
 import 'package:searvo/features/search/presentation/widgets/citation_chip.dart';
 import 'package:searvo/common/widgets/code_block_view.dart';
-import 'package:searvo/features/search/domain/entities/message_data.dart';
+
 import 'package:searvo/features/search/domain/entities/source_item.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';

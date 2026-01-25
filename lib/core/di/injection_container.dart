@@ -6,6 +6,7 @@ import 'package:searvo/features/discover/di/discover_dependencies.dart';
 import 'package:searvo/features/history/di/history_dependencies.dart';
 import 'package:searvo/features/search/di/search_dependencies.dart';
 import 'package:searvo/features/settings/di/settings_dependencies.dart';
+import 'package:searvo/features/connectors/di/connector_dependencies.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Global service locator instance
@@ -36,6 +37,7 @@ Future<void> initDependencies() async {
   await initDiscoverDependencies();
   await initHistoryDependencies();
   await initSearchDependencies();
+  await initConnectorDependencies();
 
   // Example:
   // await initAuthDependencies();

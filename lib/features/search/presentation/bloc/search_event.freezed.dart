@@ -140,10 +140,10 @@ return initialize(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String query,  SearchMode searchMode,  List<dynamic>? attachments,  String? conversationId)?  performInitialSearch,TResult Function( String query,  List<AttachmentData>? attachments)?  addNewMessage,TResult Function( int index)?  rewriteMessage,TResult Function( int index,  String newQuery)?  editQuery,TResult Function()?  clearMessages,TResult Function( String conversationId,  String title,  List<MessageBranchManager> branches)?  loadConversation,TResult Function( int messageIndex,  int branchIndex)?  switchBranch,TResult Function()?  initialize,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String query,  List<dynamic>? attachments,  String? conversationId)?  performInitialSearch,TResult Function( String query,  List<AttachmentData>? attachments)?  addNewMessage,TResult Function( int index)?  rewriteMessage,TResult Function( int index,  String newQuery)?  editQuery,TResult Function()?  clearMessages,TResult Function( String conversationId,  String title,  List<MessageBranchManager> branches)?  loadConversation,TResult Function( int messageIndex,  int branchIndex)?  switchBranch,TResult Function()?  initialize,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PerformInitialSearch() when performInitialSearch != null:
-return performInitialSearch(_that.query,_that.searchMode,_that.attachments,_that.conversationId);case _AddNewMessage() when addNewMessage != null:
+return performInitialSearch(_that.query,_that.attachments,_that.conversationId);case _AddNewMessage() when addNewMessage != null:
 return addNewMessage(_that.query,_that.attachments);case _RewriteMessage() when rewriteMessage != null:
 return rewriteMessage(_that.index);case _EditQuery() when editQuery != null:
 return editQuery(_that.index,_that.newQuery);case _ClearMessages() when clearMessages != null:
@@ -168,10 +168,10 @@ return initialize();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String query,  SearchMode searchMode,  List<dynamic>? attachments,  String? conversationId)  performInitialSearch,required TResult Function( String query,  List<AttachmentData>? attachments)  addNewMessage,required TResult Function( int index)  rewriteMessage,required TResult Function( int index,  String newQuery)  editQuery,required TResult Function()  clearMessages,required TResult Function( String conversationId,  String title,  List<MessageBranchManager> branches)  loadConversation,required TResult Function( int messageIndex,  int branchIndex)  switchBranch,required TResult Function()  initialize,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String query,  List<dynamic>? attachments,  String? conversationId)  performInitialSearch,required TResult Function( String query,  List<AttachmentData>? attachments)  addNewMessage,required TResult Function( int index)  rewriteMessage,required TResult Function( int index,  String newQuery)  editQuery,required TResult Function()  clearMessages,required TResult Function( String conversationId,  String title,  List<MessageBranchManager> branches)  loadConversation,required TResult Function( int messageIndex,  int branchIndex)  switchBranch,required TResult Function()  initialize,}) {final _that = this;
 switch (_that) {
 case _PerformInitialSearch():
-return performInitialSearch(_that.query,_that.searchMode,_that.attachments,_that.conversationId);case _AddNewMessage():
+return performInitialSearch(_that.query,_that.attachments,_that.conversationId);case _AddNewMessage():
 return addNewMessage(_that.query,_that.attachments);case _RewriteMessage():
 return rewriteMessage(_that.index);case _EditQuery():
 return editQuery(_that.index,_that.newQuery);case _ClearMessages():
@@ -195,10 +195,10 @@ return initialize();case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String query,  SearchMode searchMode,  List<dynamic>? attachments,  String? conversationId)?  performInitialSearch,TResult? Function( String query,  List<AttachmentData>? attachments)?  addNewMessage,TResult? Function( int index)?  rewriteMessage,TResult? Function( int index,  String newQuery)?  editQuery,TResult? Function()?  clearMessages,TResult? Function( String conversationId,  String title,  List<MessageBranchManager> branches)?  loadConversation,TResult? Function( int messageIndex,  int branchIndex)?  switchBranch,TResult? Function()?  initialize,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String query,  List<dynamic>? attachments,  String? conversationId)?  performInitialSearch,TResult? Function( String query,  List<AttachmentData>? attachments)?  addNewMessage,TResult? Function( int index)?  rewriteMessage,TResult? Function( int index,  String newQuery)?  editQuery,TResult? Function()?  clearMessages,TResult? Function( String conversationId,  String title,  List<MessageBranchManager> branches)?  loadConversation,TResult? Function( int messageIndex,  int branchIndex)?  switchBranch,TResult? Function()?  initialize,}) {final _that = this;
 switch (_that) {
 case _PerformInitialSearch() when performInitialSearch != null:
-return performInitialSearch(_that.query,_that.searchMode,_that.attachments,_that.conversationId);case _AddNewMessage() when addNewMessage != null:
+return performInitialSearch(_that.query,_that.attachments,_that.conversationId);case _AddNewMessage() when addNewMessage != null:
 return addNewMessage(_that.query,_that.attachments);case _RewriteMessage() when rewriteMessage != null:
 return rewriteMessage(_that.index);case _EditQuery() when editQuery != null:
 return editQuery(_that.index,_that.newQuery);case _ClearMessages() when clearMessages != null:
@@ -217,11 +217,10 @@ return initialize();case _:
 
 
 class _PerformInitialSearch implements SearchEvent {
-  const _PerformInitialSearch({required this.query, required this.searchMode, final  List<dynamic>? attachments, this.conversationId}): _attachments = attachments;
+  const _PerformInitialSearch({required this.query, final  List<dynamic>? attachments, this.conversationId}): _attachments = attachments;
   
 
  final  String query;
- final  SearchMode searchMode;
  final  List<dynamic>? _attachments;
  List<dynamic>? get attachments {
   final value = _attachments;
@@ -243,16 +242,16 @@ _$PerformInitialSearchCopyWith<_PerformInitialSearch> get copyWith => __$Perform
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PerformInitialSearch&&(identical(other.query, query) || other.query == query)&&(identical(other.searchMode, searchMode) || other.searchMode == searchMode)&&const DeepCollectionEquality().equals(other._attachments, _attachments)&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PerformInitialSearch&&(identical(other.query, query) || other.query == query)&&const DeepCollectionEquality().equals(other._attachments, _attachments)&&(identical(other.conversationId, conversationId) || other.conversationId == conversationId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,query,searchMode,const DeepCollectionEquality().hash(_attachments),conversationId);
+int get hashCode => Object.hash(runtimeType,query,const DeepCollectionEquality().hash(_attachments),conversationId);
 
 @override
 String toString() {
-  return 'SearchEvent.performInitialSearch(query: $query, searchMode: $searchMode, attachments: $attachments, conversationId: $conversationId)';
+  return 'SearchEvent.performInitialSearch(query: $query, attachments: $attachments, conversationId: $conversationId)';
 }
 
 
@@ -263,7 +262,7 @@ abstract mixin class _$PerformInitialSearchCopyWith<$Res> implements $SearchEven
   factory _$PerformInitialSearchCopyWith(_PerformInitialSearch value, $Res Function(_PerformInitialSearch) _then) = __$PerformInitialSearchCopyWithImpl;
 @useResult
 $Res call({
- String query, SearchMode searchMode, List<dynamic>? attachments, String? conversationId
+ String query, List<dynamic>? attachments, String? conversationId
 });
 
 
@@ -280,11 +279,10 @@ class __$PerformInitialSearchCopyWithImpl<$Res>
 
 /// Create a copy of SearchEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? query = null,Object? searchMode = null,Object? attachments = freezed,Object? conversationId = freezed,}) {
+@pragma('vm:prefer-inline') $Res call({Object? query = null,Object? attachments = freezed,Object? conversationId = freezed,}) {
   return _then(_PerformInitialSearch(
 query: null == query ? _self.query : query // ignore: cast_nullable_to_non_nullable
-as String,searchMode: null == searchMode ? _self.searchMode : searchMode // ignore: cast_nullable_to_non_nullable
-as SearchMode,attachments: freezed == attachments ? _self._attachments : attachments // ignore: cast_nullable_to_non_nullable
+as String,attachments: freezed == attachments ? _self._attachments : attachments // ignore: cast_nullable_to_non_nullable
 as List<dynamic>?,conversationId: freezed == conversationId ? _self.conversationId : conversationId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));

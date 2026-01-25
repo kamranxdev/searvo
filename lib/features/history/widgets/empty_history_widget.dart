@@ -7,28 +7,51 @@ class EmptyHistoryWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Icon
-            Icon(
-              Icons.history,
-              size: 80,
-              color: Colors.grey[400],
+            // Icon Stack with Glow
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withAlpha(25),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: colorScheme.primary.withAlpha(20),
+                        blurRadius: 30,
+                        spreadRadius: 10,
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.history_edu_rounded,
+                  size: 64,
+                  color: colorScheme.primary.withAlpha(200),
+                ),
+              ],
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
 
             // Title
             Text(
-              'No Conversations Yet',
+              'Your Archive awaits',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey[700],
+                color: colorScheme.onSurface,
+                letterSpacing: -0.5,
               ),
               textAlign: TextAlign.center,
             ),
@@ -37,58 +60,84 @@ class EmptyHistoryWidget extends StatelessWidget {
 
             // Description
             Text(
-              'Your search conversations will appear here. Start a new search to begin!',
+              'Start a new conversation to build your personal knowledge base.',
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.grey[600],
+                color: colorScheme.onSurfaceVariant,
+                height: 1.5,
               ),
               textAlign: TextAlign.center,
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 40),
 
             // Action button
-            ElevatedButton.icon(
-              onPressed: () {
-                context.go('/');
-              },
-              icon: const Icon(Icons.search),
-              label: const Text('Start Searching'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: colorScheme.primary.withAlpha(50),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: FilledButton.icon(
+                onPressed: () {
+                  context.go('/');
+                },
+                icon: const Icon(Icons.search_rounded),
+                label: const Text('Start Searching'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: colorScheme.primary,
+                  foregroundColor: colorScheme.onPrimary,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 18,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 48),
 
             // Features info
-            _buildFeatureItem(
-              icon: Icons.auto_awesome,
-              title: 'Smart Search',
-              description: 'AI-powered answers to your questions',
-            ),
-
-            const SizedBox(height: 16),
-
-            _buildFeatureItem(
-              icon: Icons.history,
-              title: 'Auto-Save',
-              description: 'Conversations are saved automatically',
-            ),
-
-            const SizedBox(height: 16),
-
-            _buildFeatureItem(
-              icon: Icons.replay,
-              title: 'Resume Anytime',
-              description: 'Pick up right where you left off',
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest.withAlpha(50),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: colorScheme.outline.withAlpha(20)),
+              ),
+              child: Column(
+                children: [
+                  _buildFeatureItem(
+                    context,
+                    icon: Icons.auto_awesome,
+                    title: 'AI Intelligence',
+                    description: 'Get concise answers instantly',
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Divider(height: 1),
+                  ),
+                  _buildFeatureItem(
+                    context,
+                    icon: Icons.history_toggle_off,
+                    title: 'Auto-Save',
+                    description: 'Never lose your context',
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -96,19 +145,25 @@ class EmptyHistoryWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildFeatureItem({
+  Widget _buildFeatureItem(
+    BuildContext context, {
     required IconData icon,
     required String title,
     required String description,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Row(
       children: [
-        Icon(
-          icon,
-          size: 24,
-          color: Colors.grey[600],
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, size: 24, color: colorScheme.primary),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,14 +173,15 @@ class EmptyHistoryWidget extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey[700],
+                  color: colorScheme.onSurface,
                 ),
               ),
+              const SizedBox(height: 2),
               Text(
                 description,
                 style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
+                  fontSize: 13,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
             ],

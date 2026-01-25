@@ -10,7 +10,6 @@ import 'package:searvo/features/search/presentation/bloc/search_bloc.dart';
 import 'package:searvo/features/search/presentation/bloc/search_event.dart';
 import 'package:searvo/features/search/presentation/pages/search_results_page.dart';
 
-import 'package:searvo/features/search/domain/entities/search_mode.dart';
 import 'package:searvo/features/settings/screens/settings_screen.dart';
 import 'package:searvo/common/navigation/sidebar.dart';
 import 'package:searvo/common/navigation/navigation_theme.dart';
@@ -47,15 +46,16 @@ class _SettingsIconMapper extends ColorMapper {
 class RootNavigationScreen extends StatefulWidget {
   final int currentIndex;
   final String? initialQuery;
-  final SearchMode searchMode;
+
   final String? conversationId;
+  final String? externalUrl;
 
   const RootNavigationScreen({
     super.key,
     required this.currentIndex,
     this.initialQuery,
-    this.searchMode = SearchMode.search,
     this.conversationId,
+    this.externalUrl,
   });
 
   @override
@@ -129,8 +129,8 @@ class _RootNavigationScreenState extends State<RootNavigationScreen>
     if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
       return SearchResultsContent(
         query: widget.initialQuery!,
-        searchMode: widget.searchMode,
         conversationId: widget.conversationId,
+        externalUrl: widget.externalUrl,
       );
     }
 

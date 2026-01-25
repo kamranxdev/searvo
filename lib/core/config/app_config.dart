@@ -3,7 +3,8 @@ class AppConfig {
   // App Information
   static const String appName = 'Searvo';
   static const String appVersion = '1.0.0';
-  static const String appDescription = 'AI-powered research and discovery platform';
+  static const String appDescription =
+      'AI-powered research and discovery platform';
 
   // Theme Configuration
   static const primaryColor = 0xFF4A9EFF;
@@ -18,18 +19,19 @@ class AppConfig {
   // Deep Link Configuration
   static const String deepLinkScheme = 'searvo';
   static const String deepLinkHost = 'app';
-  
+
   // URL patterns for deep linking
   static const List<String> supportedDeepLinkPaths = [
     '/home',
-    '/search', 
+    '/search',
     '/settings',
   ];
 
   // Platform specific configurations
   static const bool enableWebRouting = true;
   static const bool enableDeepLinks = true;
-  static const bool enableAnalytics = false; // Set to true when implementing analytics
+  static const bool enableAnalytics =
+      false; // Set to true when implementing analytics
 
   // API Configuration (for future use)
   static const String baseApiUrl = 'https://api.searvo.ai';
@@ -69,7 +71,8 @@ class AppConfig {
     'wikipedia': {
       'name': 'Wikipedia',
       'url': 'https://en.wikipedia.org',
-      'searchUrl': 'https://en.wikipedia.org/wiki/Special:Search?search={query}',
+      'searchUrl':
+          'https://en.wikipedia.org/wiki/Special:Search?search={query}',
     },
     'reddit': {
       'name': 'Reddit',

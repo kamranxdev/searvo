@@ -119,6 +119,12 @@ class VoiceService extends ChangeNotifier {
   Future<bool> initialize() async {
     if (_isInitialized) return true;
 
+    // Speech recognition is strictly mobile/web for now with this package
+    if (!kIsWeb && !(Platform.isAndroid || Platform.isIOS)) {
+      _setError('Speech recognition not supported on this platform');
+      return false;
+    }
+
     try {
       if (kDebugMode) {
         print('VoiceService: Starting initialization...');
@@ -544,6 +550,8 @@ class VoiceService extends ChangeNotifier {
       } else if (Platform.isAndroid) {
         await _flutterTts.setLanguage("en-US");
         // Android uses system TTS engine, quality depends on installed voices
+      } else if (Platform.isLinux) {
+        await _flutterTts.setLanguage("en-US");
       }
 
       // Set up handlers

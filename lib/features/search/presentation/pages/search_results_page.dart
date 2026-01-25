@@ -5,7 +5,6 @@ import 'package:searvo/features/search/theme/search_theme.dart';
 import 'package:searvo/features/search/presentation/widgets/follow_up_search_box.dart';
 import 'package:searvo/features/search/presentation/widgets/message_box.dart';
 
-import 'package:searvo/features/search/domain/entities/search_mode.dart';
 import 'package:searvo/features/history/services/conversation_database_service.dart';
 import 'package:searvo/common/widgets/attachment_input_widget.dart';
 import 'dart:async';
@@ -20,16 +19,17 @@ import '../bloc/search_state.dart';
 
 class SearchResultsContent extends StatefulWidget {
   final String query;
-  final SearchMode searchMode;
+
   final List<dynamic>? initialAttachments;
   final String? conversationId;
+  final String? externalUrl;
 
   const SearchResultsContent({
     super.key,
     required this.query,
-    this.searchMode = SearchMode.search,
     this.initialAttachments,
     this.conversationId,
+    this.externalUrl,
   });
 
   @override
@@ -70,7 +70,6 @@ class _SearchResultsContentState extends State<SearchResultsContent> {
         searchBloc.add(
           SearchEvent.performInitialSearch(
             query: widget.query,
-            searchMode: widget.searchMode,
             attachments: widget.initialAttachments,
           ),
         );
@@ -119,7 +118,6 @@ class _SearchResultsContentState extends State<SearchResultsContent> {
         searchBloc.add(
           SearchEvent.performInitialSearch(
             query: widget.query,
-            searchMode: widget.searchMode,
             attachments: widget.initialAttachments,
             conversationId: widget.conversationId, // Use UUID from URL
           ),
@@ -132,7 +130,6 @@ class _SearchResultsContentState extends State<SearchResultsContent> {
       searchBloc.add(
         SearchEvent.performInitialSearch(
           query: widget.query,
-          searchMode: widget.searchMode,
           attachments: widget.initialAttachments,
           conversationId: widget.conversationId, // Use UUID from URL
         ),
@@ -315,6 +312,9 @@ class _SearchResultsContentState extends State<SearchResultsContent> {
                             MessageBox(
                               branchManager: branchManager,
                               isFirstMessage: index == 0,
+                              externalUrl: index == 0
+                                  ? widget.externalUrl
+                                  : null,
                               onRelatedQuestionTap: (question) {
                                 _followUpController.text = question;
                                 _scrollToBottom();
@@ -366,6 +366,8 @@ class _SearchResultsContentState extends State<SearchResultsContent> {
                     child: FollowUpSearchBox(
                       controller: _followUpController,
                       onSend: (attachments) => _onFollowUpSubmit(attachments),
+                      onAttachmentError: (error) =>
+                          print('Attachment Error: $error'),
                       enabled: !isProcessing,
                     ),
                   ),
@@ -429,12 +431,14 @@ class SearchResultsPage extends StatefulWidget {
   final String query;
   final List<dynamic>? initialAttachments;
   final String? conversationId;
+  final String? externalUrl;
 
   const SearchResultsPage({
     super.key,
     required this.query,
     this.initialAttachments,
     this.conversationId,
+    this.externalUrl,
   });
 
   @override
@@ -448,10 +452,27 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
 
     return Scaffold(
       backgroundColor: searchColors.background,
-      body: SearchResultsContent(
-        query: widget.query,
-        initialAttachments: widget.initialAttachments,
-        conversationId: widget.conversationId,
+      body: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: const Alignment(0, -0.8), // Slightly higher center
+                radius: 1.5,
+                colors: [
+                  AppThemeConfig.primaryColor.withValues(alpha: 0.03),
+                  searchColors.background,
+                ],
+              ),
+            ),
+          ),
+          SearchResultsContent(
+            query: widget.query,
+            initialAttachments: widget.initialAttachments,
+            conversationId: widget.conversationId,
+            externalUrl: widget.externalUrl,
+          ),
+        ],
       ),
     );
   }

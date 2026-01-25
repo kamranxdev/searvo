@@ -18,6 +18,7 @@ class IntentOrchestrator {
   Future<OrchestratorPlan> plan(
     String userQuery, {
     List<dynamic> previousMessages = const [],
+    List<dynamic>? attachments,
   }) async {
     final availableTools = await _toolRegistry.getAvailableTools();
 
@@ -33,6 +34,17 @@ class IntentOrchestrator {
         )
         .toList();
 
+    String attachmentsContext = "";
+    if (attachments != null && attachments.isNotEmpty) {
+      final fileNames = attachments
+          .map((a) => a is Map ? a['name'] : a.toString())
+          .join(", ");
+      attachmentsContext =
+          "\n**IMPORTANT**: The user has attached the following files: [$fileNames].\n"
+          "If the user Query relates to these files (e.g. 'summarize this', 'what does it say'), "
+          "YOU MUST use the 'vector_search' tool with a query relevant to these files.\n";
+    }
+
     final systemPrompt =
         '''
 You are an intelligent orchestrator for the Searvo AI app. 
@@ -45,6 +57,8 @@ Instructions:
 1. **Analyze Intent**: First, determine if the user wants to perform a specific action (e.g. check weather, get directions, see stock price).
 2. **Select Tools**:
    - If the intent matches a specific tool (e.g. "Directions to..." -> 'map', "Weather in..." -> 'weather'), **YOU MUST** select that tool.
+   - **CRITICAL**: If the user has attached files or asks about "my documents", "this file", or "uploaded context", **YOU MUST** use 'vector_search' FIRST.
+   - Use 'vector_search' if the query might relate to personal data or uploaded files, even if ambiguous (e.g. "Summarize this", "Where is my center").
    - For specific tool actions, 'web_search' is OPTIONAL. Only include it if you need extra context the tool might not provide.
    - For general informational queries (e.g. "Who is...", "News about...", "Explain quantum physics"), **YOU MUST** include 'web_search'.
 3. **Sequence**: If multiple steps are needed, list them in order.
@@ -73,6 +87,10 @@ Do not include markdown formatting (```json). Just the raw JSON string.
 
     // Construct conversation context
     final StringBuffer contextBuffer = StringBuffer();
+    if (attachmentsContext.isNotEmpty) {
+      contextBuffer.writeln(attachmentsContext);
+    }
+
     if (previousMessages.isNotEmpty) {
       contextBuffer.writeln("Conversation History:");
       for (final msg in previousMessages) {

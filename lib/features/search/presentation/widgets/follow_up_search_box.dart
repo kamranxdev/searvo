@@ -9,6 +9,7 @@ class FollowUpSearchBox extends StatefulWidget {
   final Function(List<AttachmentData>?)? onSend;
   final Function(String)? onVoiceTextReceived;
   final Function(String)? onVoiceError;
+  final Function(String)? onAttachmentError;
   final bool enabled;
 
   const FollowUpSearchBox({
@@ -17,6 +18,7 @@ class FollowUpSearchBox extends StatefulWidget {
     this.onSend,
     this.onVoiceTextReceived,
     this.onVoiceError,
+    this.onAttachmentError,
     this.enabled = true,
   });
 
@@ -206,6 +208,7 @@ class _FollowUpSearchBoxState extends State<FollowUpSearchBox> {
                       AttachmentInputWidget(
                         key: _attachmentWidgetKey,
                         onAttachmentsChanged: _handleAttachmentsChanged,
+                        onError: widget.onAttachmentError,
                         activeColor: searchColors.primary,
                         inactiveColor: widget.enabled
                             ? searchColors.onSurfaceVariant.withOpacity(0.6)

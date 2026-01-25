@@ -6,7 +6,7 @@ import 'package:searvo/features/search/domain/entities/search_step.dart';
 import 'package:searvo/features/search/domain/entities/agent/agent_tool.dart';
 import 'package:uuid/uuid.dart';
 import '../../rag/services/data_ingestion/rag_scraper_adapter.dart';
-import 'package:searvo/features/search/domain/entities/search_mode.dart';
+
 import '../../rag/services/vector_store/qdrant_vector_store.dart';
 import '../../rag/services/langchain_service.dart';
 import '../../rag/services/wrappers/custom_embeddings_wrapper.dart';
@@ -64,6 +64,8 @@ class RAGDataSource {
     ];
   }
 
+  QdrantVectorStore get vectorStore => _vectorStore;
+
   /// Generate RAG stream with LangChain
   Stream<RAGUpdate> generateRAGStream(
     String query, {
@@ -73,7 +75,6 @@ class RAGDataSource {
     bool enableQueryEnhancement = true,
     bool enableAdaptivePrompting = true,
     List<dynamic>? attachments,
-    SearchMode searchMode = SearchMode.search,
     List<MessageData>? previousMessages,
     int maxHistoryMessages = 3,
     bool isNewConversation = false,

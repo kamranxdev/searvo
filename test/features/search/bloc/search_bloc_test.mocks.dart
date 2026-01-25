@@ -11,7 +11,9 @@ import 'package:searvo/features/history/database/conversation_database.dart'
     as _i9;
 import 'package:searvo/features/history/models/conversation_model.dart' as _i10;
 import 'package:searvo/features/history/services/conversation_database_service.dart'
-    as _i16;
+    as _i15;
+import 'package:searvo/features/search/data/datasources/intelligent_search_data_source.dart'
+    as _i11;
 import 'package:searvo/features/search/data/models/search_response_model.dart'
     as _i6;
 import 'package:searvo/features/search/domain/entities/message_branch_manager.dart'
@@ -19,11 +21,7 @@ import 'package:searvo/features/search/domain/entities/message_branch_manager.da
 import 'package:searvo/features/search/domain/entities/message_data.dart'
     as _i2;
 import 'package:searvo/features/search/domain/entities/search_enums.dart'
-    as _i15;
-import 'package:searvo/features/search/domain/entities/search_mode.dart'
     as _i14;
-import 'package:searvo/features/search/data/datasources/intelligent_search_data_source.dart'
-    as _i11;
 import 'package:searvo/features/search/presentation/bloc/conversation_manager.dart'
     as _i7;
 import 'package:searvo/features/search/rag/models/rag_models.dart' as _i4;
@@ -45,6 +43,7 @@ import 'package:searvo/features/search/rag/services/query_processing/query_analy
 // ignore_for_file: unnecessary_parenthesis
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
+// ignore_for_file: invalid_use_of_internal_member
 
 class _FakeMessageData_0 extends _i1.SmartFake implements _i2.MessageData {
   _FakeMessageData_0(Object parent, Invocation parentInvocation)
@@ -182,7 +181,6 @@ class MockIntelligentSearchDataSource extends _i1.Mock
     bool? enableQueryEnhancement = true,
     bool? enableAdaptivePrompting = true,
     List<dynamic>? attachments,
-    _i14.SearchMode? searchMode = _i14.SearchMode.search,
     bool? isNewConversation = false,
   }) =>
       (super.noSuchMethod(
@@ -196,7 +194,6 @@ class MockIntelligentSearchDataSource extends _i1.Mock
                 #enableQueryEnhancement: enableQueryEnhancement,
                 #enableAdaptivePrompting: enableAdaptivePrompting,
                 #attachments: attachments,
-                #searchMode: searchMode,
                 #isNewConversation: isNewConversation,
               },
             ),
@@ -213,7 +210,6 @@ class MockIntelligentSearchDataSource extends _i1.Mock
     bool? enableQueryEnhancement = true,
     bool? enableAdaptivePrompting = true,
     List<dynamic>? attachments,
-    _i14.SearchMode? searchMode = _i14.SearchMode.search,
     bool? isNewConversation = false,
   }) =>
       (super.noSuchMethod(
@@ -227,7 +223,6 @@ class MockIntelligentSearchDataSource extends _i1.Mock
                 #enableQueryEnhancement: enableQueryEnhancement,
                 #enableAdaptivePrompting: enableAdaptivePrompting,
                 #attachments: attachments,
-                #searchMode: searchMode,
                 #isNewConversation: isNewConversation,
               },
             ),
@@ -244,7 +239,6 @@ class MockIntelligentSearchDataSource extends _i1.Mock
     bool? enableQueryEnhancement = true,
     bool? enableAdaptivePrompting = true,
     List<dynamic>? attachments,
-    _i14.SearchMode? searchMode = _i14.SearchMode.search,
     dynamic Function(_i2.MessageData)? onSearchComplete,
     bool? isNewConversation = false,
   }) =>
@@ -259,7 +253,6 @@ class MockIntelligentSearchDataSource extends _i1.Mock
                 #enableQueryEnhancement: enableQueryEnhancement,
                 #enableAdaptivePrompting: enableAdaptivePrompting,
                 #attachments: attachments,
-                #searchMode: searchMode,
                 #onSearchComplete: onSearchComplete,
                 #isNewConversation: isNewConversation,
               },
@@ -277,7 +270,6 @@ class MockIntelligentSearchDataSource extends _i1.Mock
                     #enableQueryEnhancement: enableQueryEnhancement,
                     #enableAdaptivePrompting: enableAdaptivePrompting,
                     #attachments: attachments,
-                    #searchMode: searchMode,
                     #onSearchComplete: onSearchComplete,
                     #isNewConversation: isNewConversation,
                   },
@@ -296,7 +288,6 @@ class MockIntelligentSearchDataSource extends _i1.Mock
     bool? enableQueryEnhancement = true,
     bool? enableAdaptivePrompting = true,
     List<dynamic>? attachments,
-    _i14.SearchMode? searchMode = _i14.SearchMode.search,
     dynamic Function(_i2.MessageData)? onSearchComplete,
   }) =>
       (super.noSuchMethod(
@@ -310,7 +301,6 @@ class MockIntelligentSearchDataSource extends _i1.Mock
                 #enableQueryEnhancement: enableQueryEnhancement,
                 #enableAdaptivePrompting: enableAdaptivePrompting,
                 #attachments: attachments,
-                #searchMode: searchMode,
                 #onSearchComplete: onSearchComplete,
               },
             ),
@@ -327,7 +317,6 @@ class MockIntelligentSearchDataSource extends _i1.Mock
                     #enableQueryEnhancement: enableQueryEnhancement,
                     #enableAdaptivePrompting: enableAdaptivePrompting,
                     #attachments: attachments,
-                    #searchMode: searchMode,
                     #onSearchComplete: onSearchComplete,
                   },
                 ),
@@ -503,8 +492,8 @@ class MockIntelligentSearchDataSource extends _i1.Mock
   @override
   _i13.Future<_i6.SearchResponseModel> searchByType({
     required String? query,
-    _i15.SearchType? searchType = _i15.SearchType.general,
-    _i15.SearchRecency? recency = _i15.SearchRecency.any,
+    _i14.SearchType? searchType = _i14.SearchType.general,
+    _i14.SearchRecency? recency = _i14.SearchRecency.any,
     int? maxResults = 10,
     String? language = 'auto',
   }) =>
@@ -729,7 +718,7 @@ class MockConversationManager extends _i1.Mock
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockConversationDatabaseService extends _i1.Mock
-    implements _i16.ConversationDatabaseService {
+    implements _i15.ConversationDatabaseService {
   MockConversationDatabaseService() {
     _i1.throwOnMissingStub(this);
   }

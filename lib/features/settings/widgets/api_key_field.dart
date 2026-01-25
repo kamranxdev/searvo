@@ -183,10 +183,10 @@ class _ApiKeyFieldState extends State<ApiKeyField> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color: settingsColors.success.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                   border: Border.all(
-                    color: Colors.green.withOpacity(0.3),
+                    color: settingsColors.success.withValues(alpha: 0.3),
                     width: 1,
                   ),
                 ),
@@ -195,7 +195,7 @@ class _ApiKeyFieldState extends State<ApiKeyField> {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
-                    color: Colors.green.shade600,
+                    color: settingsColors.success,
                   ),
                 ),
               ),
@@ -219,7 +219,7 @@ class _ApiKeyFieldState extends State<ApiKeyField> {
                 : widget.placeholder,
             hintStyle: TextStyle(
               color: hasStoredValue
-                  ? Colors.green.shade600
+                  ? settingsColors.success
                   : settingsColors.subtitle,
               fontSize: 14,
             ),
@@ -229,7 +229,7 @@ class _ApiKeyFieldState extends State<ApiKeyField> {
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
                 color: hasStoredValue
-                    ? Colors.green.withOpacity(0.3)
+                    ? settingsColors.success.withValues(alpha: 0.3)
                     : settingsColors.border,
               ),
             ),
@@ -237,7 +237,7 @@ class _ApiKeyFieldState extends State<ApiKeyField> {
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
                 color: hasStoredValue
-                    ? Colors.green.withOpacity(0.3)
+                    ? settingsColors.success.withValues(alpha: 0.3)
                     : settingsColors.border,
               ),
             ),
@@ -245,7 +245,7 @@ class _ApiKeyFieldState extends State<ApiKeyField> {
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
                 color: hasStoredValue
-                    ? Colors.green.withOpacity(0.6)
+                    ? settingsColors.success.withValues(alpha: 0.6)
                     : settingsColors.accent,
                 width: 2,
               ),

@@ -1,5 +1,4 @@
 import '../repositories/search_repository.dart';
-import '../entities/search_mode.dart';
 
 class PerformSearchUseCase {
   final SearchRepository repository;
@@ -8,13 +7,8 @@ class PerformSearchUseCase {
 
   Stream<dynamic> call(
     String query, {
-    SearchMode searchMode = SearchMode.search,
     Map<String, dynamic> options = const {},
   }) {
-    return repository.performSearch(
-      query,
-      searchMode: searchMode,
-      options: options,
-    );
+    return repository.performSearch(query, options: options);
   }
 }

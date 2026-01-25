@@ -8,7 +8,9 @@ import 'package:searvo/features/settings/widgets/search_provider_settings_panel.
 import 'package:searvo/features/settings/widgets/website_mappings_panel.dart';
 import 'package:searvo/features/settings/widgets/history_settings_panel.dart';
 import 'package:searvo/features/settings/widgets/settings_card.dart';
+import 'package:searvo/features/settings/widgets/settings_card.dart';
 import 'package:searvo/features/settings/theme/settings_theme.dart';
+import 'package:searvo/features/connectors/presentation/widgets/connectors_settings_panel.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -59,6 +61,12 @@ class _SettingsScreenState extends State<SettingsScreen>
       label: 'Search',
       icon: Icons.search,
       description: 'Configure search engines and sources',
+    ),
+    TabItem(
+      id: 'connectors',
+      label: 'Connectors',
+      icon: Icons.cloud_outlined,
+      description: 'Manage cloud storage connections',
     ),
     TabItem(
       id: 'websiteMappings',
@@ -776,24 +784,26 @@ class _SettingsScreenState extends State<SettingsScreen>
           isTablet: isTablet,
         );
       case 4:
+        return _buildConnectorsTab(isDesktop: isDesktop);
+      case 5:
         return _buildWebsiteMappingsTab(
           isDark,
           isDesktop: isDesktop,
           isTablet: isTablet,
         );
-      case 5:
+      case 6: // Shifted indices
         return _buildHistoryTab(
           isDark,
           isDesktop: isDesktop,
           isTablet: isTablet,
         );
-      case 6:
+      case 7:
         return _buildPermissionsTab(
           isDark,
           isDesktop: isDesktop,
           isTablet: isTablet,
         );
-      case 7:
+      case 8:
         return _buildHelpTab(isDark, isDesktop: isDesktop, isTablet: isTablet);
       default:
         return _buildAppearanceTab(
@@ -1423,6 +1433,31 @@ class _SettingsScreenState extends State<SettingsScreen>
   // Helper to get setup service (lazy import pattern)
   dynamic _getSetupService() {
     return SetupService();
+  }
+
+  Widget _buildConnectorsTab({bool isDesktop = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (isDesktop) ...[
+          Text(
+            'Cloud Connectors',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Connect your personal cloud storage to search your own files.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 32),
+        ],
+        const ConnectorsSettingsPanel(),
+      ],
+    );
   }
 }
 

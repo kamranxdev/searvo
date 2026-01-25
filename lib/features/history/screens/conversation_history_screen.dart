@@ -29,13 +29,25 @@ class _ConversationHistoryView extends StatefulWidget {
       _ConversationHistoryViewState();
 }
 
-class _ConversationHistoryViewState extends State<_ConversationHistoryView> {
+class _ConversationHistoryViewState extends State<_ConversationHistoryView>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   bool _isSelectionMode = false;
   final Set<String> _selectedConversations = {};
+  late AnimationController _animationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+  }
 
   @override
   void dispose() {
+    _animationController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -152,174 +164,202 @@ class _ConversationHistoryViewState extends State<_ConversationHistoryView> {
 
     return Column(
       children: [
-        // Header section
+        // Header section with Glassmorphism
         Container(
           padding: EdgeInsets.fromLTRB(
-            isLargeScreen ? 32 : 16,
-            16,
-            isLargeScreen ? 32 : 16,
+            isLargeScreen ? 32 : 24,
+            24,
+            isLargeScreen ? 32 : 24,
             16,
           ),
           decoration: BoxDecoration(
-            color: colorScheme.surface,
+            color: colorScheme.surface.withAlpha(
+              200,
+            ), // Slightly transparent for glass effect
             border: Border(
               bottom: BorderSide(
-                color: colorScheme.outline.withOpacity(0.2),
+                color: colorScheme.primary.withAlpha(30),
                 width: 1,
               ),
             ),
           ),
-          child: Row(
+          child: Column(
             children: [
-              Expanded(
-                child: Text(
-                  _isSelectionMode
-                      ? '${_selectedConversations.length} selected'
-                      : 'History',
-                  style: TextStyle(
-                    fontSize: isLargeScreen ? 24 : 20,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-              ),
-              if (_isSelectionMode) ...[
-                BlocBuilder<HistoryCubit, HistoryState>(
-                  builder: (context, state) {
-                    return state.maybeWhen(
-                      loaded: (conversations, _, __, ___, ____) => IconButton(
-                        icon: const Icon(Icons.select_all),
-                        onPressed: () {
-                          setState(() {
-                            if (_selectedConversations.length ==
-                                conversations.length) {
-                              _selectedConversations.clear();
-                            } else {
-                              _selectedConversations.addAll(
-                                conversations.map((c) => c.conversationId),
-                              );
-                            }
-                          });
-                        },
-                        tooltip: 'Select all',
-                      ),
-                      orElse: () => const SizedBox(),
-                    );
-                  },
-                ),
-                if (_selectedConversations.isNotEmpty)
-                  IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: _deleteSelectedConversations,
-                    tooltip: 'Delete selected',
-                  ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: _toggleSelectionMode,
-                  tooltip: 'Cancel selection',
-                ),
-              ] else ...[
-                IconButton(
-                  icon: const Icon(Icons.settings_outlined),
-                  onPressed: () {
-                    // Navigate to settings tab
-                    // Assuming RootNavigation can switch tabs or we push SettingsScreen
-                    // For now, let's just push SettingsScreen if not easily switchable
-                    // Or finding a way to switch to settings tab
-                    // Since Settings is a tab in RootNavigation, we might need a way to switch tabs.
-                    // But for now, let's assume we can push a settings route or better yet,
-                    // since I need to integrate simple settings, maybe a modal or bottom sheet?
-                    // The requirement says "Improve... UX... and check in @directory:settings".
-                    // So I should link to settings.
-
-                    // Since I don't have direct access to switch main tabs from here easily without context of main navigation,
-                    // I'll show a todo or try to find how to switch.
-                    // Reviewing RootNavigationScreen might be needed but let's just push settings for now if possible or add a callback.
-                  },
-                  tooltip: 'History Settings',
-                ),
-                PopupMenuButton<String>(
-                  onSelected: (value) {
-                    switch (value) {
-                      case 'select':
-                        _toggleSelectionMode();
-                        break;
-                      case 'clear_all':
-                        _clearAllHistory();
-                        break;
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'select',
-                      child: Row(
-                        children: [
-                          Icon(Icons.checklist),
-                          SizedBox(width: 8),
-                          Text('Select Conversations'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'clear_all',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete_sweep, color: Colors.red),
-                          SizedBox(width: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _isSelectionMode
+                              ? '${_selectedConversations.length} Selected'
+                              : 'History',
+                          style: TextStyle(
+                            fontSize: isLargeScreen ? 28 : 24,
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        if (!_isSelectionMode)
                           Text(
-                            'Clear All History',
-                            style: TextStyle(color: Colors.red),
+                            'Your conversation archive',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: colorScheme.onSurfaceVariant,
+                              letterSpacing: 0.1,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (_isSelectionMode) ...[
+                    // Selection Actions
+                    BlocBuilder<HistoryCubit, HistoryState>(
+                      builder: (context, state) {
+                        return state.maybeWhen(
+                          loaded: (conversations, _, __, ___, ____) =>
+                              IconButton(
+                                icon: Icon(
+                                  Icons.select_all,
+                                  color: colorScheme.primary,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    if (_selectedConversations.length ==
+                                        conversations.length) {
+                                      _selectedConversations.clear();
+                                    } else {
+                                      _selectedConversations.addAll(
+                                        conversations.map(
+                                          (c) => c.conversationId,
+                                        ),
+                                      );
+                                    }
+                                  });
+                                },
+                                tooltip: 'Select all',
+                              ),
+                          orElse: () => const SizedBox(),
+                        );
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.delete_outline,
+                        color: colorScheme.error,
+                      ),
+                      onPressed: _deleteSelectedConversations,
+                      tooltip: 'Delete selected',
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close, color: colorScheme.onSurface),
+                      onPressed: _toggleSelectionMode,
+                      tooltip: 'Cancel selection',
+                    ),
+                  ] else ...[
+                    Container(
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest.withAlpha(
+                          50,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: PopupMenuButton<String>(
+                        icon: Icon(
+                          Icons.more_vert,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        onSelected: (value) {
+                          switch (value) {
+                            case 'select':
+                              _toggleSelectionMode();
+                              break;
+                            case 'clear_all':
+                              _clearAllHistory();
+                              break;
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(
+                            value: 'select',
+                            child: Row(
+                              children: [
+                                Icon(Icons.checklist),
+                                SizedBox(width: 12),
+                                Text('Select Conversations'),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem(
+                            value: 'clear_all',
+                            child: Row(
+                              children: [
+                                Icon(Icons.delete_sweep, color: Colors.red),
+                                SizedBox(width: 12),
+                                Text(
+                                  'Clear All History',
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
                   ],
+                ],
+              ),
+              const SizedBox(height: 24),
+              // Premium Search Bar
+              Container(
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest.withAlpha(100),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(20),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-              ],
+                child: TextField(
+                  controller: _searchController,
+                  style: TextStyle(color: colorScheme.onSurface),
+                  decoration: InputDecoration(
+                    hintText: 'Search past conversations...',
+                    hintStyle: TextStyle(
+                      color: colorScheme.onSurfaceVariant.withAlpha(150),
+                    ),
+                    prefixIcon: Icon(Icons.search, color: colorScheme.primary),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              context.read<HistoryCubit>().clearSearch();
+                            },
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
+                  ),
+                  onChanged: (value) {
+                    context.read<HistoryCubit>().search(value);
+                  },
+                ),
+              ),
             ],
-          ),
-        ),
-
-        // Search bar
-        Padding(
-          padding: EdgeInsets.fromLTRB(
-            isLargeScreen ? 32 : 16,
-            16,
-            isLargeScreen ? 32 : 16,
-            8,
-          ),
-          child: TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'Search conversations...',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchController.clear();
-                        context.read<HistoryCubit>().clearSearch();
-                      },
-                    )
-                  : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: colorScheme.outline.withOpacity(0.3),
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: colorScheme.outline.withOpacity(0.3),
-                ),
-              ),
-              filled: true,
-              fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
-            ),
-            onChanged: (value) {
-              context.read<HistoryCubit>().search(value);
-            },
           ),
         ),
 
@@ -373,6 +413,9 @@ class _ConversationHistoryViewState extends State<_ConversationHistoryView> {
                       if (conversations.isEmpty) {
                         return const EmptyHistoryWidget();
                       }
+
+                      // Forward animation on load
+                      _animationController.forward(from: 0);
 
                       // Show grouped conversations
                       return _buildGroupedConversationList(
@@ -428,56 +471,94 @@ class _ConversationHistoryViewState extends State<_ConversationHistoryView> {
 
     return ListView.builder(
       itemCount: filteredCategories.length,
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       itemBuilder: (context, index) {
         final category = filteredCategories[index];
         final conversations = grouped[category] ?? [];
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 16, 8),
-              child: Text(
-                category,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.primary,
-                  letterSpacing: 0.5,
+        return AnimatedBuilder(
+          animation: _animationController,
+          builder: (context, child) {
+            final delay = index * 100;
+            final animationValue =
+                (_animationController.value * 1000 - delay).clamp(0.0, 500.0) /
+                500.0;
+            final curvedValue = Curves.easeOutCubic.transform(animationValue);
+
+            return Opacity(
+              opacity: curvedValue,
+              child: Transform.translate(
+                offset: Offset(0, 20 * (1 - curvedValue)),
+                child: child,
+              ),
+            );
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 8, bottom: 12, top: 8),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 4,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      category.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.primary, // Gold color
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-            ...conversations.map(
-              (conversation) => ConversationListItemBloc(
-                conversation: conversation,
-                isSelected: _selectedConversations.contains(
-                  conversation.conversationId,
+              ...conversations.map(
+                (conversation) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: ConversationListItemBloc(
+                    conversation: conversation,
+                    isSelected: _selectedConversations.contains(
+                      conversation.conversationId,
+                    ),
+                    isSelectionMode: _isSelectionMode,
+                    onTap: () {
+                      if (_isSelectionMode) {
+                        _toggleConversationSelection(
+                          conversation.conversationId,
+                        );
+                      } else {
+                        _openConversation(conversation);
+                      }
+                    },
+                    onLongPress: () {
+                      if (!_isSelectionMode) {
+                        setState(() {
+                          _isSelectionMode = true;
+                          _selectedConversations.add(
+                            conversation.conversationId,
+                          );
+                        });
+                      }
+                    },
+                    onDelete: () => _deleteConversation(conversation),
+                    onPin: () => context.read<HistoryCubit>().togglePin(
+                      conversation.conversationId,
+                    ),
+                    onRename: () => _renameConversation(conversation),
+                  ),
                 ),
-                isSelectionMode: _isSelectionMode,
-                onTap: () {
-                  if (_isSelectionMode) {
-                    _toggleConversationSelection(conversation.conversationId);
-                  } else {
-                    _openConversation(conversation);
-                  }
-                },
-                onLongPress: () {
-                  if (!_isSelectionMode) {
-                    setState(() {
-                      _isSelectionMode = true;
-                      _selectedConversations.add(conversation.conversationId);
-                    });
-                  }
-                },
-                onDelete: () => _deleteConversation(conversation),
-                onPin: () => context.read<HistoryCubit>().togglePin(
-                  conversation.conversationId,
-                ),
-                onRename: () => _renameConversation(conversation),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );

@@ -556,15 +556,18 @@ class AppThemeConfig {
 class _DarkThemeColors {
   const _DarkThemeColors();
 
-  static const Color background = Color(0xFF1A1A1A); // Deep rich black
-  static const Color surface = Color(0xFF2A2A2A); // Slightly lighter surface
-  static const Color surfaceContainer = Color(0xFF333333); // For containers
+  static const Color background = Color(0xFF161616); // Deeper rich black
+  static const Color surface = Color(0xFF252525); // Better separation
+  static const Color surfaceContainer = Color(0xFF2F2F2F);
+  static const Color surfaceContainerHigh = Color(
+    0xFF383838,
+  ); // For elevated cards
   static const Color onSurface = Color(0xFFF5F5F5); // High emphasis white
   static const Color onSurfaceVariant = Color(
     0xFFB0B0B0,
   ); // Medium emphasis gray
-  static const Color outline = Color(0xFF404040); // Subtle borders
-  static const Color outlineVariant = Color(0xFF2A2A2A);
+  static const Color outline = Color(0xFF454545); // Subtle borders
+  static const Color outlineVariant = Color(0xFF252525);
 }
 
 /// Light theme color palette - Clean & Bright

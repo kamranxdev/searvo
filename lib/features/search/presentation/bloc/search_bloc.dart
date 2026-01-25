@@ -7,7 +7,7 @@ import '../../domain/entities/message_generation_state.dart';
 import '../../domain/entities/source_item.dart';
 import '../../data/datasources/intelligent_search_data_source.dart';
 import 'conversation_manager.dart';
-import '../../domain/entities/search_mode.dart';
+
 import '../../../../common/widgets/attachment_input_widget.dart';
 import '../../rag/models/rag_models.dart';
 import '../../../history/services/conversation_database_service.dart';
@@ -28,15 +28,8 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
     on<SearchEvent>((event, emit) async {
       await event.when(
         initialize: () => _onInitialize(emit),
-        performInitialSearch:
-            (query, searchMode, attachments, conversationId) =>
-                _onPerformInitialSearch(
-                  query,
-                  searchMode,
-                  attachments,
-                  conversationId,
-                  emit,
-                ),
+        performInitialSearch: (query, attachments, conversationId) =>
+            _onPerformInitialSearch(query, attachments, conversationId, emit),
         addNewMessage: (query, attachments) =>
             _onAddNewMessage(query, attachments, emit),
         rewriteMessage: (index) => _onRewriteMessage(index, emit),
@@ -73,7 +66,6 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
 
   Future<void> _onPerformInitialSearch(
     String query,
-    SearchMode searchMode,
     List<dynamic>? attachments,
     String? providedConversationId,
     Emitter<SearchState> emit,
@@ -112,7 +104,6 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
           .generateSearchStream(
             query,
             attachments: attachments,
-            searchMode: searchMode,
             isNewConversation: true,
           )
           .forEach((update) {
@@ -455,7 +446,6 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
           .generateSearchStream(
             oldMessageQuery,
             attachments: oldMessageAttachments,
-            searchMode: SearchMode.search,
           )
           .forEach((update) {
             if (update.finalResult != null) {
@@ -608,7 +598,6 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
           .generateSearchStream(
             newQuery,
             attachments: generatingMessage.attachments,
-            searchMode: SearchMode.search,
           )
           .forEach((update) {
             if (update.finalResult != null) {

@@ -1,11 +1,9 @@
-import '../entities/search_mode.dart';
 import '../entities/source_item.dart';
 
 abstract class SearchRepository {
   /// Perform a search operation and return a stream of updates.
   Stream<dynamic> performSearch(
     String query, {
-    SearchMode searchMode = SearchMode.search,
     required Map<String, dynamic> options,
   });
 

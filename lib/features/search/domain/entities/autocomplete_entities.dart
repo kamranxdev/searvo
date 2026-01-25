@@ -1,18 +1,4 @@
-/// Query intent classification
-enum QueryIntent {
-  general,
-  question,
-  definition,
-  howTo,
-  comparison,
-  news,
-  research,
-  shopping,
-  technical,
-  creative,
-  media,
-  local,
-}
+import 'package:searvo/features/search/domain/entities/search_intent.dart';
 
 /// Suggestion type for UI differentiation
 enum SuggestionType { question, topic, trending, related }
@@ -23,7 +9,7 @@ class AutocompleteSuggestion {
   final String displayTitle;
   final SuggestionType type;
   final double relevanceScore;
-  final QueryIntent intent;
+  final SearchIntent intent;
 
   AutocompleteSuggestion({
     required this.text,

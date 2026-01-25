@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:searvo/features/onboarding/onboarding.dart';
-import 'package:searvo/features/search/domain/entities/search_mode.dart';
+
 import 'package:searvo/features/settings/screens/privacy_policy_screen.dart';
 import 'package:searvo/common/navigation/root_navigation_screen.dart';
 import 'package:searvo/features/discover/screens/article_detail_screen.dart';
@@ -76,9 +76,13 @@ class AppRouter {
         path: home,
         name: 'home',
         pageBuilder: (context, state) {
-          return MaterialPage<void>(
+          return CustomTransitionPage<void>(
             key: state.pageKey,
             child: const RootNavigationScreen(currentIndex: homeIndex),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
           );
         },
       ),
@@ -127,22 +131,20 @@ class AppRouter {
             query = Uri.decodeComponent(combinedId.replaceAll('+', ' '));
           }
 
-          final modeStr = state.uri.queryParameters['mode'];
-          final searchMode = modeStr != null
-              ? SearchMode.values.firstWhere(
-                  (m) => m.name == modeStr,
-                  orElse: () => SearchMode.search,
-                )
-              : SearchMode.search;
+          final externalUrl = state.uri.queryParameters['externalUrl'];
 
-          return MaterialPage<void>(
+          return CustomTransitionPage<void>(
             key: state.pageKey,
             child: RootNavigationScreen(
               currentIndex: homeIndex,
               initialQuery: query,
-              searchMode: searchMode,
               conversationId: conversationId,
+              externalUrl: externalUrl,
             ),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
           );
         },
       ),
@@ -254,8 +256,8 @@ class AppRouter {
   static void goToSearchResults(
     BuildContext context,
     String query, {
-    SearchMode searchMode = SearchMode.search,
     String? conversationId,
+    String? externalUrl,
   }) {
     // Generate UUID if not provided (use full UUID format)
     final uuid = conversationId ?? _generateUuid();
@@ -269,11 +271,11 @@ class AppRouter {
     // Combine query and uuid with + separator
     final combinedId = '$encodedQuery+$uuid';
 
-    final modeParam = searchMode != SearchMode.search
-        ? '?mode=${searchMode.name}'
+    final externalUrlParam = externalUrl != null
+        ? '?externalUrl=${Uri.encodeComponent(externalUrl)}'
         : '';
 
-    context.go('/search/$combinedId$modeParam');
+    context.go('/search/$combinedId$externalUrlParam');
   }
 
   /// Generate a UUID (8-4-4-4-12 format, 36 chars total)

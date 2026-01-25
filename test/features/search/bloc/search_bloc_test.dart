@@ -8,7 +8,7 @@ import 'package:searvo/features/search/presentation/bloc/search_state.dart';
 import 'package:searvo/features/search/domain/entities/message_branch_manager.dart';
 import 'package:searvo/features/search/domain/entities/message_branch.dart';
 import 'package:searvo/features/search/domain/entities/message_data.dart';
-import 'package:searvo/features/search/domain/entities/search_mode.dart';
+
 import 'package:searvo/features/search/data/datasources/intelligent_search_data_source.dart';
 import 'package:searvo/features/search/presentation/bloc/conversation_manager.dart';
 
@@ -206,14 +206,12 @@ void main() {
     test('performInitialSearch event should contain correct data', () {
       const event = SearchEvent.performInitialSearch(
         query: 'test query',
-        searchMode: SearchMode.search,
         conversationId: 'conv-123',
       );
 
       event.maybeWhen(
-        performInitialSearch: (query, searchMode, attachments, conversationId) {
+        performInitialSearch: (query, attachments, conversationId) {
           expect(query, 'test query');
-          expect(searchMode, SearchMode.search);
           expect(conversationId, 'conv-123');
         },
         orElse: () => fail('Wrong event type'),
@@ -377,7 +375,6 @@ void main() {
           mockIntelligentSearchDataSource.generateSearchStream(
             any,
             attachments: anyNamed('attachments'),
-            searchMode: anyNamed('searchMode'),
             isNewConversation: anyNamed('isNewConversation'),
           ),
         ).thenAnswer((_) => Stream.empty());
@@ -401,12 +398,8 @@ void main() {
           conversationDatabaseService: mockConversationDatabaseService,
         );
       },
-      act: (bloc) => bloc.add(
-        const SearchEvent.performInitialSearch(
-          query: 'query',
-          searchMode: SearchMode.search,
-        ),
-      ),
+      act: (bloc) =>
+          bloc.add(const SearchEvent.performInitialSearch(query: 'query')),
       verify: (bloc) {
         verify(mockConversationManager.startNewConversation('query')).called(1);
       },

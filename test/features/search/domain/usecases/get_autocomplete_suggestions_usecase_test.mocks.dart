@@ -6,8 +6,7 @@
 import 'dart:async' as _i3;
 
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:searvo/features/search/domain/entities/search_mode.dart' as _i4;
-import 'package:searvo/features/search/domain/entities/source_item.dart' as _i5;
+import 'package:searvo/features/search/domain/entities/source_item.dart' as _i4;
 import 'package:searvo/features/search/domain/repositories/search_repository.dart'
     as _i2;
 
@@ -24,6 +23,7 @@ import 'package:searvo/features/search/domain/repositories/search_repository.dar
 // ignore_for_file: unnecessary_parenthesis
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
+// ignore_for_file: invalid_use_of_internal_member
 
 /// A class which mocks [SearchRepository].
 ///
@@ -36,21 +36,16 @@ class MockSearchRepository extends _i1.Mock implements _i2.SearchRepository {
   @override
   _i3.Stream<dynamic> performSearch(
     String? query, {
-    _i4.SearchMode? searchMode = _i4.SearchMode.search,
     required Map<String, dynamic>? options,
   }) =>
       (super.noSuchMethod(
-            Invocation.method(
-              #performSearch,
-              [query],
-              {#searchMode: searchMode, #options: options},
-            ),
+            Invocation.method(#performSearch, [query], {#options: options}),
             returnValue: _i3.Stream<dynamic>.empty(),
           )
           as _i3.Stream<dynamic>);
 
   @override
-  _i3.Future<List<_i5.SourceItem>> searchDirect(
+  _i3.Future<List<_i4.SourceItem>> searchDirect(
     String? query, {
     int? page = 1,
     String? category,
@@ -61,11 +56,11 @@ class MockSearchRepository extends _i1.Mock implements _i2.SearchRepository {
               [query],
               {#page: page, #category: category},
             ),
-            returnValue: _i3.Future<List<_i5.SourceItem>>.value(
-              <_i5.SourceItem>[],
+            returnValue: _i3.Future<List<_i4.SourceItem>>.value(
+              <_i4.SourceItem>[],
             ),
           )
-          as _i3.Future<List<_i5.SourceItem>>);
+          as _i3.Future<List<_i4.SourceItem>>);
 
   @override
   _i3.Future<List<String>> getSuggestions(String? query) =>

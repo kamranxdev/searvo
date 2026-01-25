@@ -44,6 +44,9 @@ class QdrantVectorStore extends VectorStore {
     // For simplicity, we assume collection exists or we try to create it if we had a setup method.
     // Here we just push points.
 
+    // Ensure collection exists before adding vectors
+    await ensureCollectionExists(vectors[0].length);
+
     final ids = <String>[];
     final points = <Map<String, dynamic>>[];
 
@@ -110,9 +113,43 @@ class QdrantVectorStore extends VectorStore {
     }).toList();
   }
 
-  /// Ensure collection exists with correct dimension (Helper method)
+  /// Ensure collection exists with correct dimension
   Future<void> ensureCollectionExists(int dimension) async {
-    // Implementation omitted for brevity/focus on interface conformance
+    try {
+      // Check if collection exists
+      final checkResponse = await http.get(
+        Uri.parse('$baseUrl/collections/$collectionName'),
+        headers: {if (apiKey != null) 'api-key': apiKey!},
+      );
+
+      if (checkResponse.statusCode == 404) {
+        // Create collection
+        print('Creating Qdrant collection: $collectionName (dim: $dimension)');
+        final createResponse = await http.put(
+          Uri.parse('$baseUrl/collections/$collectionName'),
+          headers: {
+            'Content-Type': 'application/json',
+            if (apiKey != null) 'api-key': apiKey!,
+          },
+          body: jsonEncode({
+            'vectors': {'size': dimension, 'distance': 'Cosine'},
+          }),
+        );
+
+        if (createResponse.statusCode != 200) {
+          throw Exception(
+            'Failed to create collection: ${createResponse.body}',
+          );
+        }
+      } else if (checkResponse.statusCode != 200) {
+        throw Exception(
+          'Failed to check collection status: ${checkResponse.body}',
+        );
+      }
+    } catch (e) {
+      print('Error ensuring collection exists: $e');
+      rethrow;
+    }
   }
 
   @override
@@ -125,6 +162,33 @@ class QdrantVectorStore extends VectorStore {
       },
       body: jsonEncode({'points': ids}),
     );
+    return response.statusCode == 200;
+  }
+
+  /// Delete points by metadata filter
+  Future<bool> deleteByMetadata(String key, String value) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/collections/$collectionName/points/delete'),
+      headers: {
+        'Content-Type': 'application/json',
+        if (apiKey != null) 'api-key': apiKey!,
+      },
+      body: jsonEncode({
+        'filter': {
+          'must': [
+            {
+              'key': key,
+              'match': {'value': value},
+            },
+          ],
+        },
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      print('Failed to delete by metadata: ${response.body}');
+    }
+
     return response.statusCode == 200;
   }
 

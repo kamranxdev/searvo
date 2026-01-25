@@ -54,8 +54,8 @@ RAG flow: Query → Analyze → Scrape/Retrieve → Process Documents → Genera
 ### @Mention System
 Search supports `@github`, `@youtube`, etc. for site-specific queries. Configured via `SettingsService.getWebsiteMappings()`. The `RichTextEditingController` in [rich_text_editing_controller.dart](lib/shared/widgets/rich_text_editing_controller.dart) handles mention highlighting and validation.
 
-### Search Modes
-Three modes in `SearchBox`: `SearchMode.search` (quick), `SearchMode.research` (deep), `SearchMode.study` (comprehensive). Mode affects RAG depth and scraping behavior.
+### Adaptive Searching
+The search system uses "adaptive searching" to automatically determine the best retrieval strategy based on the query complexity and context. It dynamically adjusts RAG depth and scraping behavior without requiring manual mode selection.
 
 ### Message Branching
 Conversations use `MessageBranchManager` to support multi-path branching - users can explore different conversation directions. See [message_branch_model.dart](lib/features/search/models/message_branch_model.dart).

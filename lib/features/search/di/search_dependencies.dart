@@ -11,7 +11,13 @@ import 'package:searvo/features/search/rag/services/document_processing/document
 import 'package:searvo/features/search/rag/services/document_processing/context_fusion.dart';
 import 'package:searvo/features/search/rag/services/citation/citation_manager.dart';
 import 'package:searvo/features/llm/services/providers/llm_provider_manager.dart';
-import 'package:searvo/features/search/rag/services/data_ingestion/attachment_processor.dart';
+import 'package:searvo/features/search/rag/services/ingestion/attachment_ingestion_service.dart';
+import 'package:searvo/features/search/rag/services/ingestion/rag_ingestion_service.dart';
+import 'package:searvo/features/search/rag/services/parsing/docx_parser.dart';
+import 'package:searvo/features/search/rag/services/parsing/parsing_registry.dart';
+import 'package:searvo/features/search/rag/services/parsing/pdf_parser.dart';
+import 'package:searvo/features/search/rag/services/parsing/text_parser.dart';
+
 import 'package:searvo/features/search/rag/services/query_processing/query_analyzer.dart';
 import 'package:searvo/features/search/rag/services/data_ingestion/rag_scraper_adapter.dart';
 import 'package:searvo/features/search/rag/services/langchain_service.dart';
@@ -45,7 +51,26 @@ Future<void> initSearchDependencies() async {
   sl.registerLazySingleton(() => DocumentRanker());
   sl.registerLazySingleton(() => ContextFusion());
   sl.registerLazySingleton(() => CitationManager());
-  sl.registerLazySingleton(() => AttachmentProcessor());
+  // Parsing Components
+  sl.registerLazySingleton<ParsingRegistry>(() {
+    final registry = ParsingRegistry();
+    registry.registerParser(TextParser());
+    registry.registerParser(PdfParser());
+    registry.registerParser(DocxParser());
+    return registry;
+  });
+
+  // Ingestion Services
+  sl.registerLazySingleton(
+    () => RAGIngestionService(vectorStore: sl<QdrantVectorStore>()),
+  );
+  sl.registerLazySingleton(
+    () => AttachmentIngestionService(
+      parsingRegistry: sl<ParsingRegistry>(),
+      ragIngestionService: sl<RAGIngestionService>(),
+    ),
+  );
+
   sl.registerLazySingleton(() => QueryAnalyzer());
   sl.registerLazySingleton(() => RAGScraperAdapter());
   sl.registerLazySingleton(() => IntentClassifier());
@@ -85,6 +110,7 @@ Future<void> initSearchDependencies() async {
       searchSettings: sl(),
       scraperAdapter: sl(),
       queryAnalyzer: sl(),
+      connectorRegistry: sl(),
     ),
   );
 

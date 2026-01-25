@@ -17,26 +17,26 @@ void main() {
       );
       expect(
         await classifier.classify('why is sky blue'),
-        equals(SearchIntent.general),
+        equals(SearchIntent.question),
       );
     });
 
     test('classifies coding queries correctly', () async {
       expect(
         await classifier.classify('python sort list'),
-        equals(SearchIntent.coding),
+        equals(SearchIntent.technical),
       );
       expect(
         await classifier.classify('how to implement quicksort in dart'),
-        equals(SearchIntent.coding),
+        equals(SearchIntent.howTo),
       );
       expect(
         await classifier.classify('github copilot api'),
-        equals(SearchIntent.coding),
+        equals(SearchIntent.technical),
       );
       expect(
         await classifier.classify('flutter widget test'),
-        equals(SearchIntent.coding),
+        equals(SearchIntent.technical),
       );
     });
 
@@ -58,15 +58,15 @@ void main() {
     test('classifies video queries correctly', () async {
       expect(
         await classifier.classify('youtube tutorial flutter'),
-        equals(SearchIntent.visual),
+        equals(SearchIntent.howTo),
       );
       expect(
         await classifier.classify('video of space launch'),
-        equals(SearchIntent.visual),
+        equals(SearchIntent.media),
       );
       expect(
         await classifier.classify('watch movie online'),
-        equals(SearchIntent.visual),
+        equals(SearchIntent.media),
       );
     });
 
@@ -104,18 +104,18 @@ void main() {
       );
     });
 
-    test('classifies map/local queries correctly', () async {
+    test('classifies map/local/weather queries correctly', () async {
       expect(
         await classifier.classify('restaurants near me'),
-        equals(SearchIntent.map),
+        equals(SearchIntent.local),
       );
       expect(
         await classifier.classify('weather in london'),
-        equals(SearchIntent.map),
-      ); // Might be map or news/general depending on logic
+        equals(SearchIntent.weather),
+      );
       expect(
         await classifier.classify('directions to airport'),
-        equals(SearchIntent.map),
+        equals(SearchIntent.local),
       );
     });
   });

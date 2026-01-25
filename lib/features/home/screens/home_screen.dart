@@ -3,12 +3,11 @@ import 'package:searvo/core/routing/app_router.dart';
 import 'package:searvo/core/theme/theme.dart';
 import 'package:searvo/features/search/presentation/widgets/search_box.dart'
     show SearchBox;
-import 'package:searvo/features/search/domain/entities/search_mode.dart';
+
 import 'package:searvo/features/search/data/datasources/intelligent_search_data_source.dart';
 import 'package:searvo/features/settings/services/settings_service.dart';
 import 'package:searvo/common/widgets/attachment_input_widget.dart';
 import 'package:searvo/core/di/injection_container.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 // Home screen content widget
 class SearvoHomeContent extends StatefulWidget {
@@ -26,7 +25,6 @@ class _SearvoHomeContentState extends State<SearvoHomeContent> {
       sl<IntelligentSearchDataSource>();
 
   bool _isLoading = false;
-  SearchMode _currentSearchMode = SearchMode.search;
 
   @override
   void initState() {
@@ -65,11 +63,7 @@ class _SearvoHomeContentState extends State<SearvoHomeContent> {
     try {
       // Navigate to search results using AppRouter to preserve sidebar
       if (mounted) {
-        AppRouter.goToSearchResults(
-          context,
-          query,
-          searchMode: _currentSearchMode,
-        );
+        AppRouter.goToSearchResults(context, query);
       }
     } catch (e) {
       if (mounted) {
@@ -116,6 +110,8 @@ class _SearvoHomeContentState extends State<SearvoHomeContent> {
     final searchUrlTemplate = mapping['searchUrl'];
 
     String urlToOpen;
+    String searchDomain = Uri.parse(baseUrl).host;
+
     if (searchTerm.isNotEmpty &&
         searchUrlTemplate != null &&
         searchUrlTemplate.isNotEmpty) {
@@ -141,25 +137,25 @@ class _SearvoHomeContentState extends State<SearvoHomeContent> {
       return;
     }
 
+    // NEW BEHAVIOR: "Search & Summarize"
+    // Instead of launching the URL immediately, we perform a site-specific search
+    // and pass the original URL as a fallback.
+
+    final siteQuery = 'site:$searchDomain $searchTerm'.trim();
+
     try {
-      final uri = Uri.parse(urlToOpen);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Could not open website.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+      if (mounted) {
+        AppRouter.goToSearchResults(
+          context,
+          siteQuery,
+          externalUrl: urlToOpen, // Pass the fallback URL
+        );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error opening website: $e'),
+            content: Text('Error performing mapped search: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -212,12 +208,7 @@ class _SearvoHomeContentState extends State<SearvoHomeContent> {
 
   void _onAttachmentError(String error) {
     // Show error to user
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(error),
-        backgroundColor: AppThemeConfig.errorColor,
-      ),
-    );
+    print('Attachment Error: $error');
   }
 
   @override
@@ -283,17 +274,19 @@ class _SearvoHomeContentState extends State<SearvoHomeContent> {
                             ],
                           ),
                         )
-                      : SearchBox(
-                          controller: _searchController,
-                          onSend: _onSearchSubmit,
-                          onAttachmentsChanged: _onAttachmentsChanged,
-                          onAttachmentAdded: _onAttachmentAdded,
-                          onAttachmentError: _onAttachmentError,
-                          onSearchModeChanged: (mode) {
-                            setState(() {
-                              _currentSearchMode = mode;
-                            });
-                          },
+                      : Hero(
+                          tag: 'search_box_input',
+                          child: Material(
+                            type: MaterialType.transparency,
+                            child: SearchBox(
+                              controller: _searchController,
+                              onSend: _onSearchSubmit,
+                              onAttachmentsChanged: _onAttachmentsChanged,
+                              onAttachmentAdded: _onAttachmentAdded,
+                              onAttachmentError: _onAttachmentError,
+                              suggestionsOnTop: true,
+                            ),
+                          ),
                         ),
                 ),
               ),
@@ -345,17 +338,18 @@ class _SearvoHomeContentState extends State<SearvoHomeContent> {
                               ),
                             ],
                           )
-                        : SearchBox(
-                            controller: _searchController,
-                            onSend: _onSearchSubmit,
-                            onAttachmentsChanged: _onAttachmentsChanged,
-                            onAttachmentAdded: _onAttachmentAdded,
-                            onAttachmentError: _onAttachmentError,
-                            onSearchModeChanged: (mode) {
-                              setState(() {
-                                _currentSearchMode = mode;
-                              });
-                            },
+                        : Hero(
+                            tag: 'search_box_input',
+                            child: Material(
+                              type: MaterialType.transparency,
+                              child: SearchBox(
+                                controller: _searchController,
+                                onSend: _onSearchSubmit,
+                                onAttachmentsChanged: _onAttachmentsChanged,
+                                onAttachmentAdded: _onAttachmentAdded,
+                                onAttachmentError: _onAttachmentError,
+                              ),
+                            ),
                           ),
                   ),
                 ),

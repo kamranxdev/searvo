@@ -4,6 +4,7 @@ import 'package:mockito/annotations.dart';
 import 'package:searvo/features/search/domain/entities/autocomplete_entities.dart';
 import 'package:searvo/features/search/domain/repositories/search_repository.dart';
 import 'package:searvo/features/search/domain/usecases/get_autocomplete_suggestions_usecase.dart';
+import 'package:searvo/features/search/domain/entities/search_intent.dart';
 
 import 'get_autocomplete_suggestions_usecase_test.mocks.dart';
 
@@ -60,9 +61,15 @@ void main() {
 
       // Assert
       expect(result.length, 2);
-      expect(result[0].text, 'flutter tutorial');
+      expect(result[0].text, 'flutter widgets');
       expect(result[0].type, SuggestionType.topic);
-      expect(result[0].intent, QueryIntent.general);
+      expect(
+        result[0].intent,
+        SearchIntent.technical,
+      ); // Matches query intent 'technical'
+
+      expect(result[1].text, 'flutter tutorial');
+      expect(result[1].intent, SearchIntent.howTo);
     });
 
     test('should return fallback suggestions on error', () async {

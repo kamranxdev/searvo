@@ -238,7 +238,6 @@ Complete search service integrating RAG pipeline, web scraping, and search orche
 ```dart
 Future<void> initialize()
 Future<MessageData> performSearch(String query, {
-  SearchMode mode,
   List<dynamic>? attachments,
   List<MessageData> conversationHistory,
 })
@@ -382,7 +381,6 @@ Future<MessageData> generateRAGResponse(
   bool enableQueryEnhancement,
   bool enableAdaptivePrompting,
   List<dynamic>? attachments,
-  SearchMode searchMode,
 })
 ```
 

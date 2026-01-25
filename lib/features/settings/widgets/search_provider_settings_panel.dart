@@ -125,7 +125,7 @@ class _SearchProviderSettingsPanelState
               Icon(
                 _testResult == 'success' ? Icons.check_circle : Icons.error,
                 color: _testResult == 'success'
-                    ? Colors.green
+                    ? settingsColors.success
                     : settingsColors.error,
               ),
             ],
@@ -267,12 +267,15 @@ class _SearchProviderSettingsPanelState
         _testResult = success ? 'success' : 'failed';
       });
       if (mounted) {
+        final settingsColors = SettingsTheme.colors(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               success ? 'Successfully connected!' : 'Failed to connect.',
             ),
-            backgroundColor: success ? Colors.green : Colors.red,
+            backgroundColor: success
+                ? settingsColors.success
+                : settingsColors.error,
           ),
         );
       }

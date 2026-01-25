@@ -1,8 +1,30 @@
+import 'package:searvo/features/search/domain/tools/calculator_tool.dart';
+import 'package:searvo/features/search/domain/tools/country_info_tool.dart';
+import 'package:searvo/features/search/domain/tools/crypto_price_tool.dart';
+import 'package:searvo/features/search/domain/tools/currency_converter_tool.dart';
+import 'package:searvo/features/search/domain/tools/dictionary_tool.dart';
+import 'package:searvo/features/search/domain/tools/holiday_tool.dart';
+import 'package:searvo/features/search/domain/tools/image_generation_tool.dart';
+import 'package:searvo/features/search/domain/tools/map_tool.dart';
+import 'package:searvo/features/search/domain/tools/numbers_tool.dart';
+import 'package:searvo/features/search/domain/tools/pdf_reader_tool.dart';
+import 'package:searvo/features/search/domain/tools/stock_price_tool.dart';
+import 'package:searvo/features/search/domain/tools/time_tool.dart';
+import 'package:searvo/features/search/domain/tools/unit_converter_tool.dart';
+import 'package:searvo/features/search/domain/tools/video_analyzer_tool.dart';
+import 'package:searvo/features/search/domain/tools/weather_tool.dart';
+import 'package:searvo/features/search/domain/tools/web_scraper_tool.dart';
+import 'package:searvo/features/search/domain/tools/web_search_tool.dart';
+import 'package:searvo/features/search/domain/tools/vector_search_tool.dart';
+import 'package:searvo/features/search/domain/tools/wikipedia_tool.dart';
+
 import 'package:searvo/features/settings/services/llm_settings_service.dart';
+import 'package:searvo/features/connectors/data/datasources/connector_registry.dart';
+import 'package:searvo/features/search/domain/tools/connector_tool.dart';
 import '../../domain/entities/message_data.dart';
 
 import 'rag_data_source.dart';
-import '../../domain/entities/search_mode.dart';
+
 import '../../domain/entities/search_enums.dart';
 
 import 'package:searvo/features/llm/services/providers/llm_provider_manager.dart';
@@ -18,25 +40,6 @@ import '../../rag/models/rag_models.dart';
 import '../../domain/services/agent/intent_orchestrator.dart';
 import '../../domain/services/agent/agent_executor.dart';
 import '../../domain/services/agent/tool_registry.dart';
-import '../../domain/tools/web_search/web_search_tool.dart';
-import '../../domain/tools/image_generator/image_generation_tool.dart';
-import '../../domain/tools/pdf_reader/pdf_reader_tool.dart';
-import '../../domain/tools/video_analyzer/video_analyzer_tool.dart';
-import '../../domain/tools/web_scraper/web_scraper_tool.dart';
-import '../../domain/tools/calculator/calculator_tool.dart';
-import '../../domain/tools/weather/weather_tool.dart';
-import '../../domain/tools/time/time_tool.dart';
-import '../../domain/tools/currency/currency_converter_tool.dart';
-import '../../domain/tools/dictionary/dictionary_tool.dart';
-import '../../domain/tools/wikipedia/wikipedia_tool.dart';
-import '../../domain/tools/unit_converter/unit_converter_tool.dart';
-import '../../domain/tools/country/country_info_tool.dart';
-import '../../domain/tools/numbers/numbers_tool.dart';
-import '../../domain/tools/holiday/holiday_tool.dart';
-import '../../domain/tools/crypto/crypto_price_tool.dart';
-import '../../domain/tools/stock/stock_price_tool.dart';
-import '../../domain/tools/map/map_tool.dart';
-
 import '../../domain/entities/message_generation_state.dart';
 import '../../rag/domain/entities/rag_update.dart';
 import '../../rag/domain/entities/rag_status.dart';
@@ -55,11 +58,13 @@ class IntelligentSearchDataSource {
     required SearchProviderSettingsService searchSettings,
     required RAGScraperAdapter scraperAdapter,
     required QueryAnalyzer queryAnalyzer,
+    required ConnectorRegistry connectorRegistry,
   }) : _ragDataSource = ragDataSource,
        _llmSettings = llmSettings,
        _searchSettings = searchSettings,
        _scraperAdapter = scraperAdapter,
-       _queryAnalyzer = queryAnalyzer;
+       _queryAnalyzer = queryAnalyzer,
+       _connectorRegistry = connectorRegistry;
 
   final RAGDataSource _ragDataSource;
   final LLMSettingsService _llmSettings;
@@ -68,6 +73,7 @@ class IntelligentSearchDataSource {
   final PDFExtractorService _pdfExtractor =
       PDFExtractorService(); // Kept as internal helper for now, can be injected later
   final QueryAnalyzer _queryAnalyzer;
+  final ConnectorRegistry _connectorRegistry;
   final SearXNGRemoteDataSource _searxngService = SearXNGRemoteDataSource();
 
   late final IntentOrchestrator _intentOrchestrator;
@@ -156,6 +162,8 @@ class IntelligentSearchDataSource {
     _toolRegistry = ToolRegistry();
     _toolRegistry.registerTools([
       WebSearchTool(searxngService: _searxngService),
+      VectorSearchTool(_ragDataSource.vectorStore),
+      ConnectorTool(_connectorRegistry),
       ImageGenerationTool(),
       PdfReaderTool(),
       VideoAnalyzerTool(),
@@ -199,7 +207,6 @@ class IntelligentSearchDataSource {
     bool enableQueryEnhancement = true,
     bool enableAdaptivePrompting = true,
     List<dynamic>? attachments,
-    SearchMode searchMode = SearchMode.search,
     bool isNewConversation = false,
   }) {
     return _ragDataSource.generateRAGStream(
@@ -210,7 +217,6 @@ class IntelligentSearchDataSource {
       enableQueryEnhancement: enableQueryEnhancement,
       enableAdaptivePrompting: enableAdaptivePrompting,
       attachments: attachments,
-      searchMode: searchMode,
       isNewConversation: isNewConversation,
     );
   }
@@ -224,7 +230,6 @@ class IntelligentSearchDataSource {
     bool enableQueryEnhancement = true,
     bool enableAdaptivePrompting = true,
     List<dynamic>? attachments,
-    SearchMode searchMode = SearchMode.search,
     bool isNewConversation = false,
   }) async* {
     print(
@@ -249,7 +254,10 @@ class IntelligentSearchDataSource {
       print(
         'IntelligentSearchDataSource: Requesting plan from orchestrator...',
       );
-      final plan = await _intentOrchestrator.plan(query);
+      final plan = await _intentOrchestrator.plan(
+        query,
+        attachments: attachments,
+      );
       print('IntelligentSearchDataSource: Plan received');
 
       yield RAGUpdate(
@@ -351,7 +359,6 @@ class IntelligentSearchDataSource {
         enableQueryEnhancement: enableQueryEnhancement,
         enableAdaptivePrompting: enableAdaptivePrompting,
         attachments: attachments,
-        searchMode: searchMode,
         isNewConversation: isNewConversation,
       );
     }
@@ -366,7 +373,6 @@ class IntelligentSearchDataSource {
     bool enableQueryEnhancement = true,
     bool enableAdaptivePrompting = true,
     List<dynamic>? attachments,
-    SearchMode searchMode = SearchMode.search,
     Function(MessageData)? onSearchComplete,
     bool isNewConversation = false,
   }) async {
@@ -380,7 +386,6 @@ class IntelligentSearchDataSource {
       enableQueryEnhancement: enableQueryEnhancement,
       enableAdaptivePrompting: enableAdaptivePrompting,
       attachments: attachments,
-      searchMode: searchMode,
       isNewConversation: isNewConversation,
     )) {
       if (update.finalResult != null) {
@@ -404,7 +409,6 @@ class IntelligentSearchDataSource {
     bool enableQueryEnhancement = true,
     bool enableAdaptivePrompting = true,
     List<dynamic>? attachments,
-    SearchMode searchMode = SearchMode.search,
     Function(MessageData)? onSearchComplete,
   }) async {
     if (!isReady) {
@@ -419,7 +423,7 @@ class IntelligentSearchDataSource {
     }
 
     print('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    print('🔎 New Search Request (Mode: ${searchMode.name})');
+    print('🔎 New Search Request (Adaptive)');
     if (attachments != null && attachments.isNotEmpty) {
       print('📎 With ${attachments.length} attachments');
     }
@@ -449,35 +453,17 @@ class IntelligentSearchDataSource {
       final complexity = _ragDataSource.analyzeQueryComplexity(query);
       print('📊 Complexity: ${complexity['complexity']}');
 
-      // Adjust parameters based on search mode
+      // Adjust parameters based on complexity
       int effectiveMaxDocs =
           complexity['recommendations']['maxRelevantDocuments'] as int;
       // Don't override context length - let adaptive system handle it
       int? effectiveMaxContext =
-          maxContextLength; // Use provided or let RAG orchestrator auto-detect
+          maxContextLength ??
+          (complexity['recommendations']['maxContextLength'] as int);
 
-      switch (searchMode) {
-        case SearchMode.research:
-          // Deep research mode - more documents and context
-          effectiveMaxDocs = (effectiveMaxDocs * 1.5).round();
-          // Let adaptive system handle context length
-          print(
-            '🔬 Research mode: Enhanced to $effectiveMaxDocs docs, adaptive context',
-          );
-          break;
-        case SearchMode.study:
-          // Study mode - balanced for learning
-          effectiveMaxDocs = (effectiveMaxDocs * 1.2).round();
-          // Let adaptive system handle context length
-          print(
-            '📚 Study mode: Enhanced to $effectiveMaxDocs docs, adaptive context',
-          );
-          break;
-        case SearchMode.search:
-          // Fast search mode - keep defaults
-          print('⚡ Search mode: Using default parameters');
-          break;
-      }
+      print(
+        '⚡ Adaptive Search: Using $effectiveMaxDocs docs, $effectiveMaxContext context context params',
+      );
 
       MessageData? finalResponse;
       await for (final update in _ragDataSource.generateRAGStream(
@@ -488,7 +474,6 @@ class IntelligentSearchDataSource {
         enableQueryEnhancement: enableQueryEnhancement,
         enableAdaptivePrompting: enableAdaptivePrompting,
         attachments: attachments,
-        searchMode: searchMode,
       )) {
         if (update.finalResult != null) {
           finalResponse = update.finalResult;
@@ -668,7 +653,6 @@ class IntelligentSearchDataSource {
         maxContextLength: maxContextLength,
         maxHistoryMessages: maxHistoryMessages,
         attachments: attachments,
-        searchMode: SearchMode.search,
         previousMessages: previousMessages,
       );
     }

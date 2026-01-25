@@ -145,6 +145,36 @@ class AgentExecutor {
                 .toList();
             currentData = currentData.copyWith(videos: videos);
           }
+        } else if (tool.id == 'vector_search' && result is Map) {
+          if (result['documents'] != null && result['documents'] is List) {
+            final docs = result['documents'] as List;
+            final newSources = docs.map((d) {
+              final metadata = d['metadata'] as Map<String, dynamic>? ?? {};
+              final content = d['content'] as String? ?? '';
+              // Try to get filename from metadata
+              String title = 'Document';
+              if (metadata.containsKey('source')) {
+                title = metadata['source'].toString();
+                // If it's a full path, get just the filename
+                if (title.contains('/')) {
+                  title = title.split('/').last;
+                }
+              }
+
+              return SourceItem(
+                title: title,
+                url: '',
+                description: content,
+                thumbnail: '',
+                source: 'Attachment',
+                domain: 'file',
+              );
+            }).toList();
+
+            final allSources = List<SourceItem>.from(currentData.sources)
+              ..addAll(newSources);
+            currentData = currentData.copyWith(sources: allSources);
+          }
         } else if ([
           'weather',
           'stock_price',

@@ -18,7 +18,6 @@ class MockRAGDataSource extends Mock implements RAGDataSource {
     bool? enableQueryEnhancement = true,
     bool? enableAdaptivePrompting = true,
     List<dynamic>? attachments,
-    dynamic searchMode,
     List<MessageData>? previousMessages,
     int? maxHistoryMessages = 3,
     bool? isNewConversation = false,
@@ -34,7 +33,6 @@ class MockRAGDataSource extends Mock implements RAGDataSource {
           #enableQueryEnhancement: enableQueryEnhancement,
           #enableAdaptivePrompting: enableAdaptivePrompting,
           #attachments: attachments,
-          #searchMode: searchMode,
           #previousMessages: previousMessages,
           #maxHistoryMessages: maxHistoryMessages,
           #isNewConversation: isNewConversation,
@@ -70,7 +68,6 @@ void main() {
           mockRAGDataSource.generateRAGStream(
             any,
             attachments: anyNamed('attachments'),
-            searchMode: anyNamed('searchMode'),
           ),
         ).thenAnswer(
           (_) => Stream.fromIterable([
@@ -89,7 +86,6 @@ void main() {
           mockRAGDataSource.generateRAGStream(
             any,
             attachments: anyNamed('attachments'),
-            searchMode: anyNamed('searchMode'),
           ),
         ).called(1);
       },
@@ -106,7 +102,6 @@ void main() {
           mockRAGDataSource.generateRAGStream(
             any,
             attachments: anyNamed('attachments'),
-            searchMode: anyNamed('searchMode'),
           ),
         ).thenAnswer(
           (_) => Stream.fromIterable([

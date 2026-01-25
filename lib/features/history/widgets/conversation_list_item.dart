@@ -46,198 +46,304 @@ class ConversationListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      elevation: isSelected ? 4 : 1,
-      color: isSelected
-          ? Theme.of(context).primaryColor.withOpacity(0.1)
-          : null,
-      child: InkWell(
-        onTap: onTap,
-        onLongPress: onLongPress,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Selection checkbox or icon
-              if (isSelectionMode)
-                Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: Checkbox(
-                    value: isSelected,
-                    onChanged: (value) => onTap(),
-                  ),
-                )
-              else
-                const Padding(
-                  padding: EdgeInsets.only(right: 12),
-                  child: Icon(
-                    Icons.chat_bubble_outline,
-                    size: 24,
-                    color: Colors.grey,
-                  ),
-                ),
+    final colorScheme = Theme.of(context).colorScheme;
 
-              // Conversation content
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        // Pin indicator
-                        if (conversation.isPinned)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 4),
-                            child: Icon(
-                              Icons.push_pin,
-                              size: 16,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                          ),
-
-                        // Title
-                        Expanded(
-                          child: Text(
-                            conversation.title,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+      decoration: BoxDecoration(
+        color: isSelected
+            ? colorScheme.primary.withAlpha(25)
+            : colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isSelected
+              ? colorScheme.primary.withAlpha(100)
+              : colorScheme.outline.withAlpha(20),
+          width: 1,
+        ),
+        boxShadow: [
+          if (isSelected)
+            BoxShadow(
+              color: colorScheme.primary.withAlpha(20),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          onLongPress: onLongPress,
+          borderRadius: BorderRadius.circular(16),
+          splashColor: colorScheme.primary.withAlpha(30),
+          highlightColor: colorScheme.primary.withAlpha(10),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Selection checkbox or distinct icon
+                if (isSelectionMode)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 16, top: 4),
+                    child: Transform.scale(
+                      scale: 1.2,
+                      child: Checkbox(
+                        value: isSelected,
+                        activeColor: colorScheme.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
                         ),
-
-                        // Time
-                        Text(
-                          _formatDate(conversation.updatedAt),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
+                        side: BorderSide(
+                          color: colorScheme.outline,
+                          width: 1.5,
                         ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    // Preview
-                    Text(
-                      conversation.preview,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
+                        onChanged: (value) => onTap(),
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
-
-                    const SizedBox(height: 4),
-
-                    // Message count and tags
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.message,
-                          size: 14,
-                          color: Colors.grey,
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.only(right: 16, top: 2),
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest.withAlpha(
+                          80,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${conversation.messageCount} message${conversation.messageCount != 1 ? 's' : ''}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        if (conversation.tags.isNotEmpty) ...[
-                          const SizedBox(width: 8),
-                          const Icon(
-                            Icons.label,
-                            size: 14,
-                            color: Colors.grey,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            conversation.tags.first,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        conversation.isPinned
+                            ? Icons.push_pin
+                            : Icons.chat_bubble_outline_rounded,
+                        size: 20,
+                        color: conversation.isPinned
+                            ? colorScheme.primary
+                            : colorScheme.primary.withAlpha(180),
+                      ),
+                    ),
+                  ),
+
+                // Conversation content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Title
+                          Expanded(
+                            child: Text(
+                              conversation.title,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: colorScheme.onSurface,
+                                letterSpacing: 0.1,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (conversation.tags.length > 1)
-                            Text(
-                              ' +${conversation.tags.length - 1}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
+                          const SizedBox(width: 8),
+                          // Time
+                          Text(
+                            _formatDate(conversation.updatedAt),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 6),
+
+                      // Preview
+                      Text(
+                        conversation.preview,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: colorScheme.onSurfaceVariant.withAlpha(200),
+                          height: 1.4,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // Message count and tags
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.message_outlined,
+                                  size: 12,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${conversation.messageCount}',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (conversation.tags.isNotEmpty) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.label_outline,
+                                    size: 12,
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    conversation.tags.first,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: colorScheme.onSurfaceVariant,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  if (conversation.tags.length > 1)
+                                    Text(
+                                      ' +${conversation.tags.length - 1}',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: colorScheme.onSurfaceVariant,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
+                          ],
                         ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Actions menu
+                if (!isSelectionMode)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: PopupMenuButton<String>(
+                      icon: Icon(
+                        Icons.more_vert,
+                        size: 20,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      color: colorScheme.surfaceContainer,
+                      onSelected: (value) {
+                        switch (value) {
+                          case 'pin':
+                            onPin();
+                            break;
+                          case 'rename':
+                            onRename();
+                            break;
+                          case 'delete':
+                            onDelete();
+                            break;
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'pin',
+                          child: Row(
+                            children: [
+                              Icon(
+                                conversation.isPinned
+                                    ? Icons.push_pin_outlined
+                                    : Icons.push_pin,
+                                color: colorScheme.primary,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                conversation.isPinned ? 'Unpin' : 'Pin',
+                                style: TextStyle(color: colorScheme.onSurface),
+                              ),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'rename',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.edit_outlined,
+                                color: colorScheme.onSurface,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Rename',
+                                style: TextStyle(color: colorScheme.onSurface),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.delete_outline,
+                                color: Colors.red,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Delete',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-
-              // Actions menu
-              if (!isSelectionMode)
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert, size: 20),
-                  onSelected: (value) {
-                    switch (value) {
-                      case 'pin':
-                        onPin();
-                        break;
-                      case 'rename':
-                        onRename();
-                        break;
-                      case 'delete':
-                        onDelete();
-                        break;
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: 'pin',
-                      child: Row(
-                        children: [
-                          Icon(
-                            conversation.isPinned
-                                ? Icons.push_pin_outlined
-                                : Icons.push_pin,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(conversation.isPinned ? 'Unpin' : 'Pin'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'rename',
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit),
-                          SizedBox(width: 8),
-                          Text('Rename'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text('Delete', style: TextStyle(color: Colors.red)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-            ],
+                  ),
+              ],
+            ),
           ),
         ),
       ),

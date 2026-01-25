@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -50,9 +51,12 @@ void main() async {
   runApp(const SearvoApp());
 
   // Check if launched from widget
-  try {
-    HomeWidget.initiallyLaunchedFromHomeWidget().then((uri) {
+  // Check if launched from widget (Mobile only)
+  if (Platform.isAndroid || Platform.isIOS) {
+    try {
+      final uri = await HomeWidget.initiallyLaunchedFromHomeWidget();
       if (uri != null && uri.scheme == 'searvo') {
+        // Small delay to ensure navigation can happen after app mount
         Future.delayed(const Duration(milliseconds: 500), () {
           if (uri.queryParameters['action'] == 'search') {
             AppRouter.router.go(AppRouter.home);
@@ -65,9 +69,9 @@ void main() async {
           }
         });
       }
-    });
-  } catch (e) {
-    print('HomeWidget not supported: $e');
+    } catch (e) {
+      print('HomeWidget error: $e');
+    }
   }
 }
 

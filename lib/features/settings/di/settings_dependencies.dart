@@ -7,8 +7,13 @@ import 'package:searvo/features/settings/domain/usecases/save_settings.dart';
 import 'package:searvo/features/settings/domain/usecases/update_theme.dart';
 import 'package:searvo/features/settings/presentation/cubit/settings_cubit.dart';
 
+import 'package:searvo/features/settings/services/settings_service.dart';
+
 /// Initialize settings feature dependencies
 Future<void> initSettingsDependencies() async {
+  // Services
+  sl.registerLazySingleton<SettingsService>(() => SettingsService());
+
   // Data sources
   sl.registerLazySingleton<SettingsLocalDataSource>(
     () => SettingsLocalDataSourceImpl(sharedPreferences: sl()),
@@ -26,10 +31,7 @@ Future<void> initSettingsDependencies() async {
 
   // Cubit
   sl.registerFactory(
-    () => SettingsCubit(
-      getSettings: sl(),
-      updateTheme: sl(),
-      saveSettings: sl(),
-    ),
+    () =>
+        SettingsCubit(getSettings: sl(), updateTheme: sl(), saveSettings: sl()),
   );
 }

@@ -2,16 +2,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'rag_state.dart';
 import '../models/rag_models.dart';
 import '../../data/datasources/rag_data_source.dart';
-import '../services/data_ingestion/attachment_processor.dart';
 import '../services/data_ingestion/rag_scraper_adapter.dart';
 import '../services/data_ingestion/pdf_extractor_service.dart';
 import '../services/query_processing/query_analyzer.dart';
 import '../../domain/entities/message_data.dart';
-import '../../domain/entities/search_mode.dart';
 
 class RAGCubit extends Cubit<RAGState> {
   final RAGDataSource _ragDataSource;
-  final AttachmentProcessor _attachmentProcessor = AttachmentProcessor();
   final RAGScraperAdapter _scraperAdapter = RAGScraperAdapter();
   final PDFExtractorService _pdfExtractor = PDFExtractorService();
   final QueryAnalyzer _queryAnalyzer = QueryAnalyzer();
@@ -35,34 +32,6 @@ class RAGCubit extends Cubit<RAGState> {
       return analysis;
     } catch (e) {
       emit(state.copyWith(isAnalyzingQuery: false, errorMessage: e.toString()));
-      rethrow;
-    }
-  }
-
-  Future<List<AttachmentProcessResult>> processAttachments(
-    List<String> filePaths,
-    List<String> fileNames,
-  ) async {
-    emit(state.copyWith(isProcessingAttachments: true, errorMessage: null));
-
-    try {
-      final results = <AttachmentProcessResult>[];
-      for (int i = 0; i < filePaths.length; i++) {
-        final result = await _attachmentProcessor.processAttachment(
-          filePaths[i],
-          fileNames[i],
-        );
-        results.add(result);
-      }
-      emit(state.copyWith(isProcessingAttachments: false));
-      return results;
-    } catch (e) {
-      emit(
-        state.copyWith(
-          isProcessingAttachments: false,
-          errorMessage: e.toString(),
-        ),
-      );
       rethrow;
     }
   }
@@ -101,7 +70,6 @@ class RAGCubit extends Cubit<RAGState> {
   Future<MessageData> generateRAGResponse({
     required String query,
     List<dynamic>? attachments,
-    SearchMode searchMode = SearchMode.search,
   }) async {
     emit(state.copyWith(isProcessingRAG: true, errorMessage: null));
 
@@ -110,7 +78,6 @@ class RAGCubit extends Cubit<RAGState> {
       await for (final update in _ragDataSource.generateRAGStream(
         query,
         attachments: attachments,
-        searchMode: searchMode,
       )) {
         if (update.finalResult != null) {
           finalResponse = update.finalResult;

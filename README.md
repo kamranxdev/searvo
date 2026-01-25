@@ -48,7 +48,7 @@ Choose your preferred AI provider:
 - **OpenRouter** (100+ models)
 
 ### 🌐 Advanced Search
-- **@Mentions** - Target specific sites (`@github`, `@youtube`, etc.)
+- **@Mentions** - Vertical searching, Target specific sites (`@github`, `@youtube`, etc.)
 - **Web Scraping** - Full content extraction for comprehensive analysis
 - **Multi-Query** - Combine multiple searches
 - **Context-Aware** - Understands follow-up questions

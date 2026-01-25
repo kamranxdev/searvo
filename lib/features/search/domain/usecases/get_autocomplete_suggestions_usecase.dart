@@ -1,11 +1,14 @@
 import 'dart:async';
+import 'package:searvo/core/utils/string_algorithms.dart';
+import 'package:searvo/features/search/domain/services/intent_classifier.dart';
+import 'package:searvo/features/search/domain/entities/search_intent.dart';
 import '../entities/autocomplete_entities.dart';
 import '../repositories/search_repository.dart';
 
 /// Autocomplete use case that integrates repository suggestions with NLP-based enhancement
-/// Autocomplete use case that integrates repository suggestions with NLP-based enhancement
 class GetAutocompleteSuggestionsUseCase {
   final SearchRepository _repository;
+  final IntentClassifier _intentClassifier;
   Timer? _debounceTimer;
   String? _lastQuery;
   List<AutocompleteSuggestion> _cachedSuggestions = [];
@@ -13,7 +16,10 @@ class GetAutocompleteSuggestionsUseCase {
   static const Duration _debounceDuration = Duration(milliseconds: 300);
   static const int _maxSuggestions = 8;
 
-  GetAutocompleteSuggestionsUseCase(this._repository);
+  GetAutocompleteSuggestionsUseCase(
+    this._repository, {
+    IntentClassifier? intentClassifier,
+  }) : _intentClassifier = intentClassifier ?? IntentClassifier();
 
   Future<List<AutocompleteSuggestion>> call(String query) async {
     if (query.trim().length < 2) return [];
@@ -25,7 +31,14 @@ class GetAutocompleteSuggestionsUseCase {
     try {
       final processedQuery = _preprocessQuery(query);
       final rawSuggestions = await _repository.getSuggestions(processedQuery);
-      final enhancedSuggestions = _enhanceSuggestions(query, rawSuggestions);
+      final enhancedSuggestions = await _enhanceSuggestions(
+        query,
+        rawSuggestions,
+      );
+
+      if (enhancedSuggestions.isEmpty) {
+        return _generateFallbackSuggestions(query);
+      }
 
       _lastQuery = query;
       _cachedSuggestions = enhancedSuggestions;
@@ -68,25 +81,35 @@ class GetAutocompleteSuggestionsUseCase {
     return query.trim().replaceAll(RegExp(r'\s+'), ' ');
   }
 
-  List<AutocompleteSuggestion> _enhanceSuggestions(
+  Future<List<AutocompleteSuggestion>> _enhanceSuggestions(
     String originalQuery,
     List<String> rawSuggestions,
-  ) {
+  ) async {
     final List<AutocompleteSuggestion> enhanced = [];
-    final intent = _detectQueryIntent(originalQuery);
-    final queryTokens = _tokenize(originalQuery);
-    final querySoundex = _calculateSoundex(originalQuery);
+    // Use classifier for intent
+    final intent = await _intentClassifier.classify(originalQuery);
+    final queryTokens = StringAlgorithms.tokenize(originalQuery);
+    final querySoundex = StringAlgorithms.calculateSoundex(originalQuery);
 
     for (final suggestion in rawSuggestions) {
-      final score = _calculateAdvancedScore(
+      // For suggestion intent matching, we do a quick check
+      // For performance, maybe we can expose a synchronous heuristic method?
+      // Or just await? Since standard `classify` is async but our implementation is heuristic (sync), it's fine.
+      // But `classify` takes time if it calls LLM (future proofing).
+      // Let's assume for now we just want simple matching.
+
+      final suggestionIntent = await _intentClassifier.classify(suggestion);
+
+      final score = await _calculateAdvancedScore(
         originalQuery: originalQuery,
         suggestion: suggestion,
         queryTokens: queryTokens,
         querySoundex: querySoundex,
-        intent: intent,
+        intent: intent, // Keep using query intent for boosting relevance
+        suggestionIntent: suggestionIntent,
       );
 
-      final type = _determineSuggestionType(suggestion, intent);
+      final type = await _determineSuggestionType(suggestion, suggestionIntent);
 
       enhanced.add(
         AutocompleteSuggestion(
@@ -94,7 +117,7 @@ class GetAutocompleteSuggestionsUseCase {
           displayTitle: suggestion, // Can be highlighted in UI
           type: type,
           relevanceScore: score,
-          intent: intent,
+          intent: suggestionIntent,
         ),
       );
     }
@@ -105,13 +128,14 @@ class GetAutocompleteSuggestionsUseCase {
     return enhanced.take(_maxSuggestions).toList();
   }
 
-  double _calculateAdvancedScore({
+  Future<double> _calculateAdvancedScore({
     required String originalQuery,
     required String suggestion,
     required Set<String> queryTokens,
     required String querySoundex,
-    required QueryIntent intent,
-  }) {
+    required SearchIntent intent,
+    required SearchIntent suggestionIntent,
+  }) async {
     double score = 0.0;
     final lowerSuggestion = suggestion.toLowerCase();
     final lowerQuery = originalQuery.toLowerCase();
@@ -126,7 +150,10 @@ class GetAutocompleteSuggestionsUseCase {
     }
     // 3. Fuzzy Match (Levenshtein) - Catches typos
     else {
-      final distance = _levenshteinDistance(lowerQuery, lowerSuggestion);
+      final distance = StringAlgorithms.levenshteinDistance(
+        lowerQuery,
+        lowerSuggestion,
+      );
       final maxLength = [
         lowerQuery.length,
         lowerSuggestion.length,
@@ -140,12 +167,14 @@ class GetAutocompleteSuggestionsUseCase {
 
     // 4. Phonetic Match (Soundex) - Catches "fysics" vs "physics"
     // Checks if the start of the suggestion sounds like the query
-    if (_calculateSoundex(lowerSuggestion).startsWith(querySoundex)) {
+    if (StringAlgorithms.calculateSoundex(
+      lowerSuggestion,
+    ).startsWith(querySoundex)) {
       score += 30.0;
     }
 
     // 5. Token Overlap (Jaccard) - Catches mixed order "apple phone" vs "phone apple"
-    final suggestionTokens = _tokenize(lowerSuggestion);
+    final suggestionTokens = StringAlgorithms.tokenize(lowerSuggestion);
     final intersection = queryTokens.intersection(suggestionTokens).length;
     final union = queryTokens.union(suggestionTokens).length;
     if (union > 0) {
@@ -154,7 +183,7 @@ class GetAutocompleteSuggestionsUseCase {
     }
 
     // 6. Intent Boost
-    if (_suggestionMatchesIntent(lowerSuggestion, intent)) {
+    if (_suggestionMatchesIntent(suggestionIntent, intent)) {
       score += 20.0;
     }
 
@@ -164,137 +193,21 @@ class GetAutocompleteSuggestionsUseCase {
     return score;
   }
 
-  /// Levenshtein Distance Algorithm
-  int _levenshteinDistance(String s1, String s2) {
-    if (s1 == s2) return 0;
-    if (s1.isEmpty) return s2.length;
-    if (s2.isEmpty) return s1.length;
-
-    List<int> v0 = List<int>.generate(s2.length + 1, (i) => i);
-    List<int> v1 = List<int>.filled(s2.length + 1, 0);
-
-    for (int i = 0; i < s1.length; i++) {
-      v1[0] = i + 1;
-      for (int j = 0; j < s2.length; j++) {
-        int cost = (s1[i] == s2[j]) ? 0 : 1;
-        v1[j + 1] = [
-          v1[j] + 1,
-          v0[j + 1] + 1,
-          v0[j] + cost,
-        ].reduce((a, b) => a < b ? a : b);
-      }
-      for (int j = 0; j < v0.length; j++) v0[j] = v1[j];
-    }
-    return v1[s2.length];
-  }
-
-  /// Simple Soundex implementation
-  String _calculateSoundex(String s) {
-    if (s.isEmpty) return "";
-    String normalized = s.toUpperCase().replaceAll(RegExp(r'[^A-Z]'), '');
-    if (normalized.isEmpty) return "";
-
-    String fst = normalized[0];
-    String rest = normalized.substring(1);
-
-    // Mapping
-    // B, F, P, V -> 1
-    // C, G, J, K, Q, S, X, Z -> 2
-    // D, T -> 3
-    // L -> 4
-    // M, N -> 5
-    // R -> 6
-    rest = rest.replaceAll(RegExp(r'[BFPV]'), '1');
-    rest = rest.replaceAll(RegExp(r'[CGJKQSXZ]'), '2');
-    rest = rest.replaceAll(RegExp(r'[DT]'), '3');
-    rest = rest.replaceAll(RegExp(r'[L]'), '4');
-    rest = rest.replaceAll(RegExp(r'[MN]'), '5');
-    rest = rest.replaceAll(RegExp(r'[R]'), '6');
-    rest = rest.replaceAll(RegExp(r'[AEIOUHWY]'), ''); // Remove others
-
-    // Remove adjacent duplicates
-    String result = fst;
-    if (rest.isNotEmpty) {
-      String prev = ''; // Start empty
-      for (int i = 0; i < rest.length; i++) {
-        if (rest[i] != prev) {
-          result += rest[i];
-          prev = rest[i];
-        }
-      }
-    }
-
-    // Pad or trim
-    if (result.length < 4) {
-      return result.padRight(4, '0');
-    }
-    return result.substring(0, 4);
-  }
-
-  Set<String> _tokenize(String text) {
-    return text
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^\w\s]'), '')
-        .split(RegExp(r'\s+'))
-        .where((t) => t.isNotEmpty)
-        .toSet();
-  }
-
-  QueryIntent _detectQueryIntent(String query) {
-    final lower = query.toLowerCase();
-
-    // -- Existing Categories --
-    if (RegExp(
-      r'^(what|who|when|where|why|how|is|are|can|does)',
-    ).hasMatch(lower))
-      return QueryIntent.question;
-    if (RegExp(r'(define|meaning|definition)').hasMatch(lower))
-      return QueryIntent.definition;
-    if (RegExp(r'^(how to|tutorial|guide)').hasMatch(lower))
-      return QueryIntent.howTo;
-    if (RegExp(r'(vs|versus|compare|diff)').hasMatch(lower))
-      return QueryIntent.comparison;
-    if (RegExp(r'(news|latest|breaking)').hasMatch(lower))
-      return QueryIntent.news;
-    if (RegExp(r'(research|study|paper|journal)').hasMatch(lower))
-      return QueryIntent.research;
-
-    // -- New Categories --
-    if (RegExp(r'(buy|price|cost|cheap|deal|shop|store|order)').hasMatch(lower))
-      return QueryIntent.shopping;
-    if (RegExp(
-      r'(error|bug|fix|install|download|update|code|api|sdk|exception)',
-    ).hasMatch(lower))
-      return QueryIntent.technical;
-    if (RegExp(
-      r'(idea|design|logo|art|drawing|sketch|palette|color)',
-    ).hasMatch(lower))
-      return QueryIntent.creative;
-    if (RegExp(
-      r'(watch|trailer|movie|video|song|mp3|music|stream|series)',
-    ).hasMatch(lower))
-      return QueryIntent.media;
-    if (RegExp(
-      r'(near me|restaurant|hotel|map|location|place)',
-    ).hasMatch(lower))
-      return QueryIntent.local;
-
-    return QueryIntent.general;
-  }
-
-  bool _suggestionMatchesIntent(String suggestion, QueryIntent intent) {
-    // Re-uses detection logic on suggestion text to see if it aligns
-    return _detectQueryIntent(suggestion) == intent;
-  }
-
-  SuggestionType _determineSuggestionType(
-    String suggestion,
-    QueryIntent intent,
+  bool _suggestionMatchesIntent(
+    SearchIntent suggestionIntent,
+    SearchIntent queryIntent,
   ) {
+    return suggestionIntent == queryIntent;
+  }
+
+  Future<SuggestionType> _determineSuggestionType(
+    String suggestion,
+    SearchIntent intent,
+  ) async {
     final lower = suggestion.toLowerCase();
 
     if (lower.contains('?')) return SuggestionType.question;
-    if (intent == QueryIntent.shopping)
+    if (intent == SearchIntent.shopping)
       return SuggestionType.related; // Could add more types
 
     // Existing logic
@@ -306,8 +219,36 @@ class GetAutocompleteSuggestionsUseCase {
 
   // Keep fallback minimal as before
   List<AutocompleteSuggestion> _generateFallbackSuggestions(String query) {
-    // ... (Previous implementation or simplified version)
-    return [];
+    return [
+      AutocompleteSuggestion(
+        text: query,
+        displayTitle: query,
+        type: SuggestionType.topic,
+        relevanceScore: 1.0,
+        intent: SearchIntent.general,
+      ),
+      AutocompleteSuggestion(
+        text: "$query tutorial",
+        displayTitle: "$query tutorial",
+        type: SuggestionType.topic,
+        relevanceScore: 0.8,
+        intent: SearchIntent.howTo,
+      ),
+      AutocompleteSuggestion(
+        text: "what is $query",
+        displayTitle: "what is $query",
+        type: SuggestionType.question,
+        relevanceScore: 0.7,
+        intent: SearchIntent.definition,
+      ),
+      AutocompleteSuggestion(
+        text: "$query examples",
+        displayTitle: "$query examples",
+        type: SuggestionType.topic,
+        relevanceScore: 0.6,
+        intent: SearchIntent.general,
+      ),
+    ];
   }
 
   void cancelPendingRequests() {

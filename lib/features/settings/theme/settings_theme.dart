@@ -7,58 +7,51 @@ class SettingsTheme {
   SettingsTheme._();
 
   // Settings Colors
-  static const Color _settingsBlack = Color(0xFF1E1E1E);
-  static const Color _settingsGray = Color(0xFF5D5D5D);
-  static const Color _settingsLightGray = Color(0xFF9E9E9E);
-  static const Color _settingsAccent = Color(0xFF00B4A6); // Teal accent
-  static const Color _settingsDivider = Color(0xFFEEEEEE);
-  static const Color _settingsError = Color(0xFFD32F2F);
-
-  // Dark mode colors
-  static const Color _darkSettingsWhite = Color(0xFFE0E0E0);
-  static const Color _darkSettingsGray = Color(0xFFA0A0A0);
-  static const Color _darkSettingsLightGray = Color(0xFF616161);
-  static const Color _darkSettingsAccent = Color(0xFF4DB6AC); // Lighter teal
-  static const Color _darkSettingsDivider = Color(0xFF424242);
-  static const Color _darkSettingsError = Color(0xFFEF5350);
-
-  /// Get colors based on brightness
+  /// Get colors based on brightness and app theme
   static SettingsColors colors(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return isDark ? _darkColors : _lightColors;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    if (isDark) {
+      return SettingsColors(
+        header: colorScheme.onSurface,
+        text: colorScheme.onSurface,
+        subtitle: colorScheme.onSurfaceVariant,
+        caption: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+        accent: colorScheme.primary, // Gold
+        divider: colorScheme.outlineVariant,
+        background: colorScheme.surface,
+        cardBackground: colorScheme.surfaceContainer,
+        inputBackground: colorScheme.surfaceContainerHighest,
+        border: colorScheme.outline,
+        error: colorScheme.error,
+        success: const Color(0xFF4CAF50), // Consistent success color
+        icon: colorScheme.onSurfaceVariant,
+        inverseText: colorScheme.onPrimary,
+      );
+    } else {
+      return SettingsColors(
+        header: colorScheme.onSurface,
+        text: colorScheme.onSurface,
+        subtitle: colorScheme.onSurfaceVariant,
+        caption: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+        accent: colorScheme.primary, // Gold
+        divider: colorScheme.outlineVariant,
+        background: colorScheme.surface,
+        cardBackground: colorScheme.surface,
+        inputBackground: colorScheme.surfaceContainer,
+        border: colorScheme.outline,
+        error: colorScheme.error,
+        success: const Color(0xFF4CAF50), // Consistent success color
+        icon: colorScheme.onSurfaceVariant,
+        inverseText: colorScheme.onPrimary,
+      );
+    }
   }
 
-  static const SettingsColors _lightColors = SettingsColors(
-    header: _settingsBlack,
-    text: _settingsBlack,
-    subtitle: _settingsGray,
-    caption: _settingsLightGray,
-    accent: _settingsAccent,
-    divider: _settingsDivider,
-    background: Color(0xFFF5F5F7),
-    cardBackground: Colors.white,
-    inputBackground: Color(0xFFFAFAFA),
-    border: Color(0xFFE0E0E0),
-    error: _settingsError,
-    icon: _settingsGray,
-    inverseText: Colors.white,
-  );
-
-  static const SettingsColors _darkColors = SettingsColors(
-    header: _darkSettingsWhite,
-    text: _darkSettingsWhite,
-    subtitle: _darkSettingsGray,
-    caption: _darkSettingsLightGray,
-    accent: _darkSettingsAccent,
-    divider: _darkSettingsDivider,
-    background: Color(0xFF121212),
-    cardBackground: Color(0xFF1E1E1E),
-    inputBackground: Color(0xFF2C2C2C),
-    border: Color(0xFF424242),
-    error: _darkSettingsError,
-    icon: _darkSettingsGray,
-    inverseText: _settingsBlack,
-  );
+  // Legacy static colors (kept for reference if needed, but unused in main logic now)
+  // ...
 
   /// Page Title
   static TextStyle pageTitle(BuildContext context) {
@@ -170,6 +163,7 @@ class SettingsColors {
   final Color inputBackground;
   final Color border;
   final Color error;
+  final Color success;
   final Color icon;
   final Color inverseText;
 
@@ -185,6 +179,7 @@ class SettingsColors {
     required this.inputBackground,
     required this.border,
     required this.error,
+    required this.success,
     required this.icon,
     required this.inverseText,
   });

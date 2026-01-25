@@ -23,4 +23,31 @@ enum SearchIntent {
 
   /// Location-based and place queries
   map,
+
+  /// Weather queries
+  weather,
+
+  /// Questions that require direct answers
+  question,
+
+  /// Definition and meaning queries
+  definition,
+
+  /// How-to guides and tutorials
+  howTo,
+
+  /// comparisons between two or more things
+  comparison,
+
+  /// Technical questions (errors, APIs, specific stacks)
+  technical,
+
+  /// Creative requests (ideas, art, design)
+  creative,
+
+  /// Media consumption (movies, music, videos)
+  media,
+
+  /// Local business/places search
+  local,
 }

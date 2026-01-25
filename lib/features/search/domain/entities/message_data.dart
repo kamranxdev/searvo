@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'search_step.dart';
 import 'tool_widget_data.dart';
-import 'search_mode.dart';
+
 import 'source_item.dart';
 import 'video_item.dart';
 import 'attachment_metadata.dart';
@@ -21,7 +21,7 @@ class MessageData {
   final List<AttachmentMetadata> attachments;
   final DateTime timestamp;
   final String? errorMessage;
-  final SearchMode searchMode;
+
   final List<SearchStep> steps;
   final List<ToolWidgetData> toolWidgets;
 
@@ -42,7 +42,7 @@ class MessageData {
     this.attachments = const [],
     DateTime? timestamp,
     this.errorMessage,
-    this.searchMode = SearchMode.search,
+
     this.steps = const [],
     this.toolWidgets = const [],
     this.confidenceScore,
@@ -62,7 +62,7 @@ class MessageData {
     List<AttachmentMetadata>? attachments,
     DateTime? timestamp,
     String? errorMessage,
-    SearchMode? searchMode,
+
     List<SearchStep>? steps,
     List<ToolWidgetData>? toolWidgets,
     int? confidenceScore,
@@ -81,7 +81,7 @@ class MessageData {
       attachments: attachments ?? this.attachments,
       timestamp: timestamp ?? this.timestamp,
       errorMessage: errorMessage ?? this.errorMessage,
-      searchMode: searchMode ?? this.searchMode,
+
       steps: steps ?? this.steps,
       toolWidgets: toolWidgets ?? this.toolWidgets,
       confidenceScore: confidenceScore ?? this.confidenceScore,
