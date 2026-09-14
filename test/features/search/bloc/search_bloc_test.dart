@@ -9,7 +9,7 @@ import 'package:searvo/features/search/domain/entities/message_branch_manager.da
 import 'package:searvo/features/search/domain/entities/message_branch.dart';
 import 'package:searvo/features/search/domain/entities/message_data.dart';
 
-import 'package:searvo/features/search/data/datasources/intelligent_search_data_source.dart';
+import 'package:searvo/features/search/data/datasources/search_data_source.dart';
 import 'package:searvo/features/search/presentation/bloc/conversation_manager.dart';
 
 import 'package:searvo/features/history/services/conversation_database_service.dart';
@@ -18,30 +18,30 @@ import 'package:searvo/features/history/models/conversation_model.dart';
 import 'search_bloc_test.mocks.dart';
 
 @GenerateMocks([
-  IntelligentSearchDataSource,
+  SearchDataSource,
   ConversationManager,
   ConversationDatabaseService,
   ConversationModel,
 ])
 void main() {
-  late MockIntelligentSearchDataSource mockIntelligentSearchDataSource;
+  late MockSearchDataSource mockSearchDataSource;
   late MockConversationManager mockConversationManager;
   late MockConversationDatabaseService mockConversationDatabaseService;
   late SearchBloc searchBloc;
 
   setUp(() {
-    mockIntelligentSearchDataSource = MockIntelligentSearchDataSource();
+    mockSearchDataSource = MockSearchDataSource();
     mockConversationManager = MockConversationManager();
     mockConversationDatabaseService = MockConversationDatabaseService();
 
     // Default stubs to prevent null errors
     when(mockConversationManager.state).thenReturn(ConversationState.initial());
-    when(mockIntelligentSearchDataSource.initialize()).thenAnswer((_) async {});
+    when(mockSearchDataSource.initialize()).thenAnswer((_) async {});
 
     // Stub sync service if needed logic calls it (e.g. saveConversation) - ignoring for now unless errors pop up
 
     searchBloc = SearchBloc(
-      intelligentSearchDataSource: mockIntelligentSearchDataSource,
+      searchRemoteDataSource: mockSearchDataSource,
       conversationManager: mockConversationManager,
       conversationDatabaseService: mockConversationDatabaseService,
     );
@@ -321,7 +321,7 @@ void main() {
     test('initial state should be SearchState.initial', () {
       // For this test we can instantiate manually
       final bloc = SearchBloc(
-        intelligentSearchDataSource: mockIntelligentSearchDataSource,
+        searchRemoteDataSource: mockSearchDataSource,
         conversationManager: mockConversationManager,
         conversationDatabaseService: mockConversationDatabaseService,
       );
@@ -332,13 +332,13 @@ void main() {
     blocTest<SearchBloc, SearchState>(
       'onInitialize should call searchService.initialize',
       build: () => SearchBloc(
-        intelligentSearchDataSource: mockIntelligentSearchDataSource,
+        searchRemoteDataSource: mockSearchDataSource,
         conversationManager: mockConversationManager,
         conversationDatabaseService: mockConversationDatabaseService,
       ),
       act: (bloc) => bloc.add(const SearchEvent.initialize()),
       verify: (bloc) {
-        verify(mockIntelligentSearchDataSource.initialize()).called(1);
+        verify(mockSearchDataSource.initialize()).called(1);
       },
     );
 
@@ -372,7 +372,7 @@ void main() {
         );
 
         when(
-          mockIntelligentSearchDataSource.generateSearchStream(
+          mockSearchDataSource.streamSearch(
             any,
             attachments: anyNamed('attachments'),
             isNewConversation: anyNamed('isNewConversation'),
@@ -393,7 +393,7 @@ void main() {
         ).thenAnswer((_) async => MockConversationModel());
 
         return SearchBloc(
-          intelligentSearchDataSource: mockIntelligentSearchDataSource,
+          searchRemoteDataSource: mockSearchDataSource,
           conversationManager: mockConversationManager,
           conversationDatabaseService: mockConversationDatabaseService,
         );

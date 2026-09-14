@@ -4,14 +4,15 @@ import 'package:searvo/features/discover/data/repositories/discover_repository_i
 import 'package:searvo/features/discover/domain/repositories/discover_repository.dart';
 import 'package:searvo/features/discover/domain/usecases/get_articles.dart';
 import 'package:searvo/features/discover/presentation/cubit/discover_cubit.dart';
-import 'package:searvo/features/search/data/datasources/searxng_remote_data_source.dart';
+import 'package:searvo/features/search/data/datasources/search_data_source.dart';
 
 /// Initialize discover feature dependencies
 Future<void> initDiscoverDependencies() async {
   // Data sources
   sl.registerLazySingleton<DiscoverRemoteDataSource>(
-    () =>
-        DiscoverRemoteDataSourceImpl(searxngService: SearXNGRemoteDataSource()),
+    () => DiscoverRemoteDataSourceImpl(
+      searchRemoteDataSource: sl<SearchRemoteDataSource>(),
+    ),
   );
 
   // Repository

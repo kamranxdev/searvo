@@ -5,23 +5,23 @@ import 'search_state.dart';
 import '../../domain/entities/message_branch_manager.dart';
 import '../../domain/entities/message_generation_state.dart';
 import '../../domain/entities/source_item.dart';
-import '../../data/datasources/intelligent_search_data_source.dart';
+import '../../domain/entities/search_stream_status.dart';
+import '../../data/datasources/search_data_source.dart';
 import 'conversation_manager.dart';
 
 import '../../../../common/widgets/attachment_input_widget.dart';
-import '../../rag/models/rag_models.dart';
 import '../../../history/services/conversation_database_service.dart';
 
 class SearchBloc extends Bloc<SearchEvent, SearchState> {
-  final IntelligentSearchDataSource _intelligentSearchDataSource;
+  final SearchRemoteDataSource _searchRemoteDataSource;
   final ConversationManager _conversationManager;
   final ConversationDatabaseService _conversationDatabaseService;
 
   SearchBloc({
-    required IntelligentSearchDataSource intelligentSearchDataSource,
+    required SearchRemoteDataSource searchRemoteDataSource,
     required ConversationDatabaseService conversationDatabaseService,
     ConversationManager? conversationManager,
-  }) : _intelligentSearchDataSource = intelligentSearchDataSource,
+  }) : _searchRemoteDataSource = searchRemoteDataSource,
        _conversationDatabaseService = conversationDatabaseService,
        _conversationManager = conversationManager ?? ConversationManager(),
        super(const SearchState.initial()) {
@@ -44,7 +44,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
   }
 
   Future<void> _onInitialize(Emitter<SearchState> emit) async {
-    await _intelligentSearchDataSource.initialize();
+    await _searchRemoteDataSource.initialize();
   }
 
   Future<void> _onLoadConversation(
@@ -100,8 +100,8 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       int tokenBufferCount = 0;
       DateTime lastEmitTime = DateTime.now();
 
-      await _intelligentSearchDataSource
-          .generateSearchStream(
+      await _searchRemoteDataSource
+          .streamSearch(
             query,
             attachments: attachments,
             isNewConversation: true,
@@ -125,33 +125,16 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
               'SearchBloc: Update processed. Answer length: ${accumulatedAnswer.length}. First 50 chars: "${accumulatedAnswer.length > 50 ? accumulatedAnswer.substring(0, 50) : accumulatedAnswer}..."',
             );
 
-            // Map RAG status
-            final genState = update.status == RAGStatus.streaming
+            // Map search stream status
+            final genState = update.status == SearchStreamStatus.streaming
                 ? MessageGenerationState.streaming
-                : update.status == RAGStatus.completed
+                : update.status == SearchStreamStatus.completed
                 ? MessageGenerationState.completed
                 : MessageGenerationState.generating;
 
-            // Map documents
-            List<SourceItem>? sourceItems;
-            if (update.documents != null && update.documents!.isNotEmpty) {
-              sourceItems = update.documents!
-                  .map(
-                    (d) => SourceItem(
-                      thumbnail: d.metadata['thumbnail'] ?? '',
-                      url: d.url,
-                      title: d.title,
-                      description: d.snippet,
-                      domain: d.source,
-                      source: d.source,
-                      publishedDate: d.publishedDate,
-                    ),
-                  )
-                  .toList();
-            } else if (update.finalResult != null &&
-                update.finalResult!.sources.isNotEmpty) {
-              sourceItems = update.finalResult!.sources;
-            }
+            final List<SourceItem>? sourceItems = (update.finalResult?.sources.isNotEmpty == true)
+                ? update.finalResult!.sources
+                : null;
 
             // Get current message from manager state to ensure we have latest branches
             final currentManagerBranch =
@@ -182,7 +165,7 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
                 sourceItems != null ||
                 (update.images?.isNotEmpty == true) ||
                 (update.videos?.isNotEmpty == true) ||
-                (update.steps != null && update.status != RAGStatus.streaming);
+                (update.steps != null && update.status != SearchStreamStatus.streaming);
 
             final shouldEmit =
                 !isStreaming ||
@@ -297,10 +280,10 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
 
       _conversationManager.updateCurrentMessage(streamingMessage);
 
-      await _intelligentSearchDataSource
-          .generateFollowUpStream(
-            query,
-            conversationHistory,
+      await _searchRemoteDataSource
+          .streamFollowUp(
+            query: query,
+            previousMessages: conversationHistory,
             attachments: attachments,
             maxHistoryMessages: 5,
           )
@@ -310,31 +293,15 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
               streamController.add(update.token!);
             }
 
-            final genState = update.status == RAGStatus.streaming
+            final genState = update.status == SearchStreamStatus.streaming
                 ? MessageGenerationState.streaming
-                : update.status == RAGStatus.completed
+                : update.status == SearchStreamStatus.completed
                 ? MessageGenerationState.completed
                 : MessageGenerationState.generating;
 
-            List<SourceItem>? sourceItems;
-            if (update.documents != null && update.documents!.isNotEmpty) {
-              sourceItems = update.documents!
-                  .map(
-                    (d) => SourceItem(
-                      thumbnail: d.metadata['thumbnail'] ?? '',
-                      url: d.url,
-                      title: d.title,
-                      description: d.snippet,
-                      domain: d.source,
-                      source: d.source,
-                      publishedDate: d.publishedDate,
-                    ),
-                  )
-                  .toList();
-            } else if (update.finalResult != null &&
-                update.finalResult!.sources.isNotEmpty) {
-              sourceItems = update.finalResult!.sources;
-            }
+            final List<SourceItem>? sourceItems = (update.finalResult?.sources.isNotEmpty == true)
+                ? update.finalResult!.sources
+                : null;
 
             final currentManagerBranch =
                 _conversationManager.state.messageBranches.last;
@@ -442,8 +409,8 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
       final oldMessageQuery = generatingMessage.query;
       final oldMessageAttachments = generatingMessage.attachments;
 
-      await _intelligentSearchDataSource
-          .generateSearchStream(
+      await _searchRemoteDataSource
+          .streamSearch(
             oldMessageQuery,
             attachments: oldMessageAttachments,
           )
@@ -455,31 +422,15 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
               streamController.add(update.token!);
             }
 
-            final genState = update.status == RAGStatus.streaming
+            final genState = update.status == SearchStreamStatus.streaming
                 ? MessageGenerationState.streaming
-                : update.status == RAGStatus.completed
+                : update.status == SearchStreamStatus.completed
                 ? MessageGenerationState.completed
                 : MessageGenerationState.generating;
 
-            List<SourceItem>? sourceItems;
-            if (update.documents != null && update.documents!.isNotEmpty) {
-              sourceItems = update.documents!
-                  .map(
-                    (d) => SourceItem(
-                      thumbnail: d.metadata['thumbnail'] ?? '',
-                      url: d.url,
-                      title: d.title,
-                      description: d.snippet,
-                      domain: d.source,
-                      source: d.source,
-                      publishedDate: d.publishedDate,
-                    ),
-                  )
-                  .toList();
-            } else if (update.finalResult != null &&
-                update.finalResult!.sources.isNotEmpty) {
-              sourceItems = update.finalResult!.sources;
-            }
+            final List<SourceItem>? sourceItems = (update.finalResult?.sources.isNotEmpty == true)
+                ? update.finalResult!.sources
+                : null;
 
             final currentMessage = branchManager.currentMessage.copyWith(
               answer: accumulatedAnswer,
@@ -594,8 +545,8 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
         ),
       );
 
-      await _intelligentSearchDataSource
-          .generateSearchStream(
+      await _searchRemoteDataSource
+          .streamSearch(
             newQuery,
             attachments: generatingMessage.attachments,
           )
@@ -607,31 +558,15 @@ class SearchBloc extends Bloc<SearchEvent, SearchState> {
               streamController.add(update.token!);
             }
 
-            final genState = update.status == RAGStatus.streaming
+            final genState = update.status == SearchStreamStatus.streaming
                 ? MessageGenerationState.streaming
-                : update.status == RAGStatus.completed
+                : update.status == SearchStreamStatus.completed
                 ? MessageGenerationState.completed
                 : MessageGenerationState.generating;
 
-            List<SourceItem>? sourceItems;
-            if (update.documents != null && update.documents!.isNotEmpty) {
-              sourceItems = update.documents!
-                  .map(
-                    (d) => SourceItem(
-                      thumbnail: d.metadata['thumbnail'] ?? '',
-                      url: d.url,
-                      title: d.title,
-                      description: d.snippet,
-                      domain: d.source,
-                      source: d.source,
-                      publishedDate: d.publishedDate,
-                    ),
-                  )
-                  .toList();
-            } else if (update.finalResult != null &&
-                update.finalResult!.sources.isNotEmpty) {
-              sourceItems = update.finalResult!.sources;
-            }
+            final List<SourceItem>? sourceItems = (update.finalResult?.sources.isNotEmpty == true)
+                ? update.finalResult!.sources
+                : null;
 
             final currentMessage = branchManager.currentMessage.copyWith(
               answer: accumulatedAnswer,

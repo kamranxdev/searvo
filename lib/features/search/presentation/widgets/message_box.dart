@@ -401,17 +401,24 @@ class _MessageBoxState extends State<MessageBox> with TickerProviderStateMixin {
         // C. Tools & Widgets (e.g. Weather, Stock)
         if (_currentMessage.toolWidgets.isNotEmpty) _buildToolWidgets(colors),
 
-        // D. Main Answer Content
+        // D. Top Sources Bar (Perplexity Style - Above Answer)
+        if (_currentMessage.sources.isNotEmpty) _buildTopSourcesBar(colors),
+
+        // E. Main Answer Content
         Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Perplexity Answer Section Header
+              _buildAnswerHeader(colors),
+
+              const SizedBox(height: 12),
+
               if (_currentMessage.answer.isNotEmpty)
                 StreamBuilder<String>(
                   stream: _currentMessage.answerStream,
                   builder: (context, snapshot) {
-                    // We use the accumulated answer from _currentMessage usually
                     return MarkdownResponse(
                       text: _currentMessage.answer,
                       isStreaming: _currentMessage.isGenerating,
@@ -424,17 +431,219 @@ class _MessageBoxState extends State<MessageBox> with TickerProviderStateMixin {
           ),
         ),
 
-        // E. Visuals (Images/Videos) Grid/Carousel
+        // F. Visuals (Images/Videos) Grid/Carousel
         if (_currentMessage.images.isNotEmpty ||
             _currentMessage.videos.isNotEmpty)
           _buildMediaSection(colors),
 
-        // F. Sources Section
-        if (_currentMessage.sources.isNotEmpty) _buildSourcesSection(colors),
-
         // G. Related Questions
         if (_currentMessage.relatedQuestions.isNotEmpty)
           _buildRelatedQuestions(colors),
+      ],
+    );
+  }
+
+  Widget _buildTopSourcesBar(SearchColors colors) {
+    final sources = _currentMessage.sources;
+    if (sources.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 16, 0, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 24),
+            child: Row(
+              children: [
+                Icon(Icons.layers_outlined, size: 15, color: colors.caption),
+                const SizedBox(width: 6),
+                Text(
+                  'Sources',
+                  style: TextStyle(
+                    color: colors.text,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: colors.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '${sources.length}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: colors.caption,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 68,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.only(right: 24),
+              itemCount: sources.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final source = sources[index];
+                return InkWell(
+                  onTap: () => _handleUrlTap(source.url),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    width: 155,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: colors.surfaceContainerHighest.withValues(alpha: 0.4),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: colors.border.withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 16,
+                              height: 16,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: colors.primary.withValues(alpha: 0.12),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                '${index + 1}',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  color: colors.primary,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            _buildFavicon(colors, source),
+                            const SizedBox(width: 5),
+                            Expanded(
+                              child: Text(
+                                source.domain,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: colors.caption,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          source.title,
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: colors.text,
+                            height: 1.2,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+          Divider(height: 1, color: colors.divider.withValues(alpha: 0.5)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnswerHeader(SearchColors colors) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                color: colors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(
+                Icons.auto_awesome_rounded,
+                size: 15,
+                color: colors.primary,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Answer',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: colors.text,
+                letterSpacing: -0.3,
+              ),
+            ),
+          ],
+        ),
+        Row(
+          children: [
+            IconButton(
+              icon: Icon(Icons.copy_rounded, size: 16, color: colors.caption),
+              tooltip: 'Copy answer',
+              onPressed: _copyToClipboard,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              padding: EdgeInsets.zero,
+            ),
+            const SizedBox(width: 2),
+            IconButton(
+              icon: Icon(Icons.share_rounded, size: 16, color: colors.caption),
+              tooltip: 'Share',
+              onPressed: _shareContent,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              padding: EdgeInsets.zero,
+            ),
+            if (widget.onRewrite != null) ...[
+              const SizedBox(width: 2),
+              IconButton(
+                icon: Icon(Icons.refresh_rounded, size: 16, color: colors.caption),
+                tooltip: 'Rewrite',
+                onPressed: widget.onRewrite,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                padding: EdgeInsets.zero,
+              ),
+            ],
+            const SizedBox(width: 2),
+            IconButton(
+              icon: Icon(
+                _voiceService.isSpeaking ? Icons.stop_rounded : Icons.volume_up_rounded,
+                size: 16,
+                color: _voiceService.isSpeaking ? colors.primary : colors.caption,
+              ),
+              tooltip: _voiceService.isSpeaking ? 'Stop listening' : 'Read aloud',
+              onPressed: _toggleTextToSpeech,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              padding: EdgeInsets.zero,
+            ),
+          ],
+        ),
       ],
     );
   }

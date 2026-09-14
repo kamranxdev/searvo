@@ -4,7 +4,7 @@ import 'package:searvo/core/theme/theme.dart';
 import 'package:searvo/features/search/presentation/widgets/search_box.dart'
     show SearchBox;
 
-import 'package:searvo/features/search/data/datasources/intelligent_search_data_source.dart';
+import 'package:searvo/features/search/data/datasources/search_data_source.dart';
 import 'package:searvo/features/settings/services/settings_service.dart';
 import 'package:searvo/common/widgets/attachment_input_widget.dart';
 import 'package:searvo/core/di/injection_container.dart';
@@ -21,8 +21,8 @@ class _SearvoHomeContentState extends State<SearvoHomeContent> {
   final TextEditingController _searchController = TextEditingController();
   final List<AttachmentData> _attachments = [];
   final SettingsService _settingsService = SettingsService();
-  final IntelligentSearchDataSource _intelligentSearchDataSource =
-      sl<IntelligentSearchDataSource>();
+  final SearchRemoteDataSource _searchRemoteDataSource =
+      sl<SearchRemoteDataSource>();
 
   bool _isLoading = false;
 
@@ -34,7 +34,7 @@ class _SearvoHomeContentState extends State<SearvoHomeContent> {
 
   Future<void> _initializeServices() async {
     try {
-      await _intelligentSearchDataSource.initialize();
+      await _searchRemoteDataSource.initialize();
     } catch (e) {
       print('Failed to initialize search service: $e');
     }
@@ -50,11 +50,6 @@ class _SearvoHomeContentState extends State<SearvoHomeContent> {
       return;
     }
 
-    // Check if any provider is configured
-    if (!_intelligentSearchDataSource.isConfigured) {
-      _showConfigurationDialog();
-      return;
-    }
 
     setState(() {
       _isLoading = true;

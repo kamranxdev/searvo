@@ -1,54 +1,46 @@
-# Search Feature Architecture
+# Search Feature Architecture (Client-Side)
 
 ## Overview
-The `search` feature has been refactored to follow **Clean Architecture** principles, improving scalability, testability, and maintainability. This structure aligns with `features/history` key principles.
+The `search` feature in Flutter operates as a **Clean Client** interfacing with the dedicated **Python FastAPI Backend (`backend/`)**. 
+
+All heavy operations—including autonomous tool planning, web scraping, SearXNG meta-search, vector embeddings with FastEmbed, Qdrant vector storage, and document chunking—are executed on the backend. The Flutter app focuses on high-performance streaming presentation, generative UI widgets, and conversation management.
 
 ## Directory Structure
 
-### `domain/` (Business Logic)
-Contains the core business logic, independent of UI or Data layers.
-- **`entities/`**: Plain Dart objects representing business concepts (e.g., `MessageData`, `SearchIntent`, `RagDocument`).
-- **`repositories/`**: Interfaces (abstract classes) defining the contract for data operations.
-- **`usecases/`**: Classes encapsulating specific business rules/actions (e.g., `PerformSearchUseCase`).
-
-### `data/` (Data Access)
-Implements the interfaces defined in the Domain layer.
-- **`datasources/`**: Low-level data access (e.g., `SearXNGService` - to be migrated here, `DriftDB`).
-- **`models/`**: DTOs (Data Transfer Objects) that extend Entities and handle JSON/DB serialization.
-- **`repositories/`**: Implementations of Domain Repositories.
-
-### `presentation/` (UI & State)
-Handles the user interface and state management.
-- **`bloc/`**: State management using BLoC pattern (e.g., `SearchBloc`).
-- **`pages/`**: Full screen widgets.
-- **`widgets/`**: Reusable UI components.
-
-## RAG Sub-feature
-The `rag` module contains specialized logic for Retrieval Augmented Generation.
-- **`domain/`**: RAG-specific entities (`RagDocument`, `ContextChunk`) and logic.
-- **`services/`**: specialized services for RAG orchestration (to be migrated to `domain/usecases` or `data/datasources`).
-
-## Refactoring Status & Naming Conventions
-
-### Entities (Completed)
-All models have been moved to `domain/entities` and split into granular files to adhere to Single Responsibility Principle.
-- `MessageData` -> Split into `message_data.dart`, `source_item.dart`, `video_item.dart`, `attachment_metadata.dart`.
-- `RagDocument` -> Split from `rag_models.dart`.
-- `SearchIntent`, `SearchMode`, `SearchStep`.
-
-### Pending Migrations (Next Steps)
-To fully realize the architecture, the following services should be migrated:
-
-| Current File | Proposed Location | New Name | Status |
-|--------------|-------------------|----------|--------|
-| `services/search_service.dart` | `domain/usecases/` | `SearchUseCase` (Facade) | Pending |
-| `services/searxng_service.dart` | `data/datasources/` | `SearXNGRemoteDataSource` | **Done** (with backward compat) |
-| `services/conversation_manager.dart` | `presentation/bloc/` | `ConversationManager` | **Done** (Moved) |
-| `rag/services/*` | `rag/domain/services/` | Keep as Domain Services | Pending |
-
-## Naming Guidelines
-- **Entities**: Nouns, no suffix (e.g., `Message`).
-- **Models**: `NameModel` (e.g., `MessageModel`) extends Entity.
-- **Repositories**: `NameRepository` (Interface), `NameRepositoryImpl` (Implementation).
-- **Data Sources**: `NameRemoteDataSource`, `NameLocalDataSource`.
-- **Use Cases**: `VerbNounUseCase` (e.g., `GetSearchResultsUseCase`).
+```
+lib/features/search/
+  ├── data/
+  │   ├── datasources/
+  │   │   └── search_data_source.dart   # SSE Stream & HTTP API client for backend
+  │   ├── models/
+  │   │   ├── search_stream_update.dart        # Real-time event chunks from SSE stream
+  │   │   └── search_response_model.dart       # Search results serialization
+  │   └── repositories/
+  │       └── search_repository_impl.dart      # Clean repository bridging domain to remote API
+  ├── domain/
+  │   ├── entities/                            # Domain entities (MessageData, SourceItem, etc.)
+  │   │   ├── search_stream_status.dart        # Stream lifecycle status enum
+  │   │   ├── source_item.dart                 # Web citations & sources
+  │   │   ├── message_data.dart                # Completed/in-progress message payload
+  │   │   ├── search_step.dart                 # Real-time execution steps
+  │   │   ├── tool_widget_data.dart            # Payloads for Generative UI widgets
+  │   │   ├── autocomplete_entities.dart       # Search suggestion models
+  │   │   ├── search_enums.dart                # Search categories & filters
+  │   │   ├── message_branch.dart              # Multi-branch chat conversation state
+  │   │   ├── message_branch_manager.dart      # Branch tree traversal
+  │   │   ├── message_generation_state.dart    # UI generation status
+  │   │   ├── image_item.dart                  # Media results
+  │   │   └── video_item.dart                  # Media results
+  │   ├── repositories/
+  │   │   └── search_repository.dart           # Repository interface
+  │   └── usecases/
+  │       └── get_autocomplete_suggestions_usecase.dart  # Debounced suggestions usecase
+  ├── presentation/
+  │   ├── bloc/                                # SearchBloc & ConversationManager
+  │   ├── pages/                               # Full-screen search results view
+  │   └── widgets/                             # SearchBox, MessageBox, and generative UI widgets
+  ├── theme/
+  │   └── search_theme.dart                    # Visual styles and colors
+  └── di/
+      └── search_dependencies.dart             # GetIt dependency injection
+```

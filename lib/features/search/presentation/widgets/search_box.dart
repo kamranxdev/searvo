@@ -10,8 +10,9 @@ import 'package:searvo/features/search/domain/usecases/get_autocomplete_suggesti
 import 'package:searvo/features/search/domain/entities/autocomplete_entities.dart';
 
 import 'package:searvo/features/search/domain/entities/search_intent.dart';
+import 'dart:io';
 import 'dart:ui';
-import 'package:searvo/features/search/rag/services/ingestion/attachment_ingestion_service.dart';
+import 'package:searvo/features/search/data/datasources/search_data_source.dart';
 
 enum IngestionStatus { pending, processing, success, error }
 
@@ -61,8 +62,8 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
   // Autocomplete use case
   late GetAutocompleteSuggestionsUseCase _autocompleteUseCase;
 
-  // Ingestion service
-  late AttachmentIngestionService _ingestionService;
+  // Search remote data source for document upload/indexing
+  late SearchRemoteDataSource _searchRemoteDataSource;
   final Map<String, IngestionStatus> _attachmentStatuses = {};
 
   List<AutocompleteSuggestion> _dynamicSuggestions = [];
@@ -131,7 +132,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
 
     // Initialize services
     _autocompleteUseCase = sl<GetAutocompleteSuggestionsUseCase>();
-    _ingestionService = sl<AttachmentIngestionService>();
+    _searchRemoteDataSource = sl<SearchRemoteDataSource>();
 
     // Fetch trending suggestions for empty state
     _fetchTrendingSuggestions();
@@ -249,7 +250,7 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
     _isSettingTextProgrammatically = false;
   }
 
-  /// Fetch trending suggestions from SearxNG
+  /// Fetch trending suggestions from backend
   void _fetchTrendingSuggestions() async {
     setState(() {
       _isLoadingSuggestions = true;
@@ -320,17 +321,22 @@ class _SearchBoxState extends State<SearchBox> with TickerProviderStateMixin {
       _attachmentStatuses[attachment.path] = IngestionStatus.processing;
     });
 
-    final result = await _ingestionService.ingestAttachment(attachment);
-
-    if (mounted) {
-      setState(() {
-        _attachmentStatuses[attachment.path] = result['success'] == true
-            ? IngestionStatus.success
-            : IngestionStatus.error;
-      });
-
-      if (result['success'] != true) {
-        widget.onAttachmentError?.call(result['error'] ?? 'Ingestion failed');
+    try {
+      final file = File(attachment.path);
+      if (await file.exists()) {
+        await _searchRemoteDataSource.uploadDocument(file);
+      }
+      if (mounted) {
+        setState(() {
+          _attachmentStatuses[attachment.path] = IngestionStatus.success;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _attachmentStatuses[attachment.path] = IngestionStatus.error;
+        });
+        widget.onAttachmentError?.call('Backend upload failed: $e');
       }
     }
   }

@@ -108,7 +108,7 @@ class _StreamingTextWidgetState extends State<StreamingTextWidget>
         }
       },
       onError: (error) {
-        print('Streaming error: $error');
+        debugPrint('Streaming error: $error');
         if (mounted) {
           setState(() {
             _isStreamingComplete = true;
@@ -128,27 +128,32 @@ class _StreamingTextWidgetState extends State<StreamingTextWidget>
   String _cleanText(String text) {
     var cleaned = text;
 
-    // 1. Normalize and merge consecutive citations: [1] [2] -> [1][2]
-    // We intentionally want SEPARATE citations like [1][2] for Perplexity style chips.
-    // However, we still want to remove extra spaces between them: [1] [2] -> [1][2]
+    // 1. Normalize consecutive citations: [1][2] or [1] [2] or [1], [2] -> [1, 2]
     var prev = '';
     do {
       prev = cleaned;
       cleaned = cleaned.replaceAllMapped(
-        RegExp(r'(\[\d+\])\s+(\[\d+\])'),
-        (match) => '${match.group(1)}${match.group(2)}',
+        RegExp(r'\[(\d+)\]\s*,?\s*\[(\d+)\]'),
+        (match) => '[${match.group(1)}, ${match.group(2)}]',
       );
     } while (prev != cleaned);
 
-    // 2. Bind punctuation to citations (prevent [1] . from splitting)
-    // We use a Word Joiner (\u2060) to keep them together if needed.
+    // 2. Also handle chained [1, 2][3] -> [1, 2, 3]
+    do {
+      prev = cleaned;
+      cleaned = cleaned.replaceAllMapped(
+        RegExp(r'\[([\d,\s]+)\]\s*,?\s*\[(\d+)\]'),
+        (match) => '[${match.group(1)}, ${match.group(2)}]',
+      );
+    } while (prev != cleaned);
+
+    // 3. Bind punctuation to citations (prevent [1] . from splitting)
     cleaned = cleaned.replaceAllMapped(
-      RegExp(r'((?:\[[\d]+\])+)\s*([.,;:?])'),
+      RegExp(r'((?:\[[\d,\s]+\])+)\s*([.,;:?])'),
       (match) => '${match.group(1)}\u2060${match.group(2)}',
     );
 
-    // 3. Bind citations to preceding text (prevent "text [1]" split)
-    // Replace standard space with Non-Breaking Space (\u00A0)
+    // 4. Bind citations to preceding text (prevent "text [1]" split)
     cleaned = cleaned.replaceAllMapped(
       RegExp(r'([^\s\n])\s+(\[[\d,\s]+\])'),
       (match) => '${match.group(1)}\u00A0${match.group(2)}',
@@ -163,7 +168,7 @@ class _StreamingTextWidgetState extends State<StreamingTextWidget>
     final searchColors = SearchTheme.colors(context);
     final userStyle =
         widget.style ??
-        TextStyle(fontSize: 16, height: 1.6, color: searchColors.onSurface);
+        TextStyle(fontSize: 16, height: 1.65, color: searchColors.onSurface);
 
     // If waiting for stream to start and no static text, show generic loading
     if (widget.staticText == null &&
@@ -187,13 +192,25 @@ class _StreamingTextWidgetState extends State<StreamingTextWidget>
           data: textToDisplay,
           selectable: true,
           styleSheet: MarkdownStyleSheet(
-            p: userStyle,
-            h1: userStyle.copyWith(fontSize: 24, fontWeight: FontWeight.bold),
-            h2: userStyle.copyWith(fontSize: 20, fontWeight: FontWeight.bold),
-            h3: userStyle.copyWith(fontSize: 18, fontWeight: FontWeight.bold),
+            p: userStyle.copyWith(fontSize: 16, height: 1.65),
+            h1: userStyle.copyWith(fontSize: 22, fontWeight: FontWeight.w700, height: 1.35),
+            h2: userStyle.copyWith(fontSize: 19, fontWeight: FontWeight.w700, height: 1.35),
+            h3: userStyle.copyWith(fontSize: 16.5, fontWeight: FontWeight.w700, height: 1.35),
+            strong: userStyle.copyWith(fontWeight: FontWeight.w700, color: searchColors.text),
+            em: userStyle.copyWith(fontStyle: FontStyle.italic),
+            listBullet: userStyle.copyWith(color: searchColors.primary, fontWeight: FontWeight.bold),
+            listIndent: 20,
+            blockSpacing: 14,
+            tableBorder: TableBorder.all(
+              color: searchColors.outline.withValues(alpha: 0.2),
+              width: 0.5,
+            ),
+            tableHead: userStyle.copyWith(fontWeight: FontWeight.bold, fontSize: 14),
+            tableBody: userStyle.copyWith(fontSize: 14),
+            tableCellsPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             code: TextStyle(
               backgroundColor: searchColors.surfaceContainerHighest,
-              color: searchColors.onSurface,
+              color: searchColors.primary,
               fontFamily: 'monospace',
               fontSize: 14,
             ),
@@ -208,9 +225,9 @@ class _StreamingTextWidgetState extends State<StreamingTextWidget>
               color: searchColors.surfaceContainerHighest.withValues(
                 alpha: 0.3,
               ),
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(6),
               border: Border(
-                left: BorderSide(color: searchColors.primary, width: 4),
+                left: BorderSide(color: searchColors.primary, width: 3.5),
               ),
             ),
           ),
@@ -296,7 +313,24 @@ class _CitationElementBuilder extends MarkdownElementBuilder {
   });
 
   @override
+  bool isBlockElement() => false;
+
+  @override
+  Widget? visitElementAfterWithContext(
+    BuildContext context,
+    md.Element element,
+    TextStyle? preferredStyle,
+    TextStyle? parentStyle,
+  ) {
+    return _buildCitationWidget(element);
+  }
+
+  @override
   Widget? visitElementAfter(md.Element element, TextStyle? preferredStyle) {
+    return _buildCitationWidget(element);
+  }
+
+  Widget? _buildCitationWidget(md.Element element) {
     final numbersStr = element.attributes['numbers'];
     if (numbersStr == null) return null;
 
@@ -320,11 +354,16 @@ class _CitationElementBuilder extends MarkdownElementBuilder {
       }
     }
 
-    return CitationChip(
-      citationNumbers: numbers,
-      sources: sourceList,
-      onTap: onCitationTap != null ? (idx) => onCitationTap!(idx) : null,
-      searchColors: searchColors,
+    return Text.rich(
+      WidgetSpan(
+        alignment: PlaceholderAlignment.middle,
+        child: CitationChip(
+          citationNumbers: numbers,
+          sources: sourceList,
+          onTap: onCitationTap != null ? (idx) => onCitationTap!(idx) : null,
+          searchColors: searchColors,
+        ),
+      ),
     );
   }
 }

@@ -13,7 +13,6 @@ import 'package:searvo/features/settings/services/llm_settings_service.dart';
 import 'package:searvo/features/settings/services/settings_service.dart';
 import 'package:searvo/features/search/presentation/bloc/search_bloc.dart';
 import 'package:searvo/features/search/presentation/bloc/search_event.dart';
-import 'package:searvo/features/search/rag/bloc/rag_cubit.dart';
 import 'package:searvo/features/history/presentation/cubit/history_cubit.dart';
 import 'core/theme/theme.dart';
 
@@ -100,7 +99,6 @@ class SearvoApp extends StatelessWidget {
               create: (_) =>
                   sl<SearchBloc>()..add(const SearchEvent.initialize()),
             ),
-            BlocProvider(create: (_) => sl<RAGCubit>()..initialize()),
             // Provide HistoryCubit using GetIt
             BlocProvider(
               create: (_) => sl<HistoryCubit>()..loadConversations(),

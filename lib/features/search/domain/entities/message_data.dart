@@ -108,4 +108,47 @@ class MessageData {
     if (attachments.length == 1) return attachments.first.name;
     return '${attachments.length} files attached';
   }
+
+  factory MessageData.fromMap(Map<String, dynamic> map) {
+    return MessageData(
+      query: map['query']?.toString() ?? '',
+      answer: map['answer']?.toString() ?? '',
+      relatedQuestions: (map['relatedQuestions'] as List?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
+      sources: (map['sources'] as List?)
+              ?.map((e) => SourceItem.fromMap(Map<String, dynamic>.from(e)))
+              .toList() ??
+          [],
+      images: (map['images'] as List?)?.map((e) => e.toString()).toList() ?? [],
+      imageItems: (map['imageItems'] as List?)
+              ?.map((e) => ImageItem.fromMap(Map<String, dynamic>.from(e)))
+              .toList() ??
+          [],
+      videos: (map['videos'] as List?)
+              ?.map((e) => VideoItem.fromMap(Map<String, dynamic>.from(e)))
+              .toList() ??
+          [],
+      generationState: MessageGenerationState.values.firstWhere(
+        (e) => e.name.toLowerCase() == map['generationState']?.toString().toLowerCase(),
+        orElse: () => MessageGenerationState.completed,
+      ),
+      isFallback: map['isFallback'] as bool? ?? false,
+      timestamp: map['timestamp'] != null
+          ? DateTime.tryParse(map['timestamp'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+      errorMessage: map['errorMessage']?.toString(),
+      steps: (map['steps'] as List?)
+              ?.map((e) => SearchStep.fromMap(Map<String, dynamic>.from(e)))
+              .toList() ??
+          [],
+      toolWidgets: (map['toolWidgets'] as List?)
+              ?.map((e) => ToolWidgetData.fromMap(Map<String, dynamic>.from(e)))
+              .toList() ??
+          [],
+      confidenceScore: map['confidenceScore'] as int?,
+      confidenceLevel: map['confidenceLevel']?.toString(),
+    );
+  }
 }

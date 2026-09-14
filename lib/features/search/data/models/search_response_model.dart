@@ -233,4 +233,34 @@ class SearchResponseModel {
       },
     );
   }
+
+  factory SearchResponseModel.fromJson(
+    Map<String, dynamic> json, [
+    String query = '',
+  ]) {
+    final results = (json['results'] as List? ?? [])
+        .map(
+          (result) => SearchResultModel.fromSearXNG(
+            result is Map<String, dynamic>
+                ? result
+                : Map<String, dynamic>.from(result),
+          ),
+        )
+        .toList();
+
+    return SearchResponseModel(
+      results: results,
+      totalResults:
+          json['number_of_results'] ?? json['total_results'] ?? results.length,
+      searchTime: (json['search_time'] ?? 0.0).toDouble(),
+      query: json['query'] ?? query,
+      metadata: json['metadata'] is Map<String, dynamic>
+          ? json['metadata']
+          : {
+              'suggestions': json['suggestions'] ?? [],
+              'infobox': json['infobox'],
+              'engines': json['engines'] ?? [],
+            },
+    );
+  }
 }

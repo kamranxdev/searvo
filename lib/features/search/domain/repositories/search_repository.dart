@@ -1,19 +1,15 @@
-import '../entities/source_item.dart';
+import '../../data/models/search_stream_update.dart';
 
 abstract class SearchRepository {
-  /// Perform a search operation and return a stream of updates.
-  Stream<dynamic> performSearch(
+  /// Stream real-time search execution updates from backend
+  Stream<SearchStreamUpdate> streamSearch(
     String query, {
-    required Map<String, dynamic> options,
+    List<dynamic>? attachments,
+    String? conversationId,
+    List<Map<String, dynamic>>? previousMessages,
+    String searchType = 'general',
   });
 
-  /// Perform a direct search (non-streaming, simple)
-  Future<List<SourceItem>> searchDirect(
-    String query, {
-    int page = 1,
-    String? category,
-  });
-
-  /// Get autocomplete suggestions
+  /// Get autocomplete suggestions from backend
   Future<List<String>> getSuggestions(String query);
 }

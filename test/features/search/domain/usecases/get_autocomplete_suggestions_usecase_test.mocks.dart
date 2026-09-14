@@ -6,7 +6,8 @@
 import 'dart:async' as _i3;
 
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:searvo/features/search/domain/entities/source_item.dart' as _i4;
+import 'package:searvo/features/search/data/models/search_stream_update.dart'
+    as _i4;
 import 'package:searvo/features/search/domain/repositories/search_repository.dart'
     as _i2;
 
@@ -34,33 +35,27 @@ class MockSearchRepository extends _i1.Mock implements _i2.SearchRepository {
   }
 
   @override
-  _i3.Stream<dynamic> performSearch(
+  _i3.Stream<_i4.SearchStreamUpdate> streamSearch(
     String? query, {
-    required Map<String, dynamic>? options,
-  }) =>
-      (super.noSuchMethod(
-            Invocation.method(#performSearch, [query], {#options: options}),
-            returnValue: _i3.Stream<dynamic>.empty(),
-          )
-          as _i3.Stream<dynamic>);
-
-  @override
-  _i3.Future<List<_i4.SourceItem>> searchDirect(
-    String? query, {
-    int? page = 1,
-    String? category,
+    List<dynamic>? attachments,
+    String? conversationId,
+    List<Map<String, dynamic>>? previousMessages,
+    String? searchType = 'general',
   }) =>
       (super.noSuchMethod(
             Invocation.method(
-              #searchDirect,
+              #streamSearch,
               [query],
-              {#page: page, #category: category},
+              {
+                #attachments: attachments,
+                #conversationId: conversationId,
+                #previousMessages: previousMessages,
+                #searchType: searchType,
+              },
             ),
-            returnValue: _i3.Future<List<_i4.SourceItem>>.value(
-              <_i4.SourceItem>[],
-            ),
+            returnValue: _i3.Stream<_i4.SearchStreamUpdate>.empty(),
           )
-          as _i3.Future<List<_i4.SourceItem>>);
+          as _i3.Stream<_i4.SearchStreamUpdate>);
 
   @override
   _i3.Future<List<String>> getSuggestions(String? query) =>

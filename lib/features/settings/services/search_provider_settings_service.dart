@@ -1,9 +1,11 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:searvo/features/settings/services/settings_service.dart';
 
-/// Service for managing SearXNG settings (simplified - no provider abstraction)
+/// Service for managing search backend settings
 class SearchProviderSettingsService {
-  static const String _searxngEndpointKey = 'searxng_endpoint';
+  static const String _backendApiUrlKey = 'backend_api_url';
   static const String _searchTimeoutKey = 'search_timeout';
 
   static final SearchProviderSettingsService _instance =
@@ -15,27 +17,23 @@ class SearchProviderSettingsService {
 
   final SettingsService _settingsService = SettingsService();
 
-  // SearXNG Endpoint Settings
-  Future<bool> setSearXNGEndpoint(String endpoint) async {
-    return await _settingsService.setCustomSetting(
-      _searxngEndpointKey,
-      endpoint,
-    );
+  // Backend API URL Settings
+  Future<bool> setBackendApiUrl(String url) async {
+    return await _settingsService.setCustomSetting(_backendApiUrlKey, url);
   }
 
-  String getSearXNGEndpoint() =>
-      _settingsService.getCustomSetting<String>(
-        _searxngEndpointKey,
-        'http://localhost:4000',
-      ) ??
-      'http://localhost:4000';
-
-  bool hasSearXNGEndpoint() {
-    final endpoint = _settingsService.getCustomSetting<String>(
-      _searxngEndpointKey,
-      null,
-    );
-    return endpoint != null && endpoint.isNotEmpty;
+  String getBackendApiUrl() {
+    final custom = _settingsService.getCustomSetting<String>(_backendApiUrlKey, null);
+    if (custom != null && custom.isNotEmpty) {
+      return custom;
+    }
+    // Android emulator cannot access localhost directly
+    try {
+      if (!kIsWeb && Platform.isAndroid) {
+        return 'http://10.0.2.2:8000';
+      }
+    } catch (_) {}
+    return 'http://localhost:8000';
   }
 
   // Search Timeout Settings
@@ -46,18 +44,17 @@ class SearchProviderSettingsService {
   int getSearchTimeout() =>
       _settingsService.getCustomSetting<int>(_searchTimeoutKey, 30) ?? 30;
 
-  // New: SafeSearch Settings
+  // SafeSearch Settings (for search preferences)
   static const String _safeSearchKey = 'searxng_safesearch';
 
   Future<bool> setSafeSearch(int value) async {
     return await _settingsService.setCustomSetting(_safeSearchKey, value);
   }
 
-  /// 0: None, 1: Moderate, 2: Strict
   int getSafeSearch() =>
       _settingsService.getCustomSetting<int>(_safeSearchKey, 1) ?? 1;
 
-  // New: Region Settings
+  // Region Settings
   static const String _regionKey = 'searxng_region';
 
   Future<bool> setRegion(String value) async {
@@ -67,7 +64,7 @@ class SearchProviderSettingsService {
   String getRegion() =>
       _settingsService.getCustomSetting<String>(_regionKey, '') ?? '';
 
-  // New: Max Search Time (for user-controlled speed vs quality)
+  // Max Search Time
   static const String _maxSearchTimeKey = 'searxng_max_time';
 
   Future<bool> setMaxSearchTime(double value) async {
@@ -77,59 +74,31 @@ class SearchProviderSettingsService {
   double getMaxSearchTime() =>
       _settingsService.getCustomSetting<double>(_maxSearchTimeKey, 3.0) ?? 3.0;
 
-  /// Test SearXNG connection
-  Future<bool> testSearXNGConnection({String? customEndpoint}) async {
-    final endpoint = customEndpoint ?? getSearXNGEndpoint();
-    if (endpoint.isEmpty) return false;
-
-    // Normalize and validate URL
-    final base = endpoint.trim();
-    Uri uri;
+  /// Test connection to Python FastAPI backend
+  Future<bool> testBackendApiConnection() async {
     try {
-      uri = Uri.parse(base);
-    } catch (_) {
-      return false;
-    }
-
-    // If no scheme provided (e.g., 'localhost:4000'), assume http
-    if (uri.scheme.isEmpty) {
-      uri = Uri.parse('http://$base');
-    }
-
-    if (!(uri.scheme == 'http' || uri.scheme == 'https')) return false;
-
-    final baseTrimmed = base.replaceAll(RegExp(r'/$'), '');
-
-    // Try /stats first
-    final statsUri = Uri.parse('$baseTrimmed/stats');
-    try {
-      final resp = await http.get(statsUri).timeout(const Duration(seconds: 5));
-      if (resp.statusCode == 200) return true;
-    } catch (_) {
-      // ignore and try fallback
-    }
-
-    // Fallback: try a simple search request
-    final searchUri = Uri.parse(
-      '$baseTrimmed/search',
-    ).replace(queryParameters: {'q': 'test', 'format': 'json', 'pageno': '1'});
-
-    try {
-      final searchResp = await http
-          .get(searchUri, headers: {'Accept': 'application/json'})
-          .timeout(const Duration(seconds: 5));
-      return searchResp.statusCode == 200;
+      final url = getBackendApiUrl().replaceAll(RegExp(r'/+$'), '');
+      final response = await http.get(
+        Uri.parse('$url/api/v1/health'),
+      ).timeout(const Duration(seconds: 4));
+      return response.statusCode == 200;
     } catch (_) {
       return false;
     }
   }
 
+  /// Backward-compatible SearXNG endpoint getter
+  String getSearXNGEndpoint() => 'http://localhost:4000';
+  Future<bool> setSearXNGEndpoint(String endpoint) async => true;
+  bool hasSearXNGEndpoint() => true;
+  Future<bool> testSearXNGConnection({String? customEndpoint}) async => true;
+
   /// Get configuration status
   Map<String, dynamic> getStatus() {
     return {
-      'endpoint': getSearXNGEndpoint(),
+      'backendApiUrl': getBackendApiUrl(),
       'timeout': getSearchTimeout(),
-      'isConfigured': hasSearXNGEndpoint(),
+      'isConfigured': true,
     };
   }
 }
