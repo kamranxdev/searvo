@@ -83,3 +83,16 @@ Diagnostic status check verifying connectivity to SearXNG and Qdrant.
 ```bash
 curl http://localhost:8000/api/v1/health
 ```
+
+---
+
+## 🤝 Contributing to Backend
+
+We warmly welcome contributions to the Searvo Backend! You can:
+- Add new autonomous tools to `app/services/tools/` (e.g., Wolfram Alpha, GitHub, Reddit, Finance).
+- Enhance RAG retrieval, reranking, and semantic chunking.
+- Improve streaming resilience and token synthesis.
+- Add support for new local/open models.
+
+See the root **[Contributing Guide](../CONTRIBUTING.md)** and **[Monorepo Architecture Guide](../docs/architecture/monorepo.md)** for development setup and PR guidelines.
+

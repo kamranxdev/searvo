@@ -44,13 +44,20 @@ check_docker() {
     print_success "Docker is available"
 }
 
-# Start SearXNG with Caddy and Qdrant
-start_searxng() {
-    print_status "Starting SearXNG services (SearXNG + Caddy + Qdrant)..."
+# Start backend services (FastAPI Backend, SearXNG, Caddy, Qdrant)
+start_services() {
+    print_status "Starting backend services (FastAPI Backend + SearXNG + Caddy + Qdrant)..."
     
+    # Ensure backend .env exists
+    if [ ! -f "backend/.env" ] && [ -f "backend/.env.example" ]; then
+        print_status "Creating backend/.env from backend/.env.example..."
+        cp backend/.env.example backend/.env
+    fi
+
     # Check if containers are already running
-    if docker ps --filter name=searvo-caddy --filter status=running | grep -q searvo-caddy; then
-        print_status "SearXNG services are already running"
+    if docker ps --filter name=searvo-caddy --filter status=running | grep -q searvo-caddy && \
+       docker ps --filter name=searvo-api --filter status=running | grep -q searvo-api; then
+        print_status "Backend services are already running"
         return 0
     fi
     
@@ -58,13 +65,16 @@ start_searxng() {
     print_status "Building images..."
     docker compose build >/dev/null 2>&1
     
-    print_status "Starting services on port 4000..."
+    print_status "Starting services on ports 8000, 4000, 6333..."
     docker compose up -d >/dev/null 2>&1
     
     # Wait a moment for containers to start
     sleep 3
     
-    if docker ps --filter name=searvo-caddy --filter status=running | grep -q searvo-caddy; then
+    if docker ps --filter name=searvo-caddy --filter status=running | grep -q searvo-caddy && \
+       docker ps --filter name=searvo-api --filter status=running | grep -q searvo-api; then
+        print_success "Backend API is running on http://localhost:8000"
+        print_success "API Documentation available at http://localhost:8000/docs"
         print_success "SearXNG + Caddy are running on http://localhost:4000"
         print_success "Qdrant vector database is running on http://localhost:6333"
     else
@@ -74,15 +84,26 @@ start_searxng() {
     fi
 }
 
-# Stop SearXNG and all services
-stop_searxng() {
-    print_status "Stopping SearXNG services..."
-    if docker ps --filter name=searvo-caddy --filter status=running | grep -q searvo-caddy; then
+# Alias for backward compatibility
+start_searxng() {
+    start_services "$@"
+}
+
+# Stop backend services
+stop_services() {
+    print_status "Stopping backend services..."
+    if docker ps --filter name=searvo-caddy --filter status=running | grep -q searvo-caddy || \
+       docker ps --filter name=searvo-api --filter status=running | grep -q searvo-api; then
         docker compose down >/dev/null 2>&1
-        print_success "SearXNG services stopped"
+        print_success "Backend services stopped"
     else
-        print_status "SearXNG services are not running"
+        print_status "Backend services are not running"
     fi
+}
+
+# Alias for backward compatibility
+stop_searxng() {
+    stop_services "$@"
 }
 
 # Check if any Android devices are connected
@@ -126,8 +147,8 @@ check_android_sdk() {
 run_dev() {
     print_status "Starting development environment..."
     
-    # Start SearXNG first
-    start_searxng
+    # Start backend services first
+    start_services
     
     print_status "Starting Flutter Android development..."
     
@@ -144,7 +165,7 @@ run_dev() {
     # Set up cleanup trap for graceful shutdown
     cleanup() {
         print_status "Shutting down development environment..."
-        stop_searxng
+        stop_services
         exit 0
     }
     trap cleanup INT TERM
@@ -159,7 +180,7 @@ run_dev() {
         echo "  Linux:   Download from https://developer.android.com/studio/releases/platform-tools"
         echo "  Windows: Download from https://developer.android.com/studio/releases/platform-tools"
         echo ""
-        print_status "Good news: SearXNG backend is running at http://localhost:4000"
+        print_status "Good news: Backend services are running at http://localhost:8000 (SearXNG at http://localhost:4000)"
         print_status "You can connect your Android app to it once you have the SDK installed."
         print_status ""
         print_status "To continue with backend only (no app launch), you can:"
@@ -167,7 +188,7 @@ run_dev() {
         echo "  2. Connect an Android device or start an emulator"
         echo "  3. Run this script again"
         echo ""
-        stop_searxng
+        stop_services
         exit 0
     fi
 
@@ -217,10 +238,17 @@ run_dev() {
         cleanup
     fi
 
+    # Set up reverse port forwarding so Android device can access host services
+    print_status "Configuring port forwarding for device ($DEVICE_ID)..."
+    adb -s "$DEVICE_ID" reverse tcp:8000 tcp:8000 2>/dev/null || true
+    adb -s "$DEVICE_ID" reverse tcp:4000 tcp:4000 2>/dev/null || true
+    adb -s "$DEVICE_ID" reverse tcp:6333 tcp:6333 2>/dev/null || true
+
     # Run the app on the specific device
     print_status "Launching Flutter app on Android device ($DEVICE_ID)..."
     print_success "🚀 Development environment ready!"
     print_success "   Android: will run on device $DEVICE_ID"
+    print_success "   Backend API: http://localhost:8000 (Docs: /docs)"
     print_success "   SearXNG API: http://localhost:4000"
     print_success "   Qdrant Vector DB: http://localhost:6333"
     print_status "Press Ctrl+C to stop all services"
@@ -241,7 +269,7 @@ build_prod() {
 # Stop all development services
 stop_dev() {
     print_status "Stopping all development services..."
-    stop_searxng
+    stop_services
     print_success "All services stopped"
 }
 
@@ -253,7 +281,7 @@ show_help() {
     echo "Usage: $0 [command]"
     echo ""
     echo "Commands:"
-    echo "  dev      Start development environment (Flutter Android + SearXNG) (default)"
+    echo "  dev      Start development environment (Flutter Android + Backend Services) (default)"
     echo "  build    Build Flutter app for production (APK)"
     echo "  stop     Stop all development services"
     echo "  help     Show this help message"
@@ -266,6 +294,7 @@ show_help() {
     echo ""
     echo "Services:"
     echo "  - Flutter Android: runs on connected device/emulator"
+    echo "  - Backend API: http://localhost:8000 (Docs: http://localhost:8000/docs)"
     echo "  - SearXNG API: http://localhost:4000"
     echo "  - Qdrant Vector DB: http://localhost:6333"
 }

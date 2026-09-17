@@ -13,8 +13,8 @@ We actively support the following versions with security updates:
 
 If you discover a security vulnerability in this project, please report it to us as follows:
 
-1. **Do not** create a public issue on GitHub
-2. Email your findings to [INSERT SECURITY EMAIL] (e.g., security@yourdomain.com)
+1. **Do not** create a public issue on GitHub.
+2. Report the vulnerability privately via **[GitHub Security Advisory](https://github.com/kamranxdev/searvo/security/advisories/new)** or reach out directly to the project maintainer ([@kamranxdev](https://github.com/kamranxdev)).
 3. Include detailed information about the vulnerability, including:
    - Description of the vulnerability
    - Steps to reproduce

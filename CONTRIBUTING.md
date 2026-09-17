@@ -1,196 +1,214 @@
 # Contributing to Searvo
 
-👍 First off, thank you for considering contributing to Searvo! 
+👍 **First off, thank you for considering contributing to Searvo!** 
 
-We love to receive contributions from our community! There are many ways to contribute, from writing tutorials or blog posts, improving the documentation, submitting bug reports and feature requests, or writing code.
+Searvo is an open-source, privacy-first AI search engine and autonomous agent platform. We are building this project in the open, by the community and for the community. Whether you write Flutter/Dart, Python/FastAPI, work on DevOps/Docker, design beautiful UI/UX, or improve documentation and translations, your contributions are warmly welcomed!
+
+---
 
 ## 📋 Table of Contents
 
 - [Code of Conduct](#code-of-conduct)
-- [Quick Start](#quick-start)
-- [How Can I Contribute?](#how-can-i-contribute)
+- [Monorepo Overview](#monorepo-overview)
+- [Ways to Contribute](#ways-to-contribute)
 - [Development Setup](#development-setup)
-- [Pull Request Process](#pull-request-process)
-- [Style Guidelines](#style-guidelines)
-- [Community](#community)
-
-## Code of Conduct
-
-This project and everyone participating in it is governed by our Code of Conduct. By participating, you are expected to uphold this code. Please report unacceptable behavior to the project maintainers.
-
-## Quick Start
-
-1. Fork the repository
-2. Clone your fork: `git clone https://github.com/YOUR_USERNAME/searvo.git`
-3. Create a branch: `git checkout -b feature/my-feature`
-4. Make your changes
-5. Run tests: `flutter test`
-6. Commit: `git commit -m "feat: add my feature"`
-7. Push: `git push origin feature/my-feature`
-8. Create a Pull Request
-
-## How Can I Contribute?
-
-### 🐛 Reporting Bugs
-
-Before creating bug reports, please check the existing issues. When you create a bug report, include as many details as possible:
-
-- **Use a clear and descriptive title**
-- **Describe the exact steps to reproduce the problem**
-- **Provide specific examples**
-- **Describe the behavior you observed**
-- **Explain which behavior you expected to see**
-- **Include screenshots if possible**
-- **Include your environment details** (OS, Flutter version, etc.)
-
-### 💡 Suggesting Features
-
-Feature suggestions are tracked as GitHub issues. When creating a feature suggestion:
-
-- **Use a clear and descriptive title**
-- **Provide a detailed description of the suggested feature**
-- **Explain why this feature would be useful**
-- **Include mockups or examples if applicable**
-
-### 💻 Contributing Code
-
-1. Look for issues labeled `good first issue` or `help wanted`
-2. Comment on the issue to let others know you're working on it
-3. Follow our development setup guide
-4. Make your changes following our style guidelines
-5. Write or update tests as needed
-6. Update documentation as needed
-7. Submit a pull request
-
-## Development Setup
-
-### Prerequisites
-
-- Flutter 3.8.0 or higher
-- Dart 3.8.0 or higher
-- Git
-
-### Setup Steps
-
-```bash
-# Clone the repository
-git clone https://github.com/kamranxdev/searvo.git
-cd searvo
-
-# Install dependencies
-flutter pub get
-
-# Run the app
-flutter run
-
-# Run tests
-flutter test
-
-# Run linter
-flutter analyze
-
-# Format code
-flutter format .
-```
-
-For detailed setup instructions, see our [Installation Guide](docs/getting-started/installation.md).
-
-## Pull Request Process
-
-1. **Update Documentation** - Update the README.md or docs with details of changes if needed
-2. **Follow Code Style** - Ensure your code follows our [Code Style Guide](docs/development/code-style.md)
-3. **Write Tests** - Add tests for new features
-4. **Update Changelog** - Add your changes to CHANGELOG.md (if applicable)
-5. **One Feature Per PR** - Keep pull requests focused on a single feature or fix
-6. **Descriptive PR Title** - Use conventional commit format (e.g., `feat: add voice search`)
-7. **Detailed Description** - Explain what changes you made and why
-8. **Link Issues** - Reference any related issues
-
-### PR Title Format
-
-Follow [Conventional Commits](https://www.conventionalcommits.org/):
-
-- `feat:` - New feature
-- `fix:` - Bug fix
-- `docs:` - Documentation changes
-- `style:` - Code style changes (formatting, etc.)
-- `refactor:` - Code refactoring
-- `test:` - Test changes
-- `chore:` - Build/tooling changes
-
-Examples:
-- `feat: add Ollama provider support`
-- `fix: resolve voice input crash on Android`
-- `docs: update installation guide`
-
-## Style Guidelines
-
-### Git Commit Messages
-
-- Use the present tense ("Add feature" not "Added feature")
-- Use the imperative mood ("Move cursor to..." not "Moves cursor to...")
-- Limit the first line to 72 characters or less
-- Reference issues and pull requests after the first line
-
-### Dart Code Style
-
-- Follow the official [Dart Style Guide](https://dart.dev/guides/language/effective-dart/style)
-- Run `flutter format` before committing
-- Fix all linter warnings (`flutter analyze`)
-- Use meaningful variable and function names
-- Add comments for complex logic
-- Write documentation comments for public APIs
-
-See our detailed [Code Style Guide](docs/development/code-style.md).
-
-### Documentation Style
-
-- Use clear, concise language
-- Include code examples where appropriate
-- Keep line length reasonable (80-100 characters)
-- Use proper Markdown formatting
-- Check spelling and grammar
-
-## Testing
-
-- Write tests for new features
-- Ensure all tests pass before submitting PR
-- Aim for good test coverage
-- Include both unit and widget tests where appropriate
-
-```bash
-# Run all tests
-flutter test
-
-# Run with coverage
-flutter test --coverage
-
-# Run specific test file
-flutter test test/features/search/search_service_test.dart
-```
-
-## Community
-
-- 💬 [GitHub Discussions](https://github.com/kamranxdev/searvo/discussions) - Ask questions, share ideas
-- 🐛 [Issue Tracker](https://github.com/kamranxdev/searvo/issues) - Report bugs, request features
-- 💭 [Discord](https://discord.gg/Bq67m6NYaa) - Real-time chat with the community
-
-## Recognition
-
-Contributors will be:
-- Listed in our CONTRIBUTORS.md file
-- Credited in release notes
-- Mentioned in project updates
-- Part of our amazing community! 🎉
-
-## Questions?
-
-Don't hesitate to ask! Create a discussion or reach out on Discord. We're here to help!
-
-## License
-
-By contributing, you agree that your contributions will be licensed under the MIT License.
+  - [Frontend Development (Flutter)](#1-frontend-development-flutter)
+  - [Backend Development (Python / FastAPI)](#2-backend-development-python--fastapi)
+  - [Full-Stack Development (Docker Compose)](#3-full-stack-development-docker-compose)
+- [Coding Guidelines & Standards](#coding-guidelines--standards)
+  - [Flutter / Dart Standards](#flutter--dart-standards)
+  - [Python / FastAPI Standards](#python--fastapi-standards)
+- [Git Commit & Pull Request Workflow](#git-commit--pull-request-workflow)
+  - [Monorepo Commit Scopes](#monorepo-commit-scopes)
+  - [Pull Request Checklist](#pull-request-checklist)
+- [Recognition & Community](#recognition--community)
 
 ---
 
-**Thank you for contributing to Searvo! 💙**
+## Code of Conduct
+
+Searvo is committed to fostering an open, inclusive, and harassment-free environment for all participants. By participating, you agree to abide by our **[Code of Conduct](CODE_OF_CONDUCT.md)**.
+
+---
+
+## Monorepo Overview
+
+Searvo is maintained as a single monorepo:
+
+| Component | Directory | Stack | Description |
+|---|---|---|---|
+| **Frontend Client** | `lib/` | Flutter 3.8+, Dart | Cross-platform app (Android, iOS, Web, macOS, Windows, Linux) |
+| **Backend API** | `backend/` | Python 3.10+, FastAPI, LiteLLM | Autonomous agent orchestration, RAG, SSE streaming, document processing |
+| **Vector Database** | `docker-compose.yaml` | Qdrant | Vector embeddings storage & semantic search for RAG |
+| **Metasearch** | `searxng/` | SearXNG | Privacy-respecting metasearch engine proxy |
+| **Documentation** | `docs/` | Markdown | In-depth architecture, API references, and guides |
+
+---
+
+## Ways to Contribute
+
+### 1. 🐛 Report Bugs
+- Search [existing issues](https://github.com/kamranxdev/searvo/issues) first to prevent duplicates.
+- Use our [Bug Report Template](.github/ISSUE_TEMPLATE/bug_report.md).
+- Specify whether the issue is in the **Frontend**, **Backend**, or **Infrastructure**, and include logs, screenshots, and reproduction steps.
+
+### 2. 💡 Propose Features & New Agent Tools
+- We love new ideas! Check the [Feature Requests](https://github.com/kamranxdev/searvo/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement) tab.
+- Want to add a new backend tool for the agent (e.g. GitHub search, Reddit search, financial analysis)? Let's discuss it in an issue!
+
+### 3. 🎨 Frontend Contributions (Flutter / Dart)
+- Implement UI improvements and animations.
+- Refactor and extend Clean Architecture modules in `lib/features/`.
+- Enhance accessibility (a11y), responsive layouts, and multi-language support.
+
+### 4. 🧠 Backend & AI Contributions (Python / FastAPI)
+- Expand autonomous reasoning tools in `backend/app/services/tools/`.
+- Optimize RAG chunking, hybrid search, and context compression.
+- Improve Server-Sent Events (SSE) streaming reliability and error handling.
+- Add support for new local or cloud LLM providers via LiteLLM.
+
+### 5. 📝 Documentation & Tutorials
+- Fix typos, improve explanations, add code examples, or translate documentation.
+- Write tutorials on self-hosting Searvo or integrating custom tools.
+
+---
+
+## Development Setup
+
+### 1. Frontend Development (Flutter)
+
+#### Prerequisites
+- [Flutter SDK](https://flutter.dev/docs/get-started/install) 3.8.0 or higher
+- [Dart SDK](https://dart.dev/get-dart) 3.8.0 or higher
+- Android Studio / Xcode / VS Code with Flutter extensions
+
+#### Setup Steps
+```bash
+# 1. Fork and clone the repository
+git clone https://github.com/YOUR_USERNAME/searvo.git
+cd searvo
+
+# 2. Fetch Flutter packages
+flutter pub get
+
+# 3. Launch on your desired target
+flutter run
+
+# To run on Web:
+flutter run -d chrome
+
+# 4. Verify code health
+flutter analyze
+flutter test
+```
+
+> 💡 **Connecting to Local Backend**: By default, the Flutter app connects to `http://localhost:8000` (or `http://10.0.2.2:8000` on Android emulator). Ensure your backend or Docker containers are running.
+
+---
+
+### 2. Backend Development (Python / FastAPI)
+
+#### Prerequisites
+- Python 3.10 or higher
+- `pip` and `python3-venv`
+
+#### Setup Steps
+```bash
+# 1. Navigate to backend folder
+cd backend
+
+# 2. Create and activate a virtual environment
+python3 -m venv venv
+source venv/bin/activate       # On Windows: venv\Scripts\activate
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Set up environment variables
+cp .env.example .env
+# Edit .env with your LLM API keys (e.g., OPENAI_API_KEY or GEMINI_API_KEY)
+
+# 5. Start the development server
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+Interactive API documentation will be available at:
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
+
+---
+
+### 3. Full-Stack Development (Docker Compose)
+
+The easiest way to run the entire backend stack (FastAPI API + Qdrant Vector DB + SearXNG + Caddy) is Docker Compose:
+
+```bash
+# From the project root
+cp backend/.env.example backend/.env
+docker compose up -d
+
+# Check container status
+docker compose ps
+
+# View backend logs
+docker compose logs -f api
+```
+
+---
+
+## Coding Guidelines & Standards
+
+### Flutter / Dart Standards
+- Follow the official [Effective Dart Style Guide](https://dart.dev/guides/language/effective-dart).
+- Maintain **Clean Architecture** patterns: keep UI (`presentation/`), business logic (`domain/`), and API/storage (`data/`) cleanly separated.
+- Run `dart format .` before committing.
+- Ensure all linter diagnostics pass: `flutter analyze`.
+
+### Python / FastAPI Standards
+- Follow [PEP 8](https://peps.python.org/pep-0008/) style standards.
+- Use explicit type annotations for function signatures and Pydantic models.
+- Handle asynchronous I/O with `async`/`await` for non-blocking operations.
+- Avoid committing secrets or hardcoded API keys. Use `backend/app/config.py` and `.env`.
+
+---
+
+## Git Commit & Pull Request Workflow
+
+### Monorepo Commit Scopes
+We use [Conventional Commits](https://www.conventionalcommits.org/) with component scopes to make monorepo history easy to read:
+
+- `feat(frontend): add voice search waveform animation`
+- `feat(backend): add DuckDuckGo fallback search tool`
+- `fix(agent): handle empty context gracefully in RAG pipeline`
+- `fix(ui): correct dark mode contrast on citation badges`
+- `chore(docker): update Qdrant image to latest stable`
+- `docs(readme): update contributing and setup instructions`
+
+### Pull Request Checklist
+1. **Branch Naming**: Use descriptive branch names:
+   - `feature/backend-new-tool`
+   - `fix/frontend-search-overflow`
+   - `docs/clarify-docker-setup`
+2. **Self-Review**: Review your own diff before opening the PR.
+3. **Tests**: Ensure existing tests pass and add new tests where applicable (`flutter test`).
+4. **Documentation**: Update relevant docs or docstrings if your change modifies user behavior or API endpoints.
+5. **Fill the PR Template**: Detail what changed, why, and how it was tested.
+
+---
+
+## Recognition & Community
+
+Every contributor matters! When your pull request is merged:
+- You will be added to **[CONTRIBUTORS.md](CONTRIBUTORS.md)**.
+- You will be highlighted in our release notes.
+- You earn our eternal gratitude and become an essential part of Searvo's journey! 🚀
+
+### Questions & Discussions
+- 💬 **[GitHub Discussions](https://github.com/kamranxdev/searvo/discussions)**
+- 🐛 **[GitHub Issues](https://github.com/kamranxdev/searvo/issues)**
+- 💭 **[Discord Community](https://discord.gg/Bq67m6NYaa)**
+
+---
+
+**Thank you for helping make Searvo the best open-source AI search experience! 💙**
+

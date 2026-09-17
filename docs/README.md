@@ -16,10 +16,12 @@ Welcome to the Searvo documentation! This comprehensive guide will help you unde
 - [Multi-Provider Support](features/multi-provider-support.md) - LLM provider configuration
 
 ### Architecture
+- [Monorepo Architecture](architecture/monorepo.md) - How Flutter client, FastAPI backend, Qdrant, and SearXNG work together
 - [Project Structure](architecture/project-structure.md) - Code organization
 - [Core Systems](architecture/core-systems.md) - Routing, theming, and configuration
 - [State Management](architecture/state-management.md) - Provider pattern implementation
 - [Services](architecture/services.md) - Service layer architecture
+- [Backend Intelligence API](../backend/README.md) - Python FastAPI backend documentation
 
 ### Development
 - [Contributing](development/contributing.md) - How to contribute to Searvo

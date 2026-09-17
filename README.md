@@ -1,19 +1,23 @@
 <div align="center">
 
-# Searvo - Proprietary Version
+# 🌐 Searvo
 
-### AI-Powered Search with RAG Capabilities
+### The Open-Source, Privacy-First AI Search Engine & Autonomous Agent Platform
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Flutter](https://img.shields.io/badge/Flutter-3.8+-02569B.svg)](https://flutter.dev)
-[![Dart](https://img.shields.io/badge/Dart-3.8+-0175C2.svg)](https://dart.dev)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](docs/development/contributing.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Flutter](https://img.shields.io/badge/Flutter-3.8+-02569B.svg?logo=flutter&logoColor=white)](https://flutter.dev)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.111+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB.svg?logo=python&logoColor=white)](https://python.org)
+[![Docker Compose](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)](docker-compose.yaml)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Good First Issues](https://img.shields.io/badge/Good_First_Issues-Open-informational.svg)](https://github.com/kamranxdev/searvo/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+[![Discord](https://img.shields.io/badge/Discord-Join%20Chat-5865F2?logo=discord&logoColor=white)](https://discord.gg/Bq67m6NYaa)
 
 <p align="center">
-  <strong>Open-source • Privacy-First • Multi-Platform</strong>
+  <strong>Cross-Platform Client • High-Performance Async Backend • Autonomous Agents • Privacy-First Metasearch</strong>
 </p>
 
-[Features](#features) • [Quick Start](#quick-start) • [Documentation](docs/) • [Contributing](docs/development/contributing.md)
+[Quick Start](#-quick-start) • [Monorepo Architecture](#-monorepo-architecture) • [Features](#-features) • [Contributing](#-contributing) • [Documentation](docs/) • [Community](#-community)
 
 </div>
 
@@ -21,183 +25,257 @@
 
 ## 🌟 What is Searvo?
 
-Searvo is an open-source Flutter application that transforms web search into an intelligent conversation. By combining traditional search engines with advanced Large Language Models (LLMs) and RAG (Retrieval-Augmented Generation), Searvo provides comprehensive, contextual answers backed by real web sources.
+**Searvo** is a modern, open-source AI search engine and autonomous reasoning platform. It turns web search into an intelligent, conversational, and agentic experience. By bridging privacy-respecting metasearch engines ([SearXNG](https://github.com/searxng/searxng)) with Retrieval-Augmented Generation (RAG), vector databases ([Qdrant](https://qdrant.tech/)), and Large Language Models, Searvo delivers comprehensive, contextual answers backed by real, verifiable web citations.
 
-**Built by the community, for the community** - with complete transparency and privacy control.
+### 🚀 Now Fully Open Source!
+Searvo is **100% open-source and welcoming contributions across the entire stack**! Whether you are a Flutter/Dart developer, Python/FastAPI enthusiast, AI/RAG engineer, UI/UX designer, or technical writer, we invite you to build the future of open, transparent, and private search with us.
+
+---
+
+## 🏗️ Monorepo Architecture
+
+Searvo is structured as a unified monorepo housing both the client-facing application, the intelligence backend, and supporting containerized infrastructure:
+
+```
+searvo/
+├── lib/                     # 📱 Frontend: Flutter Cross-Platform Client
+│   ├── core/                # Core theme, utilities, error handling, network
+│   └── features/            # Feature modules (Clean Architecture)
+│       ├── search/          # Search UI, SSE stream consumer, domain logic
+│       ├── llm/             # Client-side BYOK LLM integrations & providers
+│       ├── voice/           # Speech-to-text and Text-to-speech engine
+│       ├── history/         # Local conversation history & bookmarks
+│       └── settings/        # App & search provider configuration
+│
+├── backend/                 # 🧠 Backend: Python FastAPI Intelligence Engine
+│   ├── app/
+│   │   ├── api/v1/          # REST & SSE streaming endpoints (/search, /discover, /documents)
+│   │   ├── services/
+│   │   │   ├── agent/       # Autonomous tool-calling agent orchestrator
+│   │   │   ├── rag/         # Document chunking, embedding & retrieval pipeline
+│   │   │   ├── tools/       # Search, calculator, YouTube, Wikipedia, weather tools
+│   │   │   └── llm/         # Unified multi-LLM adapter (OpenAI, Gemini, Claude, Ollama)
+│   │   ├── models/          # Pydantic request/response schemas
+│   │   └── config.py        # Environment settings & configuration
+│   ├── requirements.txt     # Python backend dependencies
+│   └── Dockerfile           # Backend container build
+│
+├── searxng/                 # 🔍 Privacy-first metasearch configuration & dockerfile
+├── docs/                    # 📚 Comprehensive technical documentation
+├── docker-compose.yaml      # 🐳 Full-stack local orchestration
+├── CONTRIBUTING.md          # 🤝 Complete contribution guide for Frontend & Backend
+└── LICENSE                  # 📜 MIT Open-Source License
+```
+
+### 🧩 How the Pieces Connect
+```mermaid
+graph TD
+    Client["📱 Flutter Client<br/>(Android / iOS / Web / Desktop)"]
+    Backend["🧠 Searvo Backend API<br/>(FastAPI / Python)"]
+    SearXNG["🔍 SearXNG Metasearch<br/>(Privacy Search Engine)"]
+    Qdrant["📦 Qdrant Vector DB<br/>(Document RAG Embeddings)"]
+    LLM["⚡ LLM Providers<br/>(OpenAI, Claude, Gemini, Ollama, OpenRouter)"]
+
+    Client -- "1. Real-time SSE Query Stream" --> Backend
+    Client -. "Direct BYOK (Optional Client Mode)" .-> LLM
+    Backend -- "2. Orchestrates Search" --> SearXNG
+    Backend -- "3. Vector Search / Context" --> Qdrant
+    Backend -- "4. Agent Reasoning & Synthesis" --> LLM
+    Backend -- "5. Progressive Token & Source Stream" --> Client
+```
+
+---
 
 ## ✨ Features
 
-### 🤖 AI-Powered Search
-- **RAG Pipeline** - Retrieves web content and generates intelligent responses
-- **Multi-Source Analysis** - Combines information from multiple web sources
-- **Conversational Context** - Maintains conversation history for follow-up questions
-- **Source Citations** - Every answer includes links to original sources
+### 🧠 Autonomous Agent Backend
+- **Tool-Calling Reasoning Agent**: Deconstructs complex queries into multi-step actions (web searching, definitions, currency/crypto lookups, YouTube extraction, math calculation).
+- **Real-Time Streaming (SSE)**: Streams intermediate agent thoughts, discovered sources, UI widget payloads, and token-by-token syntheses via Server-Sent Events.
+- **RAG & Vector Retrieval**: Seamless document ingestion (PDF, DOCX, TXT), semantic chunking, and similarity search powered by Qdrant.
+- **SearXNG Privacy Proxy**: Metasearch queries without tracking, cookies, or IP footprint.
 
-### 🗣️ Voice Interaction
-- **Voice Input** - Ask questions naturally using speech
-- **Voice Output** - Hear responses read aloud with TTS
-- **Hands-Free Mode** - Complete voice-only operation
-- **Multi-Language** - Support for multiple languages
+### 📱 Cross-Platform Flutter Frontend
+- **Universal Multi-Platform**: Runs natively on Android, iOS, Web, macOS, Windows, and Linux.
+- **Interactive Markdown & Citations**: Dynamic citation links, collapsible research steps, and interactive widgets.
+- **Voice-First Interaction**: Hands-free voice search input (STT) and spoken responses (TTS) in multiple languages.
+- **BYOK (Bring Your Own Key)**: Direct client-side provider access or server-routed intelligence. Supports OpenAI, Anthropic Claude, Google Gemini, Ollama, and OpenRouter.
+- **Zero Tracking**: 100% privacy-respecting with all query history stored locally on-device.
 
-### 🔌 Multi-Provider LLM Support
-Choose your preferred AI provider:
-- **OpenAI** (GPT-3.5, GPT-4)
-- **Google** (Gemini Pro)
-- **Anthropic** (Claude 3)
-- **Ollama** (Local, privacy-first)
-- **OpenRouter** (100+ models)
-
-### 🌐 Advanced Search
-- **@Mentions** - Vertical searching, Target specific sites (`@github`, `@youtube`, etc.)
-- **Web Scraping** - Full content extraction for comprehensive analysis
-- **Multi-Query** - Combine multiple searches
-- **Context-Aware** - Understands follow-up questions
-
-### 🎨 Beautiful & Responsive
-- **Modern UI** - Clean, intuitive interface
-- **Dark/Light Themes** - Easy on the eyes
-- **Cross-Platform** - Android, iOS, Web, Linux, macOS, Windows
-- **Responsive Design** - Adapts to any screen size
+---
 
 ## 🚀 Quick Start
 
-### Prerequisites
+You can run Searvo using Docker (recommended for the full stack) or run each component independently for development.
 
-- [Flutter](https://flutter.dev/docs/get-started/install) 3.8.0 or higher
-- [Dart](https://dart.dev/get-dart) 3.8.0 or higher
+### Option 1: Full-Stack via Docker Compose (Recommended)
 
-### Installation
+Run SearXNG, Qdrant, Caddy, and the FastAPI Backend in one command:
 
 ```bash
-# Clone the repository
+# 1. Clone the repository
 git clone https://github.com/kamranxdev/searvo.git
 cd searvo
 
-# Install dependencies
-flutter pub get
+# 2. Configure backend environment
+cp backend/.env.example backend/.env
+# Edit backend/.env to add your preferred LLM API keys (e.g., OPENAI_API_KEY or GEMINI_API_KEY)
 
-# Run the app
-flutter run
+# 3. Spin up all services
+docker compose up -d
+
+# 4. Verify services:
+# - Searvo Backend API: http://localhost:8000/docs
+# - SearXNG Gateway:     http://localhost:4000
+# - Qdrant Dashboard:    http://localhost:6333/dashboard
 ```
 
-### First-Time Setup
+Then run the Flutter client connected to `http://localhost:8000`!
 
-1. **Launch Searvo** on your platform
-2. **Configure LLM Provider** in Settings
-   - Choose a provider (OpenAI, Google, Anthropic, Ollama, or OpenRouter)
-   - Enter your API key (or use Ollama for free local AI)
-3. **Start Searching!** 🎉
+---
 
-> 💡 **Tip**: Start with [Ollama](https://ollama.ai/) for free local AI, or try [Google Gemini](https://makersuite.google.com/) for generous free tier.
+### Option 2: Frontend Development (Flutter)
 
-## 📱 Platform Support
+#### Prerequisites
+- [Flutter SDK](https://flutter.dev/docs/get-started/install) 3.8.0 or higher
+- [Dart SDK](https://dart.dev/get-dart) 3.8.0 or higher
 
-| Platform | Status | Notes |
-|----------|--------|-------|
-| Android | ✅ Supported | API 21+ |
-| iOS | ✅ Supported | iOS 12+ |
-| Web | ✅ Supported | All modern browsers |
-| Linux | ⚠️ Partially | GTK 3.0+ |
-| macOS | ✅ Supported | 10.14+ |
-| Windows | ✅ Supported | Windows 10+ |
+```bash
+# In the repository root
+flutter pub get
 
-## 📚 Documentation
+# Run on your connected device, emulator, or browser
+flutter run
 
-Comprehensive documentation is available in the [`docs/`](docs/) directory:
+# To run in Chrome:
+flutter run -d chrome
 
-### Getting Started
-- **[Overview](docs/getting-started/overview.md)** - Introduction and concepts
-- **[Installation](docs/getting-started/installation.md)** - Detailed setup guide
-- **[Configuration](docs/getting-started/configuration.md)** - Configure LLM providers
+# Run tests and linter
+flutter test
+flutter analyze
+```
 
-### Features
-- **[AI Search](docs/features/ai-search.md)** - RAG-powered search
-- **[Voice Interaction](docs/features/voice-interaction.md)** - Voice features
-- **[Web Scraping](docs/features/web-scraping.md)** - Content extraction
-- **[Multi-Provider Support](docs/features/multi-provider-support.md)** - LLM providers
+---
 
-### Architecture
-- **[Project Structure](docs/architecture/project-structure.md)** - Code organization
-- **[Core Systems](docs/architecture/core-systems.md)** - Technical details
+### Option 3: Backend Development (FastAPI)
 
-### Development
-- **[Contributing Guide](docs/development/contributing.md)** - How to contribute
-- **[Code Style](docs/development/code-style.md)** - Coding standards
+#### Prerequisites
+- [Python](https://python.org) 3.10 or higher
+- Virtual environment tool (`venv`)
 
-## 🤝 Contributing
+```bash
+# Navigate to backend directory
+cd backend
 
-We welcome contributions from the community! Whether you're fixing bugs, adding features, or improving documentation, your help is appreciated.
+# Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate   # On Windows: venv\Scripts\activate
 
-**Quick Links:**
-- [Contributing Guide](docs/development/contributing.md)
-- [Good First Issues](https://github.com/kamranxdev/searvo/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-- [Feature Requests](https://github.com/kamranxdev/searvo/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
+# Install dependencies
+pip install -r requirements.txt
 
-## � Privacy & Security
+# Configure environment variables
+cp .env.example .env
 
-Searvo is designed with privacy as a core principle:
+# Run development server with auto-reload
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
 
-- ✅ **Local Storage** - All data stored on your device
-- ✅ **No Tracking** - Zero analytics or telemetry
-- ✅ **API Control** - You manage your own API keys
-- ✅ **Open Source** - Transparent, auditable code
-- ✅ **No Account Required** - Use immediately
+Interactive API documentation will be available at:
+- **Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **ReDoc**: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
-**Data Flow:** Your queries → Your chosen LLM provider (with your API key) → Back to you. No intermediary, no Searvo servers.
+---
 
 ## 🛠️ Tech Stack
 
-- **Framework**: Flutter 3.8+
-- **Language**: Dart 3.8+
-- **State Management**: Provider
-- **Routing**: GoRouter
-- **LLM Integration**: LangChain
-- **Storage**: SharedPreferences
-- **Voice**: speech_to_text, flutter_tts
+| Layer | Technologies |
+|---|---|
+| **Frontend Framework** | Flutter 3.8+, Dart 3.8+ |
+| **State & Architecture** | Provider, Clean Architecture (Domain / Data / Presentation) |
+| **Routing & Networking** | GoRouter, Dio, HTTP |
+| **Voice & Media** | `speech_to_text`, `flutter_tts` |
+| **Backend Framework** | Python 3.10+, FastAPI, Uvicorn, SSE-Starlette |
+| **Agent & LLM Core** | LiteLLM, Custom Autonomous Orchestrator, Pydantic v2 |
+| **Search & Scraping** | SearXNG, BeautifulSoup4, yt-dlp, HTTPX |
+| **Vector DB & RAG** | Qdrant Client, PyPDF, python-docx |
+| **Infrastructure** | Docker, Docker Compose, Caddy |
 
-## 🌐 Community
+---
 
-Join our growing community:
+## 🤝 Contributing
 
-- 💬 **[GitHub Discussions](https://github.com/kamranxdev/searvo/discussions)** - Ask questions, share ideas
-- 🐛 **[Issue Tracker](https://github.com/kamranxdev/searvo/issues)** - Report bugs, request features
-- 💭 **[Discord](https://discord.gg/Bq67m6NYaa)** - Real-time chat
+We are actively seeking contributors! Whether you want to add a new search tool, design an awesome mobile widget, optimize agent latency, or fix a typo in the documentation, your contribution is celebrated.
+
+### Where Can You Contribute?
+- 🎨 **Frontend (Flutter)**: Build beautiful UI components, enhance accessibility, add search filters, or improve the voice interface.
+- 🧠 **Backend (Python / FastAPI)**: Create new agent tools (e.g., Wolfram Alpha, GitHub search, Reddit scraper), optimize RAG embeddings, or improve SSE streaming resilience.
+- 🔍 **Search & AI**: Fine-tune prompt templates, benchmark multi-provider accuracy, or improve SearXNG query transformation.
+- 🐳 **DevOps & Infrastructure**: CI/CD GitHub Actions, Helm charts, Docker optimizations, and automated testing.
+- 📝 **Documentation & Localization**: Translations, developer guides, video walkthroughs, and tutorials.
+
+Check out our **[Contributing Guide](CONTRIBUTING.md)** for our step-by-step workflow, style guidelines, and setup instructions.
+
+Explore [Good First Issues](https://github.com/kamranxdev/searvo/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) to get started immediately!
+
+---
+
+## 🔒 Privacy & Security
+
+Searvo is built around privacy and data sovereignty:
+- 🛡️ **No Tracking**: No analytics, trackers, fingerprinting, or user profiling.
+- 🔑 **BYOK (Bring Your Own Key)**: You control your credentials. We never log or sell your keys.
+- 🕵️ **SearXNG Integration**: Strips tracking headers and cookies from web searches.
+- 💾 **Local-First Data**: Conversations and preferences stay on your device unless you choose to self-host.
+
+For security concerns, please review our [Security Policy](SECURITY.md).
+
+---
+
+## 📚 Documentation
+
+Detailed documentation is available in the [`docs/`](docs/) directory:
+
+- 🗺️ **[Monorepo Architecture Guide](docs/architecture/monorepo.md)** - Deep dive into how Frontend & Backend collaborate
+- 📱 **[Frontend Architecture](docs/architecture/project-structure.md)** - Flutter Clean Architecture structure
+- ⚙️ **[Backend API Reference](backend/README.md)** - FastAPI endpoints & agent tools
+- 🚀 **[Installation Guide](docs/getting-started/installation.md)** - Detailed environment setup
+- 🤝 **[Contributing Guide](CONTRIBUTING.md)** - Contributor guidelines & code standards
+- 👥 **[Contributors](CONTRIBUTORS.md)** - Celebrating our community
+
+---
+
+## 🗺️ Roadmap
+
+- [ ] **Multi-Agent Teams**: Specialized agents for coding, academic research, and deep fact-checking.
+- [ ] **Local LLM Mode**: Seamless one-click local inference via Ollama / Llama.cpp.
+- [ ] **Browser Extension**: Searvo instant search in Chrome, Firefox, and Safari.
+- [ ] **Custom Plugin Ecosystem**: Community-contributed tools and data connectors.
+- [ ] **Sync & Backup**: Optional end-to-end encrypted personal sync.
+
+Track our active progress on [GitHub Projects](https://github.com/kamranxdev/searvo/projects).
+
+---
+
+## 💬 Community & Support
+
+- 💬 **[GitHub Discussions](https://github.com/kamranxdev/searvo/discussions)** - Ask questions, showcase setups, and suggest ideas.
+- 🐛 **[GitHub Issues](https://github.com/kamranxdev/searvo/issues)** - Report bugs or submit feature requests.
+- 💭 **[Discord Community](https://discord.gg/Bq67m6NYaa)** - Chat with maintainers and contributors in real time.
+
+---
 
 ## 📜 License
 
-Searvo is open-source software licensed under the [MIT License](LICENSE).
-
-## 🙏 Acknowledgments
-
-Searvo is built with these amazing open-source projects:
-- [Flutter](https://flutter.dev/) - UI framework
-- [LangChain](https://www.langchain.com/) - LLM orchestration
-- [SearXNG](https://github.com/searxng/searxng) - Privacy-respecting metasearch
-
-## � Roadmap
-
-- [ ] Local Search History
-- [ ] Collaborative collections
-- [ ] Browser extension
-- [ ] Mobile widget support
-- [ ] Advanced analytics
-- [ ] Plugin system
-
-See our [GitHub Projects](https://github.com/kamranxdev/searvo/projects) for detailed progress.
-
-## 📧 Contact
-
-- **Project Maintainer**: [kamranxdev](https://github.com/kamranxdev)
-- **Email**: [Create an issue](https://github.com/kamranxdev/searvo/issues/new)
-- **Website**: Coming soon!
+Searvo is open-source software licensed under the **[MIT License](LICENSE)**.
 
 ---
 
 <div align="center">
 
-**Made with ❤️ by the open-source community**
+**Built with ❤️ by [Kamran Khan](https://github.com/kamranxdev) and the open-source community.**
 
-[⭐ Star this repo](https://github.com/kamranxdev/searvo) • [🐛 Report Bug](https://github.com/kamranxdev/searvo/issues) • [💡 Request Feature](https://github.com/kamranxdev/searvo/issues)
+[⭐ Star on GitHub](https://github.com/kamranxdev/searvo) • [🍴 Fork Repository](https://github.com/kamranxdev/searvo/fork) • [💬 Join Discord](https://discord.gg/Bq67m6NYaa)
 
 </div>
+
 
